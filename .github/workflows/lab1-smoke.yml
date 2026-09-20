@@ -5,12 +5,12 @@ on:
     branches: [main, develop, 'Lab1/**']
     paths:
       - 'Lab1/**'
-      - '.github/workflows/**'
+      - '.github/workflows/lab1-smoke.yml'
   pull_request:
     branches: [main]
     paths:
       - 'Lab1/**'
-      - '.github/workflows/**'
+      - '.github/workflows/lab1-smoke.yml'
   workflow_dispatch:
 
 jobs:
