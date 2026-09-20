@@ -2,7 +2,7 @@ name: Lab 1 - Smoke Test
 
 on:
   push:
-    branches: [main, develop, 'Lab1/**']
+    branches: [main, develop, 'Lab1/**', 'lab1/**']
     paths:
       - 'Lab1/**'
       - '.github/workflows/lab1-smoke.yml'
