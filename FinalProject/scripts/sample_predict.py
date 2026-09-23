@@ -2,10 +2,12 @@
 Script: sample_predict.py
 Sends sample prediction requests to the Credit Risk Scoring API.
 """
+
 import requests
 import json
 
 API_URL = "http://localhost:18020"
+
 
 def test_prediction():
     # 1. Check health
@@ -74,6 +76,7 @@ def test_prediction():
     resp_risk = requests.post(f"{API_URL}/predict", json=high_risk_customer)
     print(f"Status: {resp_risk.status_code}")
     print(json.dumps(resp_risk.json(), indent=2))
+
 
 if __name__ == "__main__":
     test_prediction()
