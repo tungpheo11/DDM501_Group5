@@ -1,0 +1,63 @@
+name: Final Project CI Pipeline
+
+on:
+  push:
+    paths:
+      - 'FinalProject/**'
+      - '.github/workflows/final-project-ci.yml'
+  pull_request:
+    paths:
+      - 'FinalProject/**'
+      - '.github/workflows/final-project-ci.yml'
+
+jobs:
+  lint-and-test:
+    name: Code Quality & Unit Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: FinalProject
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Astral uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+          enable-cache: true
+
+      - name: Set up Python 3.11
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Code Style & Lint Check (flake8)
+        run: uv run flake8 src app tests
+
+      - name: Run Test Suite (pytest with coverage)
+        run: PYTHONPATH=. uv run pytest -v tests/ --cov=src --cov=app --cov-report=term-missing
+
+  docker-build:
+    name: Docker Image Build Validation
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: FinalProject
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: FinalProject
+          file: FinalProject/Dockerfile
+          push: false
+          tags: credit-risk-api:ci-test
