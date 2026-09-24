@@ -144,6 +144,21 @@ def health_check():
     )
 
 
+@app.post("/reload-model")
+def reload_model_endpoint():
+    """
+    Manually triggers reloading the champion model from MLflow Registry or local artifact.
+    Enables zero-downtime canary/champion hot-reloading.
+    """
+    load_champion_model()
+    return {
+        "status": "ok",
+        "model_loaded": model is not None,
+        "model_name": MODEL_NAME,
+        "model_source": model_source,
+    }
+
+
 @app.get("/metrics")
 def metrics():
     """

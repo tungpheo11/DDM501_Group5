@@ -27,8 +27,10 @@
 5. [Hướng Dẫn Cài Đặt & Khởi Chạy Nhanh (Quickstart)](#-5-hướng-dẫn-cài-đặt--khởi-chạy-nhanh-quickstart)
 6. [Mô Phỏng Lưu Lượng & Quan Sát Trôi Dạt Dữ Liệu](#-6-mô-phỏng-lưu-lượng--quan-sát-trôi-dạt-dữ-liệu)
 7. [Kiểm Thử Chất Lượng & CI/CD Pipeline](#-7-kiểm-thử-chất-lượng--cicd-pipeline)
+8. [Bằng Chứng Thực Nghiệm Vận Hành (System Screenshots)](#-8-bằng-chứng-thực-nghiệm-vận-hành-system-screenshots)
 
 ---
+
 
 ## 🧠 1. Bản Chất Bài Toán & Thấu Hiểu Dữ Liệu (30% ML Domain)
 
@@ -325,12 +327,46 @@ uv sync --dev
 # Chạy toàn bộ test suite
 PYTHONPATH=. uv run pytest -v tests/ --cov=src --cov=app
 
-# Kiểm tra lint
-uv run flake8 src app tests scripts
 ```
 
 ---
 
+## 📸 8. Bằng Chứng Thực Nghiệm Vận Hành (System Screenshots)
+
+Toàn bộ hệ thống đã được khởi chạy, kiểm thử và vận hành end-to-end với dữ liệu thật. Dưới đây là bằng chứng giao diện các dịch vụ được chụp thực tế từ hệ thống:
+
+### 1. FastAPI Serving & Swagger OpenAPI (`:18020/docs`)
+Hỗ trợ đầy đủ các endpoint dự đoán thời gian thực (`/predict`), nạp nóng mô hình (`/reload-model`), đo lường Prometheus (`/metrics`) và kiểm tra sức khỏe hệ thống (`/health`):
+![FastAPI Swagger UI](docs/screenshots/01_fastapi_swagger_docs.png)
+
+### 2. MLflow Model Registry (`:15040/#/models`)
+Mô hình `credit-risk-model` quản lý vòng đời chặt chẽ với Version 1 (Baseline) và Version 2 (Challenger), tự động gắn nhãn `@champion` cho mô hình chiến thắng:
+![MLflow Model Registry](docs/screenshots/02_mlflow_model_registry.png)
+![MLflow Model Versions](docs/screenshots/02b_mlflow_model_versions_champion.png)
+
+### 3. MLflow Experiment Tracking (`:15040/#/experiments/1`)
+Theo dõi chi tiết các đợt huấn luyện (`baseline-rf-v1.0` và `retrain-rf-v2.0-challenger`), so sánh ROC-AUC, F1-Score và Financial Loss:
+![MLflow Experiments Tracking](docs/screenshots/03_mlflow_experiments_tracking.png)
+
+### 4. MinIO S3 Object Storage (`:19041`)
+Lưu trữ toàn bộ artifacts của mô hình, môi trường conda/pip và signature theo chuẩn S3 bucket:
+![MinIO S3 Storage](docs/screenshots/04_minio_s3_storage.png)
+
+### 5. Prometheus Scrape Targets (`:19090/targets`)
+Thu thập telemetry thời gian thực từ `credit-risk-api:8000/metrics` với chu kỳ 5 giây:
+![Prometheus Targets](docs/screenshots/05_prometheus_targets.png)
+
+### 6. Grafana Real-time Monitoring Dashboard (`:13000`)
+Trực quan hóa toàn diện KPI nghiệp vụ: tổng số request, tỷ lệ dự đoán rủi ro (Gauge), tỷ lệ phân loại quyết định (APPROVE vs REVIEW vs DECLINE) và độ trễ p95 theo thời gian:
+![Grafana Dashboard](docs/screenshots/06_grafana_telemetry_dashboard.png)
+
+### 7. Báo Cáo Trôi Dạt Dữ Liệu Tương Tác của Evidently AI
+Phát hiện Covariate Drift nghiêm trọng với $\text{PSI} \ge 0.25$ trên `AGE` và `LIMIT_BAL`, tự động kích hoạt Retraining Loop:
+![Evidently Drift Report](docs/screenshots/07_evidently_drift_report.png)
+
+---
+
 ## 👥 Nhóm Tác Giả (Group 5)
+
 * **Khóa học**: DDM501 — AI in DevOps, DataOps, MLOps
 * **Học viện**: Viện Quản trị & Công nghệ FSB, Đại học FPT

@@ -62,3 +62,11 @@ def test_predict_endpoint(client):
     assert 0.0 <= data["default_probability"] <= 1.0
     assert data["risk_decision"] in ["APPROVE", "REVIEW", "DECLINE"]
     assert "request_id" in data
+
+
+def test_reload_model_endpoint(client):
+    response = client.post("/reload-model")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+    assert "model_source" in data

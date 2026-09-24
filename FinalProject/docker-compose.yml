@@ -117,12 +117,17 @@ services:
       DECLINE_THRESHOLD: ${DECLINE_THRESHOLD:-0.60}
     ports:
       - "${API_PORT:-18020}:8000"
+    volumes:
+      - ./app:/app/app:ro
+      - ./src:/app/src:ro
+      - ./models:/app/models:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 10s
+
 
   # ---------------------------------------------------------------------------
   # 5. Prometheus: Real-time Telemetry Scraper

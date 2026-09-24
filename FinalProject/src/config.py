@@ -11,6 +11,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 MODELS_DIR = BASE_DIR / "models"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
+REPORTS_DIR = BASE_DIR / "reports"
+REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
 
 # Dataset file paths
 BASELINE_DATA_PATH = os.getenv(
@@ -67,6 +70,12 @@ MODEL_NAME = os.getenv("MODEL_NAME", "credit-risk-model")
 MODEL_ALIAS = os.getenv("MODEL_ALIAS", "champion")
 EXPERIMENT_NAME = os.getenv("EXPERIMENT_NAME", "credit-default-risk-scoring")
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:15040")
+
+# MinIO S3 configurations for MLflow Artifacts
+os.environ.setdefault("AWS_ACCESS_KEY_ID", "minioadmin")
+os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "miniopassword")
+os.environ.setdefault("MLFLOW_S3_ENDPOINT_URL", "http://localhost:19040")
+
 
 # Decision thresholds for Credit Risk Scoring
 REVIEW_THRESHOLD = float(os.getenv("REVIEW_THRESHOLD", "0.30"))

@@ -19,6 +19,7 @@ dependencies = [
     "httpx>=0.28.0",
     "boto3>=1.35.0",
     "joblib>=1.4.0",
+    "evidently>=0.7.23",
 ]
 
 [dependency-groups]
