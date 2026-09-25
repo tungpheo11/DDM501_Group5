@@ -2,29 +2,78 @@
   "id": null,
   "uid": "credit-risk-mlops",
   "title": "Credit Risk MLOps Telemetry & Drift Monitoring",
-  "tags": ["mlops", "credit-risk", "evidently"],
+  "tags": ["mlops", "credit-risk", "evidently", "executive"],
   "timezone": "browser",
   "schemaVersion": 38,
-  "version": 1,
+  "version": 2,
   "refresh": "5s",
   "panels": [
     {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "id": 100,
+      "title": "🏛️ Executive Portfolio & Financial Impact KPIs",
+      "type": "row"
+    },
+    {
       "id": 1,
-      "title": "Total Prediction Requests",
+      "title": "Total Loan Applications",
       "type": "stat",
-      "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0},
+      "gridPos": {"h": 5, "w": 6, "x": 0, "y": 1},
       "targets": [
         {
           "expr": "sum(credit_prediction_requests_total)",
           "refId": "A"
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "mappings": []
+        }
+      }
     },
     {
       "id": 2,
+      "title": "Approved Credit Volume",
+      "type": "stat",
+      "gridPos": {"h": 5, "w": 6, "x": 6, "y": 1},
+      "targets": [
+        {
+          "expr": "credit_approved_volume_ntd_total",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": {"fixedColor": "green", "mode": "fixed"}
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Blocked Default Exposure",
+      "type": "stat",
+      "gridPos": {"h": 5, "w": 6, "x": 12, "y": 1},
+      "targets": [
+        {
+          "expr": "credit_declined_volume_ntd_total",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": {"fixedColor": "red", "mode": "fixed"}
+        }
+      }
+    },
+    {
+      "id": 4,
       "title": "Rolling Default Risk Ratio",
       "type": "gauge",
-      "gridPos": {"h": 6, "w": 6, "x": 6, "y": 0},
+      "gridPos": {"h": 5, "w": 6, "x": 18, "y": 1},
       "targets": [
         {
           "expr": "credit_default_prediction_ratio",
@@ -35,35 +84,151 @@
         "defaults": {
           "min": 0,
           "max": 1,
+          "unit": "percentunit",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {"color": "green", "value": null},
-              {"color": "yellow", "value": 0.3},
-              {"color": "red", "value": 0.5}
+              {"color": "yellow", "value": 0.25},
+              {"color": "red", "value": 0.45}
             ]
           }
         }
       }
     },
     {
-      "id": 3,
-      "title": "Decisions Breakdown (APPROVE vs REVIEW vs DECLINE)",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 6},
+      "id": 200,
+      "title": "⚖️ Real-Time Decision Pipeline & Score Distribution",
+      "type": "row"
+    },
+    {
+      "id": 5,
+      "title": "Decision Breakdown (Approve vs Review vs Decline)",
       "type": "piechart",
-      "gridPos": {"h": 6, "w": 6, "x": 12, "y": 0},
+      "gridPos": {"h": 8, "w": 7, "x": 0, "y": 7},
       "targets": [
         {
           "expr": "sum by (decision) (credit_prediction_requests_total)",
           "legendFormat": "{{decision}}",
           "refId": "A"
         }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"}
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Decision Stream Rate (Throughput per Decision)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 10, "x": 7, "y": 7},
+      "targets": [
+        {
+          "expr": "sum by (decision) (rate(credit_prediction_requests_total[1m]))",
+          "legendFormat": "{{decision}}",
+          "refId": "A"
+        }
       ]
     },
     {
-      "id": 4,
+      "id": 7,
+      "title": "FICO Credit Score Distribution",
+      "type": "bargauge",
+      "gridPos": {"h": 8, "w": 7, "x": 17, "y": 7},
+      "targets": [
+        {
+          "expr": "sum by (le) (increase(credit_applicant_score_distribution_bucket[10m]))",
+          "legendFormat": "<= {{le}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "color": {"mode": "palette-classic"}
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 15},
+      "id": 300,
+      "title": "🧬 Behavioral & Demographic Drift Telemetry (Covariate Drift)",
+      "type": "row"
+    },
+    {
+      "id": 8,
+      "title": "Rolling Mean Applicant Age (Demographic Drift)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 16},
+      "targets": [
+        {
+          "expr": "credit_customer_age_rolling_mean",
+          "legendFormat": "Mean Age (Years)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "years",
+          "color": {"fixedColor": "purple", "mode": "fixed"}
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Credit Utilization Ratio Trend (Inflation & Shopping Shocks)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 16},
+      "targets": [
+        {
+          "expr": "credit_customer_utilization_ratio_mean * 100",
+          "legendFormat": "Debt / Limit %",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {"fixedColor": "orange", "mode": "fixed"}
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Payment Delay Ratio (PAY_0 > 0) Trend",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 16},
+      "targets": [
+        {
+          "expr": "credit_customer_pay_0_delayed_ratio * 100",
+          "legendFormat": "% Applicants Delayed",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {"fixedColor": "red", "mode": "fixed"}
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 24},
+      "id": 400,
+      "title": "⚡ System Performance & Operational SLAs",
+      "type": "row"
+    },
+    {
+      "id": 11,
       "title": "p95 Inference Latency (ms)",
       "type": "stat",
-      "gridPos": {"h": 6, "w": 6, "x": 18, "y": 0},
+      "gridPos": {"h": 5, "w": 8, "x": 0, "y": 25},
       "targets": [
         {
           "expr": "histogram_quantile(0.95, sum(rate(credit_prediction_duration_seconds_bucket[5m])) by (le)) * 1000",
@@ -77,30 +242,38 @@
       }
     },
     {
-      "id": 5,
-      "title": "Prediction Traffic Rate over Time",
-      "type": "timeseries",
-      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 6},
+      "id": 12,
+      "title": "Request Throughput (RPS)",
+      "type": "stat",
+      "gridPos": {"h": 5, "w": 8, "x": 8, "y": 25},
       "targets": [
         {
-          "expr": "sum by (decision) (rate(credit_prediction_requests_total[1m]))",
-          "legendFormat": "{{decision}}",
+          "expr": "sum(rate(credit_prediction_requests_total[1m]))",
           "refId": "A"
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        }
+      }
     },
     {
-      "id": 6,
-      "title": "Default Prediction Ratio Trend",
-      "type": "timeseries",
-      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 6},
+      "id": 13,
+      "title": "Mean Applicant Credit Limit (NTD)",
+      "type": "stat",
+      "gridPos": {"h": 5, "w": 8, "x": 16, "y": 25},
       "targets": [
         {
-          "expr": "credit_default_prediction_ratio",
-          "legendFormat": "Risk Ratio",
+          "expr": "credit_customer_limit_bal_rolling_mean",
           "refId": "A"
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD"
+        }
+      }
     }
   ]
 }

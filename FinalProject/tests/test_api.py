@@ -62,9 +62,16 @@ def test_predict_endpoint(client):
     assert 0.0 <= data["default_probability"] <= 1.0
     assert data["risk_decision"] in ["APPROVE", "REVIEW", "DECLINE"]
     assert "request_id" in data
+    assert "credit_score" in data
+    assert 300 <= data["credit_score"] <= 850
+    assert data["credit_tier"] in ["PRIME", "NEAR_PRIME", "SUBPRIME", "HIGH_RISK"]
+    assert "recommended_limit_ntd" in data
+    assert isinstance(data["top_risk_factors"], list)
+    assert "policy_guardrails" in data
 
 
 def test_reload_model_endpoint(client):
+
     response = client.post("/reload-model")
     assert response.status_code == 200
     data = response.json()

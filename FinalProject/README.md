@@ -88,43 +88,67 @@ graph LR
 
 Để mô phỏng lưu lượng thực tế sinh động mà không tạo ra dữ liệu rác (random noise ngẫu nhiên vô nghĩa), nhóm phát triển công cụ **Persona Agent Simulator** (`scripts/persona_simulator.py`) với 3 Archetypes đại diện cho hành vi khách hàng thực tế:
 
-### 3 Hồ Sơ Khách Hàng (Customer Archetypes)
+### 5 Hồ Sơ Khách Hàng & Các Trạng Thái Hành Vi (Customer Archetypes & Behavioral Regimes)
+
+Để mô phỏng lưu lượng thực tế sinh động thay vì tạo dữ liệu ngẫu nhiên vô nghĩa (random noise), hệ thống xây dựng **Bộ Giả Lập Đa Tác Nhân (Agent Persona Simulator)** với 5 nhóm khách hàng đại diện cho các chu kỳ kinh tế:
 
 ```mermaid
 classDiagram
-    class Persona1_CorporateWorker {
-        +Tuổi: 35 - 55 tuổi
-        +Hạn mức: 150,000 - 500,000 NTD
-        +Chi tiêu: 10% - 35% hạn mức
-        +Hành vi: PAY_0 in [-1, 0] (Đúng hạn)
-        +Xác suất vỡ nợ: Rất thấp (8%)
+    class Persona1_TraditionalPrime {
+        +Tuổi: 35 - 52 tuổi
+        +Hạn mức: 150k - 400k NTD
+        +Tỷ lệ nợ: 8% - 25% (Rất thấp)
+        +Hành vi: PAY_0 in [0, -1] (Đúng hạn)
+        +FICO Score: 740 - 850 (PRIME)
+        +Xác suất vỡ nợ: < 8%
     }
-    class Persona2_GenZFreelancer {
-        +Tuổi: 18 - 26 tuổi
-        +Hạn mức: 10,000 - 60,000 NTD
-        +Chi tiêu: 40% - 85% hạn mức
+    class Persona2_HolidayShopper {
+        +Tuổi: 30 - 48 tuổi
+        +Hạn mức: 100k - 250k NTD
+        +Tỷ lệ nợ: 80% - 92% (Kịch trần mùa lễ hội)
+        +Hành vi: PAY_0 in [0, -1] (Vẫn trả nợ lớn)
+        +FICO Score: 670 - 740 (NEAR_PRIME)
+        +Xác suất vỡ nợ: 10% - 15%
+    }
+    class Persona3_GenZFreelancer {
+        +Tuổi: 19 - 25 tuổi
+        +Hạn mức: 20k - 50k NTD
+        +Tỷ lệ nợ: 35% - 65% (Linh hoạt)
         +Hành vi: PAY_0 in [0, 1] (Lệch kỳ lương gig)
-        +Xác suất vỡ nợ: Thấp - Trung bình (15%)
+        +FICO Score: 580 - 680 (SUBPRIME)
+        +Xác suất vỡ nợ: 12% - 18% (Không bùng nợ)
     }
-    class Persona3_OverleveragedSpeculator {
-        +Tuổi: Bất kỳ
-        +Hạn mức: Bất kỳ
-        +Chi tiêu: > 95% (Kịch trần thẻ)
-        +Hành vi: PAY_0 >= 2 (Nợ xấu liên miên)
-        +Xác suất vỡ nợ: Cực cao (> 80%)
+    class Persona4_OverleveragedSpeculator {
+        +Tuổi: 28 - 48 tuổi
+        +Hạn mức: 50k - 100k NTD
+        +Tỷ lệ nợ: > 95% (Cạn kiệt thẻ)
+        +Hành vi: PAY_0 in [2, 3] (Nợ xấu liên miên)
+        +FICO Score: 300 - 520 (HIGH_RISK)
+        +Xác suất vỡ nợ: > 80% (Nguy cơ bùng nợ)
+    }
+    class Persona5_RebuildingBorrower {
+        +Tuổi: 32 - 46 tuổi
+        +Hạn mức: 60k - 120k NTD
+        +Tỷ lệ nợ: Giảm dần từ 45% xuống 25%
+        +Hành vi: Quá khứ PAY_6=2, hiện tại PAY_0=0
+        +FICO Score: Phục hồi từ 550 lên 650
+        +Xác suất vỡ nợ: Trung bình thấp (~14%)
     }
 ```
 
-1. **Persona 1: Nhân viên văn phòng truyền thống (Traditional Corporate Worker)**:
-   - Đại diện cho tập dữ liệu gốc mà Model V1 được huấn luyện.
-   - Thu nhập ổn định, thanh toán đầy đủ hàng tháng, rủi ro vỡ nợ rất thấp.
-2. **Persona 2: Giới trẻ / Freelancer / Gen-Z (Gig Economy Worker)**:
-   - Đại diện cho đối tượng khách hàng của chiến dịch Marketing kích cầu của ngân hàng.
-   - Tuổi trẻ, hạn mức thẻ thấp, thỉnh thoảng trễ hạn 1 tuần (`PAY_0 = 1`) do chu kỳ nhận thù lao freelance lệch so với kỳ sao kê ngân hàng, **nhưng vẫn trả đủ tiền và không hề bùng nợ**.
-3. **Persona 3: Khách hàng đầu cơ đòn bẩy quá mức (Over-leveraged Speculator)**:
-   - Thẻ tín dụng bị quẹt cạn kiệt (Credit Utilization > 95%), trễ hạn liên tiếp nhiều tháng (`PAY_0 >= 2`). Đây là đối tượng nguy hiểm cần chặn đứng lập tức.
+1. **Persona 1: Khách hàng truyền thống Prime (Traditional Prime Worker)**:
+   - Dân công sở thu nhập ổn định, tỷ lệ sử dụng thẻ thấp, trả nợ đúng hạn, xếp hạng tín dụng PRIME.
+2. **Persona 2: Khách hàng chi tiêu mùa lễ hội (Holiday Shopping Spurt)**:
+   - Cú sốc chi tiêu thời vụ: Nợ thẻ vọt lên 80-92% hạn mức (Credit Line Stress), nhưng uy tín trả nợ vẫn được duy trì.
+3. **Persona 3: Giới trẻ Gen-Z / Gig Economy Freelancer**:
+   - Khách hàng trẻ tuổi, hạn mức thẻ thấp, thỉnh thoảng trễ hạn 1 tuần (`PAY_0 = 1`) do chu kỳ nhận thù lao freelance lệch so với kỳ sao kê ngân hàng, **nhưng vẫn hoàn trả đầy đủ**.
+4. **Persona 4: Khách hàng đầu cơ đòn bẩy quá mức / Vòng tròn gian lận (Over-leveraged Speculator)**:
+   - Quẹt cạn kiệt thẻ tín dụng (>95%), trễ hạn 2-3 tháng liên tiếp (`PAY_0 >= 2`), khả năng bùng nợ cực cao (>80%).
+5. **Persona 5: Khách hàng đang tái thiết lập kỷ luật tín dụng (Rebuilding Disciplined Borrower)**:
+   - Từng có nợ xấu cách đây 6 tháng (`PAY_6 = 2`), nhưng các tháng gần đây thanh toán nghiêm túc để nâng điểm FICO.
 
 ---
+
 
 ### Kịch Bản Thất Bại của Model V1 (Drift Failure Mode)
 
@@ -274,43 +298,49 @@ curl -s -X POST http://localhost:18020/predict \
   }' | jq .
 ```
 
-Phản hồi mẫu:
+Phản hồi thẩm định chuyên sâu mẫu:
 ```json
 {
-  "request_id": "req_a1b2c3d4e5f6",
+  "request_id": "req_8795799b07bb",
   "default_prediction": 0,
-  "default_probability": 0.12,
-  "risk_decision": "APPROVE",
-  "served_by": "local_artifact:.../credit_model_v1.joblib",
-  "latency_ms": 12.4
+  "default_probability": 0.386,
+  "credit_score": 638,
+  "credit_tier": "SUBPRIME",
+  "risk_decision": "REVIEW",
+  "recommended_limit_ntd": 100000.0,
+  "top_risk_factors": [
+    "Repayment Discipline: Timely and structured monthly repayments",
+    "Conservative Debt Ratio: Low credit utilization of 12.5%"
+  ],
+  "policy_guardrails": {
+    "age_verification": "PASS",
+    "utilization_ceiling_check": "ACCEPTABLE",
+    "delinquency_guardrail": "CLEAR"
+  },
+  "served_by": "mlflow_registry:models:/credit-risk-model@champion",
+  "latency_ms": 29.61
 }
 ```
 
 ---
 
-## 🧪 6. Mô Phỏng Lưu Lượng & Quan Sát Trôi Dạt Dữ Liệu
+## 🧪 6. Mô Phỏng Lưu Lượng Đa Tác Nhân & Diễn Biến Kinh Tế (Behavioral Evolution)
 
-Nhóm đã đóng gói sẵn script mô phỏng thông minh `scripts/persona_simulator.py`.
+Nhóm đã đóng gói sẵn script mô phỏng thông minh `scripts/persona_simulator.py` hỗ trợ cả từng chế độ lẫn **chuỗi kịch bản liên hoàn (Staged Progression)**:
 
-### Kịch bản 1: Giả lập lưu lượng ngày thường (Normal Stable Stream)
-Mô phỏng 80% khách hàng truyền thống, 10% Gen-Z, 10% khách hàng đầu cơ:
+### 🌟 Kịch bản Khuyến Nghị: Chuỗi 4 Giai Đoạn Liên Hoàn (Staged Progression)
+Chạy liên tục qua 4 trạng thái kinh tế thực tế để quan sát toàn bộ bảng đồng hồ Grafana & Prometheus dịch chuyển theo thời gian thực:
 ```bash
-python scripts/persona_simulator.py --mode normal --count 50 --delay 0.05
+python scripts/persona_simulator.py --mode staged_progression --count 35 --delay 0.02
 ```
-*Kết quả trên Grafana*: Tỷ lệ Approve duy trì ở mức cao ~70-75%, chỉ số PSI < 0.10 (phân phối ổn định).
-
-### Kịch bản 2: Giả lập chiến dịch Marketing gây ra trôi dạt (Campaign Drift Stream)
-Mô phỏng chiến dịch marketing bùng nổ: 75% Gen-Z tràn vào hệ thống:
-```bash
-python scripts/persona_simulator.py --mode campaign_drift --count 100 --delay 0.05
-```
-*Kết quả trên Grafana & Prometheus*:
-- **Độ tuổi trung bình** tụt từ 38.5 xuống còn 25.2 tuổi.
-- **Hạn mức trung bình** giảm mạnh.
-- **Tỷ lệ Approve** rớt thẳng đứng xuống dưới 35% do Model V1 từ chối nhầm hàng loạt giới trẻ.
-- **Evidently AI**: Cảnh báo PSI của `AGE` và `LIMIT_BAL` chạm ngưỡng báo động đỏ ($\ge 0.25$).
+*Diễn biến 4 giai đoạn*:
+1. **Stage 1: Traditional Prime Borrowers (Ổn định)**: Khách hàng truyền thống 35-52t, tỷ lệ nợ < 25%, điểm FICO > 700, tỷ lệ Approve cao, PSI < 0.05.
+2. **Stage 2: Holiday Shopping Spurt (Sốc chi tiêu lễ hội)**: Khách hàng prime quẹt thẻ kịch trần 80-92% hạn mức (Credit Line Stress), Prometheus ghi nhận Utilization vọt lên ~85%, chuyển dịch sang vùng `REVIEW`.
+3. **Stage 3: Gen-Z Acquisition Campaign (Cú sốc nhân khẩu học)**: Giới trẻ tràn vào hệ thống, độ tuổi trung bình tụt từ 39 xuống 22 tuổi, trễ hạn lương gig `PAY_0=1` khiến Model V1 từ chối ồ ạt (Decline vọt lên > 60%), ngân sách marketing bị lãng phí.
+4. **Stage 4: Coordinated Delinquency Attack (Cú sốc bùng nợ)**: Nhóm đầu cơ quẹt cạn kiệt thẻ và trễ hạn 2-3 tháng, điểm FICO rớt xuống ~340, hệ thống tự động chặn đứng $2,000,000+ NTD rủi ro.
 
 ---
+
 
 ## 🛠️ 7. Kiểm Thử Chất Lượng & CI/CD Pipeline
 

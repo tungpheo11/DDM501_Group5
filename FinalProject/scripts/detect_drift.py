@@ -11,9 +11,10 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 from evidently.legacy.report import Report
-from evidently.legacy.metric_preset import DataDriftPreset
+from evidently.legacy.metric_preset import DataDriftPreset, DataQualityPreset
 
 from src.config import (
+
     BASELINE_DATA_PATH,
     DRIFTED_STREAM_PATH,
     DATABASE_URL,
@@ -125,12 +126,13 @@ def run_drift_analysis():
 
     # 4. Generate Evidently HTML Report
 
-    print("\nGenerating Evidently Data Drift Report...")
-    drift_report = Report(metrics=[DataDriftPreset()])
+    print("\nGenerating Evidently Data Drift & Quality Report...")
+    drift_report = Report(metrics=[DataDriftPreset(), DataQualityPreset()])
     drift_report.run(reference_data=ref_eval, current_data=cur_eval)
 
     report_html_path = os.path.join(REPORTS_DIR, "drift_report.html")
     drift_report.save_html(report_html_path)
+
     print(f"Evidently HTML Report saved to: {report_html_path}")
 
     # Extract JSON metrics from report
@@ -140,10 +142,11 @@ def run_drift_analysis():
         json.dump({
             "psi_metrics": psi_results,
             "drift_report": report_dict,
-        }, f, indent=2)
+        }, f, indent=2, default=str)
     print(f"Drift summary JSON saved to: {summary_path}")
 
     # Check alert condition
+
     age_psi = psi_results.get("AGE", 0.0)
     is_drifted = age_psi >= 0.25 or any(v >= 0.25 for v in psi_results.values())
     if is_drifted:

@@ -82,14 +82,32 @@ class CreditPredictResponse(BaseModel):
     default_probability: float = Field(
         ..., description="Probability of default (0.0 to 1.0)"
     )
+    credit_score: int = Field(
+        ..., description="Calibrated credit score on 300-850 scale (higher is better)"
+    )
+    credit_tier: str = Field(
+        ..., description="Risk tier: PRIME, NEAR_PRIME, SUBPRIME, or HIGH_RISK"
+    )
     risk_decision: str = Field(
         ..., description="Business decision: APPROVE, REVIEW, or DECLINE"
+    )
+    recommended_limit_ntd: float = Field(
+        ..., description="Algorithmically determined safe credit limit in NT dollars"
+    )
+    top_risk_factors: list[str] = Field(
+        default_factory=list,
+        description="Explainability: Top drivers influencing this customer's risk score",
+    )
+    policy_guardrails: dict[str, str] = Field(
+        default_factory=dict,
+        description="Automated compliance and policy checks applied during evaluation",
     )
     served_by: str
     latency_ms: float
 
 
 class HealthResponse(BaseModel):
+
     status: str
     model_loaded: bool
     model_name: str

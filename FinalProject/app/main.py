@@ -57,7 +57,41 @@ DEFAULT_RISK_RATIO = Gauge(
     "credit_default_prediction_ratio",
     "Rolling ratio of requests predicted as default risk (1)",
 )
+CREDIT_APPROVED_VOLUME = Counter(
+    "credit_approved_volume_ntd_total",
+    "Cumulative credit amount approved in NTD",
+)
+CREDIT_DECLINED_VOLUME = Counter(
+    "credit_declined_volume_ntd_total",
+    "Cumulative credit exposure blocked in NTD",
+)
+AVG_AGE_GAUGE = Gauge(
+    "credit_customer_age_rolling_mean",
+    "Rolling mean age of incoming applicants",
+)
+AVG_LIMIT_GAUGE = Gauge(
+    "credit_customer_limit_bal_rolling_mean",
+    "Rolling mean credit limit of applicants in NTD",
+)
+AVG_UTILIZATION_GAUGE = Gauge(
+    "credit_customer_utilization_ratio_mean",
+    "Rolling credit card utilization ratio (BILL_AMT1 / LIMIT_BAL)",
+)
+PAY_0_DELAY_RATIO = Gauge(
+    "credit_customer_pay_0_delayed_ratio",
+    "Ratio of applicants with recent payment delay (PAY_0 > 0)",
+)
+CREDIT_SCORE_HISTOGRAM = Histogram(
+    "credit_applicant_score_distribution",
+    "Credit score distribution on 300-850 scale",
+    buckets=[350, 450, 550, 650, 700, 750, 800, 850],
+)
+
 recent_predictions = []
+recent_ages = []
+recent_limits = []
+recent_utilizations = []
+recent_delays = []
 
 
 def is_service_reachable(url: str, timeout: float = 0.5) -> bool:
@@ -170,7 +204,6 @@ def metrics():
 @app.post("/predict", response_model=CreditPredictResponse)
 def predict_credit_risk(payload: CreditPredictRequest):
     if model is None:
-        # Try reloading on the fly in case model just finished training
         load_champion_model()
         if model is None:
             PREDICTION_REQUESTS.labels(decision="NONE", status="503").inc()
@@ -185,7 +218,7 @@ def predict_credit_risk(payload: CreditPredictRequest):
     df_input = pd.DataFrame([features_dict])
 
     try:
-        # 1. Inference
+        # 1. Model Inference
         with PREDICTION_LATENCY.time():
             prediction = int(model.predict(df_input)[0])
             if hasattr(model, "predict_proba"):
@@ -193,7 +226,7 @@ def predict_credit_risk(payload: CreditPredictRequest):
             else:
                 probability = float(prediction)
 
-        # 2. Business Decision Rule
+        # 2. Multi-threshold Business Decision
         if probability >= DECLINE_THRESHOLD:
             decision = "DECLINE"
         elif probability >= REVIEW_THRESHOLD:
@@ -201,16 +234,114 @@ def predict_credit_risk(payload: CreditPredictRequest):
         else:
             decision = "APPROVE"
 
+        # 3. Credit Scoring & Explainability (XAI)
+        limit_bal = float(payload.LIMIT_BAL)
+        bill1 = float(payload.BILL_AMT1)
+        age = int(payload.AGE)
+        pay0 = int(payload.PAY_0)
+        utilization = (bill1 / limit_bal) if limit_bal > 0 else 0.0
+
+        # Calibrated FICO-equivalent Score (300 to 850 scale)
+        credit_score = int(round(850.0 - (probability * 550.0)))
+        credit_score = max(300, min(850, credit_score))
+
+        if credit_score >= 740:
+            credit_tier = "PRIME"
+        elif credit_score >= 670:
+            credit_tier = "NEAR_PRIME"
+        elif credit_score >= 580:
+            credit_tier = "SUBPRIME"
+        else:
+            credit_tier = "HIGH_RISK"
+
+        # Dynamic Credit Limit Recommendation
+        if decision == "APPROVE":
+            recommended_limit = round(min(limit_bal * 1.25, 500000.0), -2)
+        elif decision == "REVIEW":
+            recommended_limit = round(min(limit_bal * 0.50, 100000.0), -2)
+        else:
+            recommended_limit = 0.0
+
+        # Explainability: Top 3 Risk Factors
+        top_risk_factors = []
+        if pay0 >= 2:
+            top_risk_factors.append(
+                f"Severe Delinquency: PAY_0={pay0} indicates {pay0}+ months payment default"
+            )
+        elif pay0 == 1:
+            top_risk_factors.append(
+                "Payment Lag: 1-month delayed payment recorded on recent billing cycle"
+            )
+        else:
+            top_risk_factors.append(
+                "Repayment Discipline: Timely and structured monthly repayments"
+            )
+
+        if utilization >= 0.90:
+            top_risk_factors.append(
+                f"Excessive Credit Line Utilization: {utilization * 100:.1f}% of limit consumed"
+            )
+        elif utilization <= 0.35:
+            top_risk_factors.append(
+                f"Conservative Debt Ratio: Low credit utilization of {utilization * 100:.1f}%"
+            )
+        else:
+            top_risk_factors.append(
+                f"Moderate Debt Utilization: {utilization * 100:.1f}% credit utilization"
+            )
+
+        if age < 25:
+            top_risk_factors.append(
+                f"Demographic Cohort: Young applicant profile ({age}yo) with nascent credit history"
+            )
+        elif age >= 45:
+            top_risk_factors.append(
+                f"Demographic Cohort: Mature applicant profile ({age}yo) with established credit history"
+            )
+
+        if limit_bal <= 30000.0:
+            top_risk_factors.append("Sub-prime Credit Ceiling: Low initial assigned limit")
+
+        policy_guardrails = {
+            "age_verification": "PASS" if age >= 18 else "FAIL",
+            "utilization_ceiling_check": (
+                "ACCEPTABLE" if utilization < 0.95 else "OVER_UTILIZED_WARNING"
+            ),
+            "delinquency_guardrail": (
+                "CLEAR" if pay0 <= 1 else "ELEVATED_DEFAULT_RISK"
+            ),
+        }
+
         duration_ms = (time.time() - start_time) * 1000
 
-        # 3. Update telemetry metrics
+        # 4. Telemetry Updates
         PREDICTION_REQUESTS.labels(decision=decision, status="200").inc()
+        CREDIT_SCORE_HISTOGRAM.observe(credit_score)
+        if decision == "APPROVE":
+            CREDIT_APPROVED_VOLUME.inc(recommended_limit)
+        elif decision == "DECLINE":
+            CREDIT_DECLINED_VOLUME.inc(limit_bal)
+
         recent_predictions.append(prediction)
+        recent_ages.append(age)
+        recent_limits.append(limit_bal)
+        recent_utilizations.append(utilization)
+        recent_delays.append(1 if pay0 > 0 else 0)
+
         if len(recent_predictions) > 200:
             recent_predictions.pop(0)
-        DEFAULT_RISK_RATIO.set(sum(recent_predictions) / len(recent_predictions))
+            recent_ages.pop(0)
+            recent_limits.pop(0)
+            recent_utilizations.pop(0)
+            recent_delays.pop(0)
 
-        # 4. Asynchronously/directly save inference log for Evidently drift detection
+        DEFAULT_RISK_RATIO.set(sum(recent_predictions) / len(recent_predictions))
+        AVG_AGE_GAUGE.set(sum(recent_ages) / len(recent_ages))
+        AVG_LIMIT_GAUGE.set(sum(recent_limits) / len(recent_limits))
+        AVG_UTILIZATION_GAUGE.set(sum(recent_utilizations) / len(recent_utilizations))
+        PAY_0_DELAY_RATIO.set(sum(recent_delays) / len(recent_delays))
+
+        # 5. Persist to PostgreSQL inference_logs
         save_inference_log(
             request_id=req_id,
             features=features_dict,
@@ -225,7 +356,12 @@ def predict_credit_risk(payload: CreditPredictRequest):
             request_id=req_id,
             default_prediction=prediction,
             default_probability=probability,
+            credit_score=credit_score,
+            credit_tier=credit_tier,
             risk_decision=decision,
+            recommended_limit_ntd=recommended_limit,
+            top_risk_factors=top_risk_factors[:3],
+            policy_guardrails=policy_guardrails,
             served_by=model_source,
             latency_ms=round(duration_ms, 2),
         )
