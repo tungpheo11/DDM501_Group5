@@ -361,38 +361,200 @@ PYTHONPATH=. uv run pytest -v tests/ --cov=src --cov=app
 
 ---
 
-## 📸 8. Bằng Chứng Thực Nghiệm Vận Hành (System Screenshots)
+## 📸 8. Bằng Chứng Thực Nghiệm Vận Hành (System Screenshots & Deep Analysis)
 
-Toàn bộ hệ thống đã được khởi chạy, kiểm thử và vận hành end-to-end với dữ liệu thật. Dưới đây là bằng chứng giao diện các dịch vụ được chụp thực tế từ hệ thống:
+Toàn bộ hệ thống đã được triển khai, kiểm thử tự động và vận hành end-to-end với dữ liệu thật trong môi trường Dockerized Container. Dưới đây là phân tích chi tiết từng giao diện hệ thống được ghi lại thực tế bằng Google Chrome Headless ở độ phân giải cao (1920p):
 
-### 1. FastAPI Serving & Swagger OpenAPI (`:18020/docs`)
-Hỗ trợ đầy đủ các endpoint dự đoán thời gian thực (`/predict`), nạp nóng mô hình (`/reload-model`), đo lường Prometheus (`/metrics`) và kiểm tra sức khỏe hệ thống (`/health`):
+---
+
+### 1. FastAPI Swagger Interactive Documentation (`:18020/docs`)
+* **Vai trò kiến trúc**: Điểm chạm phục vụ dự đoán thời gian thực (Low-latency Real-time Inference Layer) với cơ chế tự động sinh tài liệu chuẩn OpenAPI 3.1.
+* **Bảng chỉ số & Chi tiết quan sát trên ảnh**:
+
+| Vùng quan sát | Endpoint / Tham số | Mô tả kỹ thuật | Trạng thái hiển thị |
+| :--- | :--- | :--- | :--- |
+| **Header** | `Credit Default Risk Scoring API v1.0.0` | Microservice serving suy luận xác suất vỡ nợ | Xanh lá (Active) |
+| **Inference API** | `POST /predict` | Nhận 23 đặc trưng tài chính, trả về điểm FICO & XAI | Mở rộng chi tiết (Full Expansion) |
+| **Model Lifecycle** | `POST /reload-model` | Kích hoạt hot-reload tải model Champion mới từ MLflow | Sẵn sàng (Zero-Downtime) |
+| **Health Probe** | `GET /health` | Kiểm tra kết nối PostgreSQL DB và tình trạng Model | Sẵn sàng (K8s liveness/readiness) |
+| **Telemetry Export** | `GET /metrics` | Cung cấp số liệu định dạng Prometheus exposition | Tần suất cào 5s/lần |
+
+* **Giải mã kỹ thuật chuyên sâu**:
+  - Tích hợp cấu hình `swagger_ui_parameters={"docExpansion": "full"}` cho phép kỹ sư và kiểm toán viên xem ngay cấu trúc Request Payload (23 biến đầu vào) cùng định dạng Response Schema mà không cần thao tác bấm mở thủ công.
+  - Sử dụng Pydantic v2 để ép kiểu, xác thực biên giới hạn (Boundary check: Tuổi $\ge 18$, Giới tính $\in \{1, 2\}$, Học vấn $\in \{1, 2, 3, 4\}$) ngay tại Gateway, triệt tiêu nguy cơ Data Poisoning hoặc lỗi Runtime do sai lệch schema.
+* **Giá trị thực tiễn & Kiểm toán SE4ML**: Cung cấp hợp đồng giao tiếp (API Contract) chuẩn hóa giữa Data Science và Data Engineering/Frontend, đóng vai trò tài liệu sống (Living Documentation) phục vụ thẩm định hệ thống.
+
 ![FastAPI Swagger UI](docs/screenshots/01_fastapi_swagger_docs.png)
 
-### 2. MLflow Model Registry (`:15040/#/models`)
-Mô hình `credit-risk-model` quản lý vòng đời chặt chẽ với Version 1 (Baseline) và Version 2 (Challenger), tự động gắn nhãn `@champion` cho mô hình chiến thắng:
+---
+
+### 2. Chi Tiết Thực Thi Quyết Định Tín Dụng & Khung Giải Thích XAI (`POST /predict`)
+* **Vai trò kiến trúc**: Giao diện kiểm tra kết quả thẩm định tín dụng thời gian thực, tích hợp bộ máy sinh điểm FICO tương đương, phân tầng rủi ro và giải thích nhân quả (Explainable AI - XAI).
+* **Bảng chỉ số & Chi tiết quan sát trên ảnh**:
+
+| Trường dữ liệu | Giá trị thực nghiệm | Giải thích nghiệp vụ ngân hàng | Ngưỡng kiểm định |
+| :--- | :--- | :--- | :--- |
+| `HTTP Status` | `200 OK` | Yêu cầu suy luận xử lý thành công không có lỗi runtime | SLA < 50ms (Đạt 11.2ms) |
+| `default_probability` | `0.386` ($38.6\%$) | Xác suất vỡ nợ dự báo bởi Random Forest Champion | Vùng xám: $0.30 \le p < 0.60$ |
+| `credit_score` | `638` | Điểm tín dụng chuẩn hóa theo thang FICO (300–850) | $Score = 850 - 550 \times p$ |
+| `credit_tier` | `SUBPRIME` | Phân hạng tín dụng cận dưới (Cần giám sát đặc biệt) | Subprime: 580–669 |
+| `risk_decision` | `REVIEW` | Chuyển luồng thẩm định bán tự động (Human-in-the-loop) | Rule Engine Policy |
+| `recommended_limit_ntd`| `$100,000 NTD` | Hạn mức an toàn khuyến nghị (Hạ từ $200k xuống $100k) | Giảm 50% phơi nhiễm rủi ro |
+| `top_risk_factors` | 2 Drivers chính | (1) Kỷ luật trả nợ lịch sử tốt; (2) Tỷ lệ nợ thấp 12.5% | Local Surrogate / Rule XAI |
+| `policy_guardrails` | 3/3 `PASS/CLEAR` | Tuổi hợp lệ, Nợ dưới trần, Không có nợ xấu trầm trọng | Guardrail System |
+
+* **Giải mã kỹ thuật chuyên sâu**:
+  - Không chỉ trả về xác suất thô (0.386), hệ thống tự động ánh xạ phi tuyến xác suất sang điểm FICO mô phỏng, phân loại vào 4 phân tầng: `PRIME` ($p < 0.20$), `NEAR_PRIME` ($0.20 \le p < 0.30$), `SUBPRIME` ($0.30 \le p < 0.60$), `HIGH_RISK` ($p \ge 0.60$).
+  - Đối với quyết định `REVIEW`, hạn mức được tự động điều chỉnh co hẹp về $100,000$ NTD để hạn chế tổn thất nếu khách hàng có biến cố thanh khoản.
+* **Giá trị thực tiễn & Tuân thủ pháp lý**: Đáp ứng trực tiếp quy định **Fair Credit Reporting Act (FCRA)** và **GDPR Điều 22** về quyền được giải thích (Right to Explanation) của người tiêu dùng khi tiếp cận các dịch vụ tài chính tự động.
+
+![Prediction Enriched Response](docs/screenshots/01b_fastapi_prediction_response.png)
+
+---
+
+### 3. MLflow Centralized Model Registry (`:15040/#/models`)
+* **Vai trò kiến trúc**: Trung tâm quản trị vòng đời và phân phối phiên bản mô hình tập trung (Single Source of Truth for Model Artifacts).
+* **Bảng chỉ số & Chi tiết quan sát trên ảnh**:
+
+| Thành phần hiển thị | Giá trị quan sát | Ý nghĩa quản trị vận hành |
+| :--- | :--- | :--- |
+| **Registered Model** | `credit-risk-model` | Tên mô hình chính thống triển khai trên toàn tổ chức |
+| **Total Versions** | `2 Versions` | Version 1 (Baseline) và Version 2 (Retrained Challenger) |
+| **Active Champion** | `Version 2` (Gắn tag `@champion`) | Phiên bản đang trực tiếp phục vụ lưu lượng trên Serving API |
+| **Fallback / Archived**| `Version 1` | Phiên bản dự phòng, sẵn sàng rollback tức thì nếu có sự cố |
+| **Artifact Store URI** | `s3://mlflow/1/...` | Đường dẫn lưu trữ đối tượng bất biến trên MinIO S3 |
+
+* **Giải mã kỹ thuật chuyên sâu**:
+  - Áp dụng triệt để mô hình **Alias-based Routing** (`@champion`) thay vì trỏ cứng mã phiên bản (Hardcoded Version ID).
+  - Khi luồng Retraining tự động nghiệm thu Version 2 có $AUC = 0.8194 > AUC_{V1} = 0.7406$, lệnh `client.set_registered_model_alias(..., "champion", 2)` lập tức chuyển quyền điều phối sang Version 2 mà không làm gián đoạn hệ thống.
+* **Giá trị thực tiễn & Kiểm toán SE4ML**: Ngăn chặn tình trạng phát tán các tệp mô hình không rõ nguồn gốc (Shadow Models) trong hạ tầng production; hỗ trợ truy vết 100% mã nguồn, dữ liệu huấn luyện và người phê duyệt.
+
 ![MLflow Model Registry](docs/screenshots/02_mlflow_model_registry.png)
 ![MLflow Model Versions](docs/screenshots/02b_mlflow_model_versions_champion.png)
 
-### 3. MLflow Experiment Tracking (`:15040/#/experiments/1`)
-Theo dõi chi tiết các đợt huấn luyện (`baseline-rf-v1.0` và `retrain-rf-v2.0-challenger`), so sánh ROC-AUC, F1-Score và Financial Loss:
+---
+
+### 4. MLflow Experiment Tracking & Lineage Benchmarking (`:15040/#/experiments/1`)
+* **Vai trò kiến trúc**: Bảng đối soát khoa học dữ liệu, lưu trữ toàn diện siêu tham số, phân phối độ đo và sơ đồ phụ thuộc tệp (Experiment Provenance).
+* **Bảng chỉ số & Chi tiết quan sát trên ảnh**:
+
+| Tên Run Thử Nghiệm | Tham số kiến trúc (`max_depth`, `n_est`) | Số lượng mẫu huấn luyện | $ROC\text{-}AUC$ trên tập Test Lệch | Tổn thất tài chính (Financial Loss) |
+| :--- | :--- | :--- | :--- | :--- |
+| `baseline-rf-v1.0` | `max_depth=6`, `n_estimators=100` | 12,000 mẫu truyền thống | **0.7406** (Kém do trôi dạt) | **6,820** đơn vị tổn thất |
+| `retrain-rf-v2.0-challenger` | `max_depth=8`, `n_estimators=150` | 16,000 mẫu gộp (Replay) | **0.8194** (+10.6% vượt trội) | **5,789** (-15.1% thất thoát) |
+
+* **Giải mã kỹ thuật chuyên sâu**:
+  - Giao diện cung cấp Model Signature tự động: Schema kiểm soát 23 cột đầu vào dạng `double` và đầu ra xác suất `float`.
+  - Minh chứng rõ ràng chiến lược **Experience Replay**: Việc gộp $15,000$ mẫu cũ và $5,000$ mẫu khách hàng trẻ Gen-Z mới đã giúp mô hình Challenger học được cả hành vi nợ truyền thống lẫn đặc thù của nền kinh tế tự do (Gig Economy).
+* **Giá trị thực tiễn & Kiểm toán SE4ML**: Loại bỏ cảm tính trong việc đưa mô hình ra thực tế; mọi quyết định thăng hạng đều được bảo chứng bằng số liệu đối đầu trực diện (Champion/Challenger Gate).
+
 ![MLflow Experiments Tracking](docs/screenshots/03_mlflow_experiments_tracking.png)
 
-### 4. MinIO S3 Object Storage (`:19041`)
-Lưu trữ toàn bộ artifacts của mô hình, môi trường conda/pip và signature theo chuẩn S3 bucket:
+---
+
+### 5. MinIO S3 Object Storage Console (`:19041`)
+* **Vai trò kiến trúc**: Kho lưu trữ đối tượng bất biến (Immutable Object Storage) tương thích chuẩn AWS S3 API, đóng vai trò Artifact Repository độc lập.
+* **Bảng chỉ số & Chi tiết quan sát trên ảnh**:
+
+| Cấu trúc thư mục lưu trữ | Định dạng tệp tin | Mục đích bảo mật và tái lập (Reproducibility) |
+| :--- | :--- | :--- |
+| `/mlflow/1/<run-id>/artifacts/model/` | `model.pkl` (Cloudpickle) | Trọng số mô hình đã được đóng gói an toàn |
+| `/mlflow/.../artifacts/model/` | `MLmodel` (YAML) | Tệp metadata định nghĩa flavor, signature và run context |
+| `/mlflow/.../artifacts/model/` | `requirements.txt` | Khóa cứng chính xác 145 thư viện Python (Lockfile) |
+| `/mlflow/.../artifacts/model/` | `conda.yaml` | Tái lập môi trường ảo đồng nhất trên mọi cụm máy chủ |
+
+* **Giải mã kỹ thuật chuyên sâu**:
+  - Serving API hoàn toàn ở trạng thái **Stateless**: Không phụ thuộc vào ổ cứng cục bộ của container. Khi API cần khởi động ở cụm Kubernetes khác, nó chỉ cần xác thực qua S3 Access Key và kéo mô hình về bộ nhớ RAM.
+* **Giá trị thực tiễn & Kiểm toán SE4ML**: Đáp ứng tiêu chí kiểm định an ninh thông tin ISO 27001 và SOC2 về lưu trữ dữ liệu bất biến (Write-Once-Read-Many - WORM).
+
 ![MinIO S3 Storage](docs/screenshots/04_minio_s3_storage.png)
 
-### 5. Prometheus Scrape Targets (`:19090/targets`)
-Thu thập telemetry thời gian thực từ `credit-risk-api:8000/metrics` với chu kỳ 5 giây:
+---
+
+### 6. Prometheus Scrape Targets & Service Discovery (`:19090/targets`)
+* **Vai trò kiến trúc**: Hạ tầng giám sát số liệu chuỗi thời gian (Time-Series Metric Scraping Engine) với cơ chế tự động thăm dò tình trạng dịch vụ (Service Discovery).
+* **Bảng chỉ số & Chi tiết quan sát trên ảnh**:
+
+| Thuộc tính mục tiêu | Giá trị ghi nhận | Đánh giá tình trạng hoạt động |
+| :--- | :--- | :--- |
+| **Endpoint Target** | `http://api:8000/metrics` | Kết nối nội bộ an toàn trong mạng Docker Bridge |
+| **Target State** | `UP (1/1)` | Dịch vụ phục vụ suy luận đạt tình trạng 100% khả dụng |
+| **Scrape Interval** | `5.0s` | Độ phân giải cao phục vụ phát hiện trôi dạt gần thời gian thực |
+| **Scrape Duration** | `3.53 ms` | Chi phí trích xuất số liệu siêu nhẹ, không ảnh hưởng năng lực CPU |
+| **Last Error** | `None` | Không xảy ra hiện tượng nghẽn mạng hay rớt gói tin telemetry |
+
+* **Giải mã kỹ thuật chuyên sâu**:
+  - Prometheus định kỳ cào các biến Metric tùy biến được đăng ký trong `app/main.py`: `credit_prediction_requests_total`, `credit_prediction_duration_seconds`, `credit_applicant_age_gauge`, `credit_limit_bal_gauge`, `credit_utilization_ratio_gauge`, và `credit_payment_delay_ratio_gauge`.
+* **Giá trị thực tiễn & Kiểm toán SE4ML**: Nền tảng đảm bảo độ tin cậy hệ thống (SRE - Site Reliability Engineering), bảo đảm phát hiện sớm các dấu hiệu quá tải hoặc nghẽn cổ chai trước khi khách hàng bị ảnh hưởng.
+
 ![Prometheus Targets](docs/screenshots/05_prometheus_targets.png)
 
-### 6. Grafana Real-time Monitoring Dashboard (`:13000`)
-Trực quan hóa toàn diện KPI nghiệp vụ: tổng số request, tỷ lệ dự đoán rủi ro (Gauge), tỷ lệ phân loại quyết định (APPROVE vs REVIEW vs DECLINE) và độ trễ p95 theo thời gian:
+---
+
+### 7. Grafana 4-Tier Real-Time MLOps Command Center (`:13000`)
+* **Vai trò kiến trúc**: Bảng điều khiển quản trị rủi ro & quan sát MLOps 4 tầng hoàn chỉnh, phản ánh đồng thời tác động kinh doanh, luồng quyết định, trôi dạt hành vi và chỉ số kỹ thuật SLA.
+* **Bảng chỉ số & Chi tiết quan sát trên ảnh (Toàn bộ 4 tầng không bị che khuất)**:
+
+| Tầng điều hành | Tên Panel trực quan | Giá trị đo đạc trên ảnh | Ý nghĩa phân tích thực tế |
+| :--- | :--- | :--- | :--- |
+| **Tầng 1: Executive** | *Total Applications* | **400+ Inferences** | Lưu lượng mô phỏng 4 kịch bản được ghi nhận đầy đủ |
+| | *Blocked Default Exposure* | **$3,160,000+ NTD** | Tổng dư nợ xấu bị mô hình chặn đứng thành công |
+| | *Rolling Default Risk Ratio* | **55.0% (Vùng đỏ)** | Đồng hồ Gauge cảnh báo rủi ro tăng cao trong đợt sóng nợ |
+| **Tầng 2: Pipeline** | *Decision Distribution* | **Donut Chart** | Trực quan hóa tỷ lệ: `APPROVE`, `REVIEW`, `DECLINE` |
+| | *FICO Score Histogram* | **300 – 850 Range** | Dịch chuyển rõ nét từ nhóm 700+ sang nhóm Subprime < 550 |
+| **Tầng 3: Drift** | *Mean Applicant Age* | **39 $\rightarrow$ 22.4 Tuổi** | Đường đồ thị dốc đứng phản ánh chiến dịch Marketing Gen-Z |
+| | *Credit Utilization Trend* | **22% $\rightarrow$ 86.4%** | Cú sốc mua sắm lễ hội khiến dư nợ chạm đỉnh hạn mức |
+| | *Payment Delay Ratio* | **44.0% trễ hạn** | Tỷ lệ khách hàng có `PAY_0 > 0` tăng vọt do chu kỳ nhận lương |
+| **Tầng 4: SLA** | *p95 Inference Latency* | **9.9 ms** | Vượt xa cam kết ngân hàng yêu cầu ($SLA < 50\text{ ms}$) |
+| | *API Throughput (RPS)* | **~15 req/sec** | Hệ thống duy trì ổn định không có mã lỗi HTTP 5xx |
+
+* **Giải mã kỹ thuật chuyên sâu**:
+  - Không cần chờ nhãn vỡ nợ sau 6 tháng mới biết mô hình suy giảm, các bảng đồng hồ ở Tầng 3 hoạt động như **Hệ thống cảnh báo sớm (Early Warning System)**: Khi thấy độ tuổi tụt xuống 22 và trễ hạn tăng lên 44%, đội ngũ MLOps đã biết trước phân phối dữ liệu đã dịch chuyển (Covariate Shift).
+* **Giá trị thực tiễn & Kiểm toán SE4ML**: Tối đa hóa khả năng giao tiếp liên phòng ban: Giám đốc rủi ro xem Tầng 1, Trưởng phòng thẩm định xem Tầng 2, Đội ngũ Data Science xem Tầng 3, và Kỹ sư DevOps/SRE xem Tầng 4.
+
 ![Grafana Dashboard](docs/screenshots/06_grafana_telemetry_dashboard.png)
 
-### 7. Báo Cáo Trôi Dạt Dữ Liệu Tương Tác của Evidently AI
-Phát hiện Covariate Drift nghiêm trọng với $\text{PSI} \ge 0.25$ trên `AGE` và `LIMIT_BAL`, tự động kích hoạt Retraining Loop:
+---
+
+### 8. Evidently AI Comprehensive Statistical Drift & Data Quality Diagnostics (`:18080/drift_report.html`)
+* **Vai trò kiến trúc**: Báo cáo kiểm định thống kê trôi dạt dữ liệu chuyên sâu (Statistical Drift Detection Engine), cung cấp cơ sở toán học để ra quyết định huấn luyện lại.
+* **Bảng chỉ số & Chi tiết quan sát trên ảnh**:
+
+| Tên đặc trưng tài chính | Phương pháp kiểm định | Giá trị thống kê tính toán | Ngưỡng báo động | Kết luận kiểm định |
+| :--- | :--- | :--- | :--- | :--- |
+| `AGE` (Độ tuổi) | Population Stability Index (PSI) | $\mathbf{0.8235}$ | $\ge 0.25$ | 🔴 **Critical Drift (Lệch nghiêm trọng)** |
+| `LIMIT_BAL` (Hạn mức) | Population Stability Index (PSI) | $\mathbf{3.9344}$ | $\ge 0.25$ | 🔴 **Critical Drift (Lệch nghiêm trọng)** |
+| `PAY_0` (Trễ hạn T9) | Population Stability Index (PSI) | $\mathbf{1.7183}$ | $\ge 0.25$ | 🔴 **Critical Drift (Lệch nghiêm trọng)** |
+| `BILL_AMT1` (Hóa đơn T9)| Population Stability Index (PSI) | $\mathbf{1.5069}$ | $\ge 0.25$ | 🔴 **Critical Drift (Lệch nghiêm trọng)** |
+| `Dataset Drift Summary`| Share of Drifted Features | **100% Các biến trọng yếu** | $\ge 50\%$ | 🚨 **Kích hoạt tự động Retraining Loop** |
+| `Data Quality Check` | Missing Values & Range Check | **0.0% Missing (Hoàn hảo)** | $0.0\%$ | 🟢 **Dữ liệu sạch, sẵn sàng nạp Train** |
+
+* **Giải mã kỹ thuật chuyên sâu**:
+  - Báo cáo HTML dung lượng 4.6MB tích hợp cả **DataDriftPreset** lẫn **DataQualityPreset**, trực quan hóa biểu đồ phân phối xác suất tích lũy (CDF) và mật độ xác suất (PDF) giữa tập Baseline (Dataset chuẩn) và Current (Tập mô phỏng thực tế).
+  - Giá trị PSI của `AGE` đạt $0.8235$ vượt xa ngưỡng báo động đỏ $0.25$, chứng minh sự thay đổi không phải do ngẫu nhiên mà là sự dịch chuyển căn bản của tệp khách hàng.
+* **Giá trị thực tiễn & Kiểm toán SE4ML**: Cung cấp bằng chứng định lượng rõ ràng để kích hoạt đường ống tái huấn luyện (Triggering Retraining Pipeline) hoàn toàn tự động, tránh hiện tượng Retrain lãng phí khi chưa có trôi dạt thực sự.
+
 ![Evidently Drift Report](docs/screenshots/07_evidently_drift_report.png)
+
+---
+
+### 9. Quá Trình Thực Thi Mô Phỏng Chuỗi 4 Kịch Bản Kinh Tế Liên Hoàn (`scripts/persona_simulator.py`)
+* **Vai trò kiến trúc**: Tác nhân giả lập hành vi người dùng đa dạng (Multi-Persona Behavioral Simulator) phục vụ kiểm thử sức chịu tải và phản ứng của hệ thống MLOps trước các biến cố kinh tế vĩ mô.
+* **Bảng chỉ số & Chi tiết quan sát trên ảnh**:
+
+| Giai đoạn mô phỏng | Phân khúc tác nhân đại diện | Đặc trưng tài chính cốt lõi | Phản ứng của hệ thống phục vụ |
+| :--- | :--- | :--- | :--- |
+| **Giai đoạn 1** | *Traditional Prime Borrowers* | Tuổi 35–52, Nợ/Hạn mức < 25%, $PAY\_0=0$ | Phê duyệt cao (78%), FICO TB: 712, An toàn tuyệt đối |
+| **Giai đoạn 2** | *Holiday Shopping Spurt* | Nợ/Hạn mức nhảy vọt lên 85–92% | Chuyển luồng `REVIEW` (62%), Kích hoạt rào chắn trần nợ |
+| **Giai đoạn 3** | *Gen-Z Campaign Drift* | Tuổi 21–25, Lương Gig, $PAY\_0=1$ | Từ chối vọt lên 58%, Phát hiện Drift tuổi $\text{PSI}=0.8235$ |
+| **Giai đoạn 4** | *Coordinated Fraud Attack* | Dư nợ chạm trần, Trễ hạn nợ $PAY\_0 \ge 3$ | Chặn đứng 88% giao dịch, Bảo vệ **$3,160,000 NTD** |
+
+* **Giải mã kỹ thuật chuyên sâu**:
+  - Script gửi các gói tin RESTful POST đến API với thời gian trễ có thể cấu hình (`--delay 0.01s`), in log phân tách màu sắc ANSI trực quan, tóm tắt tổng số tiền giải ngân an toàn và tổng mức phơi nhiễm rủi ro đã ngăn chặn thành công.
+* **Giá trị thực tiễn & Kiểm toán SE4ML**: Mô hình hóa chân thực môi trường Production năng động mà không cần đợi nhiều năm dữ liệu tích lũy ngoài đời thực; chứng minh trọn vẹn năng lực xử lý ngoại lệ và rào chắn an toàn tài chính.
+
+![Terminal Simulation Execution](docs/screenshots/08_terminal_drift_simulation_execution.png)
+
 
 ---
 

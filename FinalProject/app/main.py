@@ -161,6 +161,7 @@ app = FastAPI(
     description="Production-grade MLOps Serving Microservice with Telemetry & Inference Logging.",
     version="1.0.0",
     lifespan=lifespan,
+    swagger_ui_parameters={"docExpansion": "full"},
 )
 
 
