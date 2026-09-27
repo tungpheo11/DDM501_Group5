@@ -1,5 +1,8 @@
 # Lab 3: Testing & CI/CD for ML Systems
 
+[![Lab 3 - CI Pipeline](https://github.com/tungpheo11/DDM501_Group5/actions/workflows/lab3-ci.yml/badge.svg?branch=Lab3)](https://github.com/tungpheo11/DDM501_Group5/actions/workflows/lab3-ci.yml)
+[![Lab 3 - CD Pipeline](https://github.com/tungpheo11/DDM501_Group5/actions/workflows/lab3-cd.yml/badge.svg)](https://github.com/tungpheo11/DDM501_Group5/actions/workflows/lab3-cd.yml)
+
 ## Overview
 
 Implement comprehensive testing strategies and CI/CD pipelines for the movie rating prediction system to ensure quality and automate deployment.
@@ -125,16 +128,17 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 Complete the following files:
 
 ### Test Files
-- [ ] `tests/unit/test_model.py` - Unit tests for model class
-- [ ] `tests/unit/test_schemas.py` - Schema validation tests
-- [ ] `tests/integration/test_api.py` - API endpoint tests
-- [ ] `tests/data/test_data_quality.py` - Data quality tests
-- [ ] `tests/model/test_model_behavior.py` - Behavioral tests
+- [x] `tests/unit/test_model.py` - Unit tests for model class
+- [x] `tests/unit/test_schemas.py` - Schema validation tests
+- [x] `tests/unit/test_utils.py` - Config and utility tests
+- [x] `tests/integration/test_api.py` - API endpoint tests
+- [x] `tests/data/test_data_quality.py` - Data quality tests
+- [x] `tests/model/test_model_behavior.py` - Behavioral tests
 
 ### CI/CD Files
-- [ ] `.github/workflows/ci.yml` - CI pipeline
-- [ ] `.github/workflows/cd.yml` - CD pipeline (BONUS)
-- [ ] `.pre-commit-config.yaml` - Pre-commit hooks
+- [x] `.github/workflows/lab3-ci.yml` - CI pipeline (lint → type-check → test → build)
+- [x] `.github/workflows/lab3-cd.yml` - CD pipeline (tag push → Docker Hub → staging → production)
+- [x] `.pre-commit-config.yaml` - Pre-commit hooks (black, isort, flake8, mypy)
 
 ## Test Types
 
