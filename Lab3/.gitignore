@@ -38,6 +38,7 @@ data/
 *.csv
 !tests/data/
 !tests/data/**
+tests/data/__pycache__/
 
 # Logs
 *.log
