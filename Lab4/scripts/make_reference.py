@@ -26,7 +26,12 @@ Usage:
 
 import argparse
 import json
+import sys
 from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
 
 import numpy as np
 import pandas as pd
@@ -35,7 +40,6 @@ from app.monitoring import MONITORED_FEATURES
 from pipeline.data_ingestion import load_raw, split_data
 from pipeline.preprocessing import add_derived_features
 
-BASE_DIR = Path(__file__).resolve().parents[1]
 OUT_PATH = BASE_DIR / "models" / "reference.json"
 
 

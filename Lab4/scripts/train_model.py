@@ -12,8 +12,13 @@ Usage:
     python scripts/train_model.py
 """
 
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
 
 import joblib
 import pandas as pd
@@ -28,7 +33,6 @@ from sklearn.model_selection import train_test_split
 from pipeline.config import RANDOM_STATE, REVIEW_THRESHOLD, TARGET
 from pipeline.training import build_pipeline
 
-BASE_DIR = Path(__file__).resolve().parents[1]
 DATA_PATH = BASE_DIR / "data" / "credit_default.csv"
 MODEL_PATH = BASE_DIR / "models" / "credit_model.joblib"
 

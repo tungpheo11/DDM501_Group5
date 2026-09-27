@@ -34,7 +34,12 @@ import time
 import urllib.error
 import urllib.request
 from collections import Counter
+from pathlib import Path
 from typing import Any, Dict, List
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
 
 import numpy as np
 import pandas as pd
