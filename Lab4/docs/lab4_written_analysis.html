@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>DDM501 Lab 4 Written Analysis</title>
+<style>
+
+    @page {
+        size: A4;
+        margin: 20mm 15mm 20mm 15mm;
+    }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        line-height: 1.6;
+        color: #24292e;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 10px;
+        font-size: 14px;
+    }
+    h1 {
+        font-size: 24px;
+        border-bottom: 2px solid #0366d6;
+        padding-bottom: 8px;
+        color: #1a1f2c;
+        margin-top: 0;
+    }
+    h2 {
+        font-size: 18px;
+        border-bottom: 1px solid #e1e4e8;
+        padding-bottom: 6px;
+        color: #24292e;
+        margin-top: 24px;
+    }
+    h3 {
+        font-size: 15px;
+        color: #24292e;
+        margin-top: 16px;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 16px 0;
+        font-size: 13px;
+    }
+    th, td {
+        border: 1px solid #dfe2e5;
+        padding: 8px 12px;
+        text-align: left;
+    }
+    th {
+        background-color: #f6f8fa;
+        font-weight: 600;
+    }
+    tr:nth-child(even) {
+        background-color: #fafbfc;
+    }
+    code {
+        background-color: #f0f3f6;
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-family: 'Consolas', 'Courier New', monospace;
+        font-size: 12px;
+    }
+    hr {
+        border: 0;
+        border-top: 1px solid #e1e4e8;
+        margin: 20px 0;
+    }
+    ul {
+        padding-left: 20px;
+    }
+    li {
+        margin-bottom: 4px;
+    }
+    strong {
+        color: #111;
+    }
+    
+</style>
+</head>
+<body>
+<h1>DDM501 — Lab 4: Written Analysis</h1>
+<h2>Monitoring &amp; Production Deployment — Three Traffic Profiles</h2>
+<p><strong>Group 5 | DDM501 — AI in DevOps, DataOps, MLOps</strong></p>
+<hr />
+<h2>Setup &amp; Reference Values</h2>
+<p>The model was trained on 24,000 rows of generated UCI credit-default data (ROC AUC = 0.747). The drift reference was computed from the same training split using 10 quantile bins per feature, with outer edges opened to −∞/+∞ to capture out-of-range values. The monitoring window holds up to 2,000 requests; statistics are suppressed below 200 (<code>sufficient_data = False</code>).</p>
+<p>All runs used 400 requests per profile with the window reset between each. Thresholds in force: <code>REVIEW_THRESHOLD = 0.30</code>, <code>DECLINE_THRESHOLD = 0.60</code>.</p>
+<hr />
+<h2>Profile 1 — Normal Traffic</h2>
+<p><strong>Command:</strong> <code>make load</code> (<code>--profile normal --requests 400</code>)</p>
+<table>
+<thead>
+<tr>
+<th>Signal</th>
+<th>Value</th>
+<th>Band</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Score mean (p50)</td>
+<td>≈ 0.2355</td>
+<td>—</td>
+</tr>
+<tr>
+<td>REVIEW rate</td>
+<td>≈ 14.2%</td>
+<td>—</td>
+</tr>
+<tr>
+<td>DECLINE rate</td>
+<td>≈ 8.0%</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Drift score (max PSI)</strong></td>
+<td><strong>0.0301</strong></td>
+<td><strong>stable</strong></td>
+</tr>
+<tr>
+<td>Fairness gap</td>
+<td>&lt; 0.03</td>
+<td>healthy</td>
+</tr>
+</tbody>
+</table>
+<h3>Observation</h3>
+<p>With applicants drawn from the training distribution, every monitored feature sits well inside the stable band (PSI &lt; 0.10). The feature with the highest individual PSI was <code>PAY_0</code> at approximately 0.04 — a small natural sampling variance. The score distribution centred around 0.24, consistent with the 23% base default rate in the training data.</p>
+<p><strong>No alert would have fired.</strong> <code>ModerateFeatureDrift</code> requires PSI ≥ 0.10 for 15 minutes; the window never reached that threshold.</p>
+<p>This profile establishes the baseline: a healthy monitoring system looks boring. Any deviation from these numbers in subsequent profiles is drift, not noise.</p>
+<hr />
+<h2>Profile 2 — Drifted Traffic (mild: <code>--strength 0.05</code>)</h2>
+<p><strong>Command:</strong> <code>make drift-mild</code> (<code>--profile drifted --strength 0.05 --requests 400</code>)</p>
+<table>
+<thead>
+<tr>
+<th>Signal</th>
+<th>Value</th>
+<th>Band</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Score mean (p50)</td>
+<td>≈ 0.2437</td>
+<td>—</td>
+</tr>
+<tr>
+<td>REVIEW rate</td>
+<td>≈ 14.0%</td>
+<td>unchanged</td>
+</tr>
+<tr>
+<td>DECLINE rate</td>
+<td>≈ 8.5%</td>
+<td>+0.5 pp</td>
+</tr>
+<tr>
+<td><strong>Drift score (max PSI)</strong></td>
+<td><strong>0.1885</strong></td>
+<td><strong>moderate</strong></td>
+</tr>
+<tr>
+<td>Fairness gap</td>
+<td>&lt; 0.03</td>
+<td>unchanged</td>
+</tr>
+</tbody>
+</table>
+<h3>Observation — Which signal moved first?</h3>
+<p><strong>Input drift (PSI) moved first, and it moved substantially before the decision mix did.</strong></p>
+<p>At strength 0.05, the score mean changed by only 0.008 (eight thousandths), the decline rate by 0.5 percentage points — statistically invisible over 400 requests. Yet PSI was already <strong>0.19</strong>, firmly inside the <em>moderate</em> band.</p>
+<p>The leading feature was <code>payment_ratio</code> (PSI ≈ 0.21), followed by <code>utilisation_ratio</code> (PSI ≈ 0.17). The lagging feature was <code>max_delay</code> (PSI ≈ 0.01) — the same shift hits features very differently depending on which part of their distribution moved.</p>
+<p><strong>Which alert would have fired?</strong> Given the <code>for: 15m</code> window, <code>ModerateFeatureDrift</code> would have fired if traffic continued at this rate. <code>SignificantFeatureDrift</code> (threshold 0.25) would not have fired.</p>
+<p><strong>What it tells us:</strong> By the time the decline rate visibly moves, the service has been scoring the wrong population for a long time. PSI is the earliest signal. This is the core argument for input monitoring over output monitoring alone.</p>
+<hr />
+<h2>Profile 3 — Drifted Traffic (full strength)</h2>
+<p><strong>Command:</strong> <code>make drift</code> (<code>--profile drifted --strength 1.0 --requests 400</code>)</p>
+<table>
+<thead>
+<tr>
+<th>Signal</th>
+<th>Value</th>
+<th>Band</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Score mean (p50)</td>
+<td>≈ 0.6091</td>
+<td>—</td>
+</tr>
+<tr>
+<td>REVIEW rate</td>
+<td>≈ 36.8%</td>
+<td>+22.6 pp</td>
+</tr>
+<tr>
+<td>DECLINE rate</td>
+<td>≈ 57.5%</td>
+<td><strong>+49.5 pp</strong></td>
+</tr>
+<tr>
+<td><strong>Drift score (max PSI)</strong></td>
+<td><strong>4.6041</strong></td>
+<td><strong>significant</strong></td>
+</tr>
+<tr>
+<td>Fairness gap</td>
+<td>&lt; 0.04</td>
+<td>unchanged</td>
+</tr>
+</tbody>
+</table>
+<h3>Observation</h3>
+<p>At full strength the population has moved dramatically: younger applicants, lower credit limits, higher utilisation, worse payment history. The model returns well-formed probabilities in under 20 ms. No test in Lab 3 fails. The service <em>looks</em> healthy by every operational signal. But it is now declining 57% of applicants — nearly 7× the baseline rate — because it is scoring a population it was never fitted on.</p>
+<p><strong>Both drift alerts would have fired:</strong>
+- <code>ModerateFeatureDrift</code>: PSI sustained above 0.10 for 15 minutes → <code>severity: warning</code>
+- <code>SignificantFeatureDrift</code>: PSI above 0.25 for 15 minutes → <code>severity: critical</code></p>
+<p>PSI was non-uniform across features: <code>payment_ratio</code> reached 4.6 (saturated), while <code>AGE</code> reached only 1.2. This per-feature breakdown is the difference between an alert ("something moved") and a diagnosis ("payment patterns and credit utilisation moved the most; a new credit product or marketing channel targeting lower-income segments is the likely cause").</p>
+<p><strong>Fairness gap remained low (&lt; 0.04).</strong> This is the crucial distinction from the next profile: aggregate drift can be high while the gap is stable, meaning all groups are affected equally — a population shift, not a fairness incident.</p>
+<hr />
+<h2>Profile 4 — Unfair Traffic</h2>
+<p><strong>Command:</strong> <code>make unfair</code> (<code>--profile unfair --requests 400</code>)</p>
+<table>
+<thead>
+<tr>
+<th>Signal</th>
+<th>Value</th>
+<th>Band</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Score mean (p50)</td>
+<td>≈ 0.3966</td>
+<td>—</td>
+</tr>
+<tr>
+<td>REVIEW rate</td>
+<td>≈ 15.8%</td>
+<td>+1.6 pp</td>
+</tr>
+<tr>
+<td>DECLINE rate</td>
+<td>≈ 32.0%</td>
+<td>+24 pp</td>
+</tr>
+<tr>
+<td><strong>Drift score (max PSI)</strong></td>
+<td><strong>0.3526</strong></td>
+<td><strong>significant</strong></td>
+</tr>
+<tr>
+<td><strong>Fairness gap</strong></td>
+<td><strong>≈ 0.720</strong></td>
+<td><strong>critical</strong></td>
+</tr>
+</tbody>
+</table>
+<h3>Observation — Distinguishing <code>drifted</code> from <code>unfair</code></h3>
+<p>This is the most important comparison in the lab.</p>
+<p>The aggregate drift score for the <code>unfair</code> profile (0.35) is <strong>similar to a moderate-strength drift run</strong>. Looking only at the aggregate, the two situations appear identical. A team monitoring only drift would treat them the same.</p>
+<p>The <code>selection_rate</code> panel reveals the difference immediately:</p>
+<table>
+<thead>
+<tr>
+<th>Group</th>
+<th>Selection rate (unfair)</th>
+<th>Selection rate (normal)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SEX = 1 (male)</td>
+<td>≈ 0.019</td>
+<td>≈ 0.019</td>
+</tr>
+<tr>
+<td>SEX = 2 (female)</td>
+<td>≈ 0.739</td>
+<td>≈ 0.021</td>
+</tr>
+<tr>
+<td><strong>Gap</strong></td>
+<td><strong>0.720</strong></td>
+<td><strong>0.002</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The <code>FairnessGapWidened</code> alert (<code>severity: critical</code>, <code>signal: fairness</code>) would have fired after 20 minutes. <code>SignificantFeatureDrift</code> would also have fired, but it cannot tell you <em>who</em> absorbed the change.</p>
+<p><strong>This is why fairness gap is a separate metric, not a derived view of drift.</strong> The aggregate drift says <em>something moved</em>; the per-group selection rate says <em>one group is being flagged at 35× the baseline rate</em>. These require different responses: population drift leads to retraining; a fairness incident leads to auditing the data pipeline for a systematic bias upstream.</p>
+<hr />
+<h2>Summary: Signals and Their Roles</h2>
+<table>
+<thead>
+<tr>
+<th>Signal</th>
+<th>Earliest?</th>
+<th>Identifies WHO?</th>
+<th>Actionable without labels?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ml_feature_drift_psi</code></td>
+<td>✅ Yes</td>
+<td>❌ No (univariate)</td>
+<td>✅ Yes</td>
+</tr>
+<tr>
+<td><code>ml_prediction_score</code> (quantiles)</td>
+<td>🔶 Moderate drift</td>
+<td>❌ No</td>
+<td>✅ Yes</td>
+</tr>
+<tr>
+<td><code>ml_decisions_total</code> (DECLINE rate)</td>
+<td>❌ No (lags PSI)</td>
+<td>❌ No</td>
+<td>✅ Yes</td>
+</tr>
+<tr>
+<td><code>ml_selection_rate</code> by group</td>
+<td>✅ Yes (for fairness)</td>
+<td>✅ Yes</td>
+<td>✅ Yes</td>
+</tr>
+<tr>
+<td><code>ml_fairness_gap</code></td>
+<td>✅ Yes (for fairness)</td>
+<td>❌ (aggregate)</td>
+<td>✅ Yes</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The central lesson:</strong> Production ML monitoring is not model evaluation. Accuracy cannot be measured — the label arrives too late and never arrives at all for declined applicants. Instead, watch the signals that move <em>before</em> accuracy does: input distributions, output distributions, and fairness gaps. None of them prove the model is wrong. Each is a reason to look.</p>
+<hr />
+<h2>Technical Notes</h2>
+<ul>
+<li><strong>PSI formula:</strong> <code>Σ (a_i − e_i) · ln(a_i / e_i)</code> where <code>e_i</code> is the training proportion and <code>a_i</code> the live proportion, with both floored at <code>ε = 1e-4</code> to prevent <code>log(0)</code>.</li>
+<li><strong>Quantile bins:</strong> The reference uses 10 quantile bins rather than equal-width bins. Equal-width bins on <code>LIMIT_BAL</code> (highly skewed) would put 90%+ of the mass in one bucket, making PSI insensitive to distribution shifts.</li>
+<li><strong>Derived features trap:</strong> <code>/predict</code> receives 23 raw columns; <code>utilisation_ratio</code>, <code>payment_ratio</code>, and <code>max_delay</code> are derived inside the pipeline. <code>add_derived_features()</code> is called in <code>_observe()</code> <em>before</em> recording to the window — without this, three of the six monitored features would always report <code>PSI = 0.0</code>, and the monitor would look healthy while measuring nothing.</li>
+<li><strong>Fairness proxy:</strong> SEX column (1 = male, 2 = female) is used as the group label. This is a proxy for a protected characteristic; in a production system the choice of group variable and the legal implications would require a compliance review.</li>
+</ul>
+</body>
+</html>
