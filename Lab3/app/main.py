@@ -3,6 +3,7 @@ FastAPI application for Movie Rating Prediction.
 """
 
 import logging
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -38,7 +39,7 @@ app.add_middleware(
 )
 
 # Global model instance
-model: MovieRatingModel = None
+model: Optional[MovieRatingModel] = None
 
 
 @app.on_event("startup")
