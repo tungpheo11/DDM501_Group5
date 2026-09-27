@@ -36,6 +36,8 @@ models/*.pkl
 # Data
 data/
 *.csv
+!tests/data/
+!tests/data/**
 
 # Logs
 *.log
