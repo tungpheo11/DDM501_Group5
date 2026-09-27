@@ -7,7 +7,7 @@ name: Lab 3 - CI Pipeline
 
 on:
   push:
-    branches: [main, develop, 'Lab3/**', 'lab3/**']
+    branches: [main, develop, Lab3, lab3, 'Lab3/**', 'lab3/**']
     paths:
       - 'Lab3/**'
       - '.github/workflows/lab3-ci.yml'
