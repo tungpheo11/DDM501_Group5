@@ -1,0 +1,326 @@
+{
+  "generated_at": "2026-09-28T09:28:59+00:00",
+  "session_id": "20260928T092715Z",
+  "selected_model": "logistic_regression",
+  "config": {
+    "cv_folds": 5,
+    "n_trials": 20,
+    "random_state": 42,
+    "decision_threshold": 0.5,
+    "cost_false_negative": 10.0,
+    "cost_false_positive": 1.0,
+    "train_rows": 12000,
+    "holdout_rows": 3000,
+    "n_engineered_features": 12,
+    "test_size": 0.2,
+    "metric": "roc_auc",
+    "candidates": [
+      "logistic_regression",
+      "random_forest",
+      "xgboost",
+      "lightgbm"
+    ]
+  },
+  "data": {
+    "train_file": "reference/train_baseline.csv",
+    "gate_file": "processed/stream_normal.csv",
+    "train_rows": 12000,
+    "holdout_rows": 3000,
+    "gate_rows": 5000,
+    "data_version": "3df05ace93a33597",
+    "manifest_verified": true
+  },
+  "models": [
+    {
+      "name": "logistic_regression",
+      "display_name": "Logistic Regression",
+      "best_params": {
+        "C": 0.008433492996539142
+      },
+      "cv": {
+        "roc_auc_mean": 0.751294,
+        "roc_auc_std": 0.015184,
+        "pr_auc_mean": 0.5389,
+        "pr_auc_std": 0.020545,
+        "oof_f1_score": 0.501916,
+        "oof_recall": 0.588103,
+        "oof_precision": 0.437761,
+        "oof_expected_loss": 1.08575,
+        "oof_brier": 0.193103,
+        "cost_optimal_threshold": 0.25
+      },
+      "cv_fold_roc_auc": [
+        0.730544,
+        0.756004,
+        0.741799,
+        0.775974,
+        0.752148
+      ],
+      "holdout": {
+        "roc_auc": 0.770021,
+        "pr_auc": 0.568794,
+        "brier": 0.188531,
+        "accuracy": 0.756,
+        "precision": 0.464206,
+        "recall": 0.621257,
+        "f1_score": 0.53137,
+        "financial_loss": 3009.0,
+        "expected_loss": 1.003,
+        "true_negatives": 1853,
+        "false_positives": 479,
+        "false_negatives": 253,
+        "true_positives": 415
+      },
+      "normal_stream": {
+        "roc_auc": 0.751865,
+        "pr_auc": 0.544694,
+        "brier": 0.191357,
+        "accuracy": 0.7468,
+        "precision": 0.458586,
+        "recall": 0.595801,
+        "f1_score": 0.518265,
+        "financial_loss": 5424.0,
+        "expected_loss": 1.0848,
+        "true_negatives": 3053,
+        "false_positives": 804,
+        "false_negatives": 462,
+        "true_positives": 681
+      },
+      "tuning": {
+        "n_trials": 20,
+        "n_pruned": 9,
+        "best_trial": 19,
+        "duration_seconds": 5.65
+      },
+      "mlflow_run_id": "c7dffd0d1c3f43ce8376923f46e90cad"
+    },
+    {
+      "name": "random_forest",
+      "display_name": "Random Forest",
+      "best_params": {
+        "n_estimators": 300,
+        "max_depth": 7,
+        "min_samples_leaf": 18,
+        "max_features": "log2",
+        "class_weight": "balanced_subsample"
+      },
+      "cv": {
+        "roc_auc_mean": 0.74722,
+        "roc_auc_std": 0.011356,
+        "pr_auc_mean": 0.523885,
+        "pr_auc_std": 0.021169,
+        "oof_f1_score": 0.511723,
+        "oof_recall": 0.514403,
+        "oof_precision": 0.509071,
+        "oof_expected_loss": 1.192167,
+        "oof_brier": 0.185273,
+        "cost_optimal_threshold": 0.26
+      },
+      "cv_fold_roc_auc": [
+        0.738997,
+        0.749653,
+        0.738346,
+        0.768427,
+        0.740679
+      ],
+      "holdout": {
+        "roc_auc": 0.765698,
+        "pr_auc": 0.563474,
+        "brier": 0.182575,
+        "accuracy": 0.79,
+        "precision": 0.528107,
+        "recall": 0.534431,
+        "f1_score": 0.53125,
+        "financial_loss": 3429.0,
+        "expected_loss": 1.143,
+        "true_negatives": 2013,
+        "false_positives": 319,
+        "false_negatives": 311,
+        "true_positives": 357
+      },
+      "normal_stream": {
+        "roc_auc": 0.747439,
+        "pr_auc": 0.531267,
+        "brier": 0.185304,
+        "accuracy": 0.7782,
+        "precision": 0.514965,
+        "recall": 0.511811,
+        "f1_score": 0.513383,
+        "financial_loss": 6131.0,
+        "expected_loss": 1.2262,
+        "true_negatives": 3306,
+        "false_positives": 551,
+        "false_negatives": 558,
+        "true_positives": 585
+      },
+      "tuning": {
+        "n_trials": 20,
+        "n_pruned": 7,
+        "best_trial": 15,
+        "duration_seconds": 44.05
+      },
+      "mlflow_run_id": "713aa6e2330941cebd49a63d22d569a5"
+    },
+    {
+      "name": "xgboost",
+      "display_name": "XGBoost",
+      "best_params": {
+        "n_estimators": 250,
+        "max_depth": 2,
+        "learning_rate": 0.020755889248795886,
+        "subsample": 0.9323277393035136,
+        "colsample_bytree": 0.5371197233215805,
+        "min_child_weight": 3,
+        "reg_lambda": 1.5632297874896508,
+        "scale_pos_weight": 3.4893
+      },
+      "cv": {
+        "roc_auc_mean": 0.750888,
+        "roc_auc_std": 0.01274,
+        "pr_auc_mean": 0.534903,
+        "pr_auc_std": 0.023372,
+        "oof_f1_score": 0.508648,
+        "oof_recall": 0.539095,
+        "oof_precision": 0.481457,
+        "oof_expected_loss": 1.156,
+        "oof_brier": 0.191837,
+        "cost_optimal_threshold": 0.26
+      },
+      "cv_fold_roc_auc": [
+        0.737924,
+        0.757508,
+        0.739447,
+        0.772242,
+        0.747317
+      ],
+      "holdout": {
+        "roc_auc": 0.767052,
+        "pr_auc": 0.567149,
+        "brier": 0.188331,
+        "accuracy": 0.779333,
+        "precision": 0.504021,
+        "recall": 0.562874,
+        "f1_score": 0.531825,
+        "financial_loss": 3290.0,
+        "expected_loss": 1.096667,
+        "true_negatives": 1962,
+        "false_positives": 370,
+        "false_negatives": 292,
+        "true_positives": 376
+      },
+      "normal_stream": {
+        "roc_auc": 0.75559,
+        "pr_auc": 0.551397,
+        "brier": 0.189976,
+        "accuracy": 0.7726,
+        "precision": 0.502412,
+        "recall": 0.546807,
+        "f1_score": 0.52367,
+        "financial_loss": 5799.0,
+        "expected_loss": 1.1598,
+        "true_negatives": 3238,
+        "false_positives": 619,
+        "false_negatives": 518,
+        "true_positives": 625
+      },
+      "tuning": {
+        "n_trials": 20,
+        "n_pruned": 8,
+        "best_trial": 12,
+        "duration_seconds": 22.44
+      },
+      "mlflow_run_id": "990f877f3aae4a88af5ffcd810c9bc0d"
+    },
+    {
+      "name": "lightgbm",
+      "display_name": "LightGBM",
+      "best_params": {
+        "n_estimators": 150,
+        "num_leaves": 10,
+        "learning_rate": 0.035276537862999086,
+        "min_child_samples": 103,
+        "subsample": 0.6991475808361234,
+        "colsample_bytree": 0.5117983344935128,
+        "reg_lambda": 0.8853595228566117
+      },
+      "cv": {
+        "roc_auc_mean": 0.748754,
+        "roc_auc_std": 0.012284,
+        "pr_auc_mean": 0.531559,
+        "pr_auc_std": 0.020947,
+        "oof_f1_score": 0.50664,
+        "oof_recall": 0.563786,
+        "oof_precision": 0.460012,
+        "oof_expected_loss": 1.119083,
+        "oof_brier": 0.189144,
+        "cost_optimal_threshold": 0.22
+      },
+      "cv_fold_roc_auc": [
+        0.739275,
+        0.758694,
+        0.736219,
+        0.767748,
+        0.741834
+      ],
+      "holdout": {
+        "roc_auc": 0.767795,
+        "pr_auc": 0.570526,
+        "brier": 0.185697,
+        "accuracy": 0.764333,
+        "precision": 0.476015,
+        "recall": 0.579341,
+        "f1_score": 0.52262,
+        "financial_loss": 3236.0,
+        "expected_loss": 1.078667,
+        "true_negatives": 1906,
+        "false_positives": 426,
+        "false_negatives": 281,
+        "true_positives": 387
+      },
+      "normal_stream": {
+        "roc_auc": 0.754888,
+        "pr_auc": 0.55165,
+        "brier": 0.187147,
+        "accuracy": 0.7614,
+        "precision": 0.481315,
+        "recall": 0.56343,
+        "f1_score": 0.519146,
+        "financial_loss": 5684.0,
+        "expected_loss": 1.1368,
+        "true_negatives": 3163,
+        "false_positives": 694,
+        "false_negatives": 499,
+        "true_positives": 644
+      },
+      "tuning": {
+        "n_trials": 20,
+        "n_pruned": 8,
+        "best_trial": 16,
+        "duration_seconds": 26.05
+      },
+      "mlflow_run_id": "9f45b1fa4b4b47adaa53ffac6e208583"
+    }
+  ],
+  "gate": {
+    "promote": true,
+    "reasons": [
+      "no current champion; challenger passes the quality floor"
+    ],
+    "challenger": {
+      "roc_auc": 0.7518651820065141,
+      "expected_loss": 1.0848
+    },
+    "champion": null,
+    "roc_auc_delta": null,
+    "expected_loss_delta": null,
+    "champion_source": "registry (no champion yet)",
+    "champion_version_before": null,
+    "evaluation_set": "processed/stream_normal.csv"
+  },
+  "registry": {
+    "tracking_uri": "sqlite:////Users/thaycacac/Documents/mse/ky4/DDM501/ddm501/final-project/DDM501_Group5/FinalProject/mlruns/mlflow.db",
+    "model_name": "credit-risk-model",
+    "registered_version": "1",
+    "champion_version": "1"
+  }
+}

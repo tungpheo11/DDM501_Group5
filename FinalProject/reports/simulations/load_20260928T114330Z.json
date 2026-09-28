@@ -1,0 +1,25 @@
+{
+  "scenario": "load",
+  "started_at": "2026-09-28T11:43:30.728469+00:00",
+  "finished_at": "2026-09-28T11:46:50.851788+00:00",
+  "api_url": "http://localhost:18020",
+  "traffic": {
+    "requests": 133637,
+    "success": 0,
+    "errors": 133637,
+    "status_codes": {
+      "503": 133637
+    },
+    "decisions": {},
+    "decision_share": {},
+    "mean_default_probability": null,
+    "latency_ms": {
+      "p50": 5.2,
+      "p95": 10.1,
+      "p99": 21.1,
+      "max": 502.7
+    },
+    "throughput_rps": 667.8
+  },
+  "duration_seconds": 200.1
+}

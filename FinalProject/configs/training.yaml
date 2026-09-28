@@ -1,0 +1,62 @@
+# Training configuration (domain settings, identical across environments).
+# Environment-specific endpoints live in configs/environments/<APP_ENV>.yaml.
+
+random_state: 42
+
+split:
+  test_size: 0.2 # stratified holdout carved out of reference/train_baseline.csv
+
+# Candidate algorithms tuned by `make train` (see credit_risk.training.models).
+candidates:
+  - logistic_regression
+  - random_forest
+  - xgboost
+  - lightgbm
+
+tuning:
+  n_trials: 20 # Optuna TPE trials per candidate (env override: OPTUNA_N_TRIALS)
+  timeout_seconds: null # optional wall-clock cap per candidate (env: OPTUNA_TIMEOUT_SECONDS)
+  cv_folds: 5 # StratifiedKFold(shuffle=True, random_state) on the training split
+  metric: roc_auc # objective maximised by Optuna and used to pick the challenger
+
+# Probability cut-off for decision metrics (F1, recall, financial loss). Models are
+# class-weighted, so 0.5 matches `model.predict`; the cost-optimal threshold is reported too.
+decision_threshold: 0.5
+
+# Local fallback artifact served by the API when the MLflow registry is unreachable.
+champion_artifact_name: credit_model_v1.joblib
+
+# Champion/challenger gate, evaluated on processed/stream_normal.csv (never used for training).
+promotion:
+  min_roc_auc: 0.70
+  max_roc_auc_drop: 0.005
+  min_loss_improvement: 0.0
+
+baseline:
+  run_name: baseline-rf-v1.0
+  artifact_name: credit_model_v1.joblib
+  model_type: RandomForestClassifier
+  params:
+    n_estimators: 100
+    max_depth: 6
+    class_weight: balanced
+
+# Retraining (make retrain / Airflow) refits the champion's algorithm and tuned
+# hyper-parameters from models/model_spec.json; these params are only the fallback
+# when no spec exists yet.
+challenger:
+  run_name: retrain-challenger
+  artifact_name: credit_model_v2.joblib
+  model_type: random_forest
+  strategy: Replay-15k-baseline-plus-5k-feedback
+  params:
+    n_estimators: 150
+    max_depth: 8
+    min_samples_split: 8
+    class_weight: balanced
+
+# Asymmetric cost matrix: a missed defaulter (FN) costs 10x a wrongly declined
+# good customer (FP).
+business_cost:
+  false_negative: 10.0
+  false_positive: 1.0

@@ -1,0 +1,51 @@
+# Data drift alerts from the Evidently drift monitor (services/drift_monitor).
+# Tested by monitoring/prometheus/tests/alerts_test.yml.
+
+groups:
+  - name: credit-risk-drift
+    rules:
+      - alert: DataDriftDetected
+        expr: credit_drift_detected{job="drift-monitor"} == 1
+        for: 2m
+        labels:
+          severity: warning
+          component: drift
+        annotations:
+          summary: "Data drift detected on the latest inference window"
+          description: "A key feature PSI reached 0.25 or at least 50% of features drifted (Evidently). The drift_monitoring DAG will trigger model_retrain."
+          runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#datadriftdetected"
+          dashboard: "http://localhost:13000/d/credit-drift"
+
+      - alert: DriftMonitorDown
+        expr: up{job="drift-monitor"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          component: drift
+        annotations:
+          summary: "Drift monitor is down"
+          description: "Drift is not being measured; DataDriftDetected and PredictionDistributionShift cannot fire."
+          runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#driftmonitordown"
+          dashboard: "http://localhost:13000/d/credit-drift"
+
+      - alert: DriftAnalysisStale
+        # Second branch: the monitor restarted and has never succeeded since (gauge still 0).
+        expr: >-
+          (
+            credit_drift_last_analysis_timestamp_seconds{job="drift-monitor"} > 0
+            and time() - credit_drift_last_analysis_timestamp_seconds{job="drift-monitor"} > 900
+          )
+          or
+          (
+            credit_drift_last_analysis_timestamp_seconds{job="drift-monitor"} == 0
+            and on (job, instance) time() - process_start_time_seconds{job="drift-monitor"} > 900
+          )
+        for: 5m
+        labels:
+          severity: warning
+          component: drift
+        annotations:
+          summary: "No successful drift analysis for more than 15 minutes"
+          description: "The background analysis loop is failing (database unreachable or analysis errors)."
+          runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#driftanalysisstale"
+          dashboard: "http://localhost:13000/d/credit-drift"

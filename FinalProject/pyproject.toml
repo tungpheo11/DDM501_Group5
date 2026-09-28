@@ -1,6 +1,10 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "final-project-credit-risk-mlops"
-version = "1.0.0"
+name = "credit-risk-mlops"
+version = "1.1.0"
 description = "DDM501 Final Project: End-to-End MLOps Closed Loop Credit Default Risk Scoring"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -20,15 +24,129 @@ dependencies = [
     "boto3>=1.35.0",
     "joblib>=1.4.0",
     "evidently>=0.7.23",
+    "pyyaml>=6.0",
+    "pandera[pandas]>=0.33.1",
+    "optuna>=5.0.0",
+    "xgboost>=3.2.0",
+    "lightgbm>=4.7.0",
+    "matplotlib>=3.11.2",
+    "shap>=0.51.0",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=8.3.0",
     "pytest-cov>=6.0.0",
-    "flake8>=7.1.0",
+    "ruff>=0.8.0",
     "black>=24.10.0",
+    "mypy>=1.13.0",
+    "types-requests>=2.32.0",
+    "types-PyYAML>=6.0",
+    "pre-commit>=4.0.0",
+    # Offline Responsible AI analysis (make responsible-ai); not needed by the serving image.
+    "fairlearn>=0.14.0",
+    "lime>=0.2.0.1",
+    "nbclient>=0.10.0",
+    "nbformat>=5.10.0",
+    "ipykernel>=6.29.0",
+    "locust>=2.32.0",
 ]
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [tool.uv]
-package = false
+package = true
+
+# ---------------------------------------------------------------------------
+# Formatting & linting
+# ---------------------------------------------------------------------------
+[tool.black]
+line-length = 120
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+src = ["src", "tests"]
+extend-exclude = ["notebooks", "orchestration/airflow/logs"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "N",        # pep8-naming
+    "UP",       # pyupgrade
+    "B",        # bugbear
+    "SIM",      # simplify
+    "C40", "C41", "C42",  # flake8-comprehensions
+    "D",        # pydocstyle
+]
+ignore = [
+    "D105", "D107",  # magic methods / __init__ docstrings
+    "N815",          # UCI column names (LIMIT_BAL, PAY_0) are part of the API contract
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D", "N802"]
+"scripts/**" = ["D"]
+"simulations/**" = ["D103"]
+"orchestration/airflow/dags/*.py" = ["D103"]  # task callables are described by the DAG doc_md
+"src/credit_risk/serving/app.py" = ["D103"]
+"src/credit_risk/serving/routers/*.py" = ["D103"]  # route handlers are documented via OpenAPI summary/description
+
+[tool.ruff.lint.isort]
+known-first-party = ["credit_risk", "drift_monitor"]
+
+# ---------------------------------------------------------------------------
+# Type checking
+# ---------------------------------------------------------------------------
+[tool.mypy]
+# python_version is intentionally unset: third-party stubs resolved for newer
+# interpreters (e.g. numpy on 3.12+) use syntax a pinned 3.11 target rejects.
+# ruff's target-version keeps our own code 3.11-compatible.
+files = ["src", "scripts", "simulations", "services"]
+mypy_path = ["src", "services"]
+ignore_missing_imports = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_return_any = false
+
+[[tool.mypy.overrides]]
+module = ["scripts.*"]
+disallow_untyped_defs = false
+
+# ---------------------------------------------------------------------------
+# Tests
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "services", "simulations"]
+# e2e/load need the running stack: `make test-e2e`, `make test-load` (a later -m on the command line wins).
+addopts = "-ra --strict-markers --import-mode=importlib -m 'not e2e and not load'"
+markers = [
+    "integration: exercises the FastAPI app or several modules together",
+    "data_quality: validates datasets under data/",
+    "model_validation: checks model quality against acceptance thresholds",
+    "e2e: requires the full Docker Compose stack",
+    "load: load/performance tests (Locust)",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore:.*InconsistentVersionWarning.*",
+]
+
+[tool.coverage.run]
+source = ["credit_risk"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true

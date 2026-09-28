@@ -1,0 +1,42 @@
+{
+  "scenario": "normal",
+  "started_at": "2026-09-28T12:43:04.294709+00:00",
+  "finished_at": "2026-09-28T12:43:25.621021+00:00",
+  "api_url": "http://localhost:18020",
+  "traffic": {
+    "requests": 1500,
+    "success": 1500,
+    "errors": 0,
+    "status_codes": {
+      "200": 1500
+    },
+    "decisions": {
+      "REVIEW": 810,
+      "DECLINE": 301,
+      "APPROVE": 389
+    },
+    "decision_share": {
+      "REVIEW": 0.54,
+      "DECLINE": 0.201,
+      "APPROVE": 0.259
+    },
+    "mean_default_probability": 0.442,
+    "latency_ms": {
+      "p50": 26.1,
+      "p95": 37.6,
+      "p99": 45.1,
+      "max": 103.4
+    }
+  },
+  "drift": {
+    "status": "success",
+    "is_drifted": false,
+    "drift_share": 0.0,
+    "max_psi": 0.0205,
+    "prediction_psi": 0.0329,
+    "prediction_shift": false,
+    "reasons": [],
+    "report": "drift_report_20260928T124325Z.html",
+    "current_samples": 500
+  }
+}

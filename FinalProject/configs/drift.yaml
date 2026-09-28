@@ -1,0 +1,35 @@
+# Data drift detection configuration (Evidently + PSI).
+
+psi:
+  num_buckets: 10
+  moderate_threshold: 0.10
+  critical_threshold: 0.25   # also applied to the prediction (default probability) PSI
+
+key_features:
+  - AGE
+  - LIMIT_BAL
+  - PAY_0
+  - BILL_AMT1
+
+evidently:
+  # Drift is declared when at least this share of feature columns drifts
+  # (Evidently per-column stattests), in addition to the key-feature PSI rule.
+  drift_share_threshold: 0.5
+
+# Minimum number of logged inferences required before the production stream
+# from PostgreSQL is used instead of the offline drifted stream file.
+min_current_samples: 50
+db_query_limit: 5000
+
+report_html: drift_report.html
+summary_json: drift_summary.json
+
+# Online drift-monitor service (services/drift_monitor).
+service:
+  # Most recent inference logs compared with the reference on every analysis.
+  window_size: 500               # env DRIFT_WINDOW_SIZE
+  # Background analysis period; POST /analyze runs one on demand.
+  analysis_interval_seconds: 60  # env DRIFT_ANALYSIS_INTERVAL_SECONDS
+  # Reference rows sampled (fixed seed) to keep each Evidently run well under a second.
+  reference_sample_size: 5000
+  max_saved_reports: 20

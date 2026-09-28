@@ -1,0 +1,67 @@
+%% Component diagram of the ML pipeline (package credit_risk: data, features, training, evaluation, responsible_ai, monitoring)
+%% Màu theo package: xanh = data/features, cam nhạt = training/evaluation, tím nhạt = responsible_ai, xanh lá nhạt = monitoring
+flowchart TB
+    raw[("<b>data/raw/credit_default.csv</b><br/><i>[UCI 30k snapshot]</i>")]:::store
+    dag["<b>Airflow model_retrain</b><br/><i>[Container]</i>"]:::container
+    cfg["<b>Layered config</b><br/><i>config.settings</i><br/>configs/*.yaml + environments/APP_ENV<br/>+ env vars"]:::cfg
+
+    loader["<b>Loader</b><br/><i>data.loader</i><br/>đọc CSV, chuẩn hoá cột"]:::data
+    valid["<b>Data contracts</b><br/><i>data.validation (pandera)</i><br/>schema, domain, target rate 10-40%<br/>→ reports/data_validation.json"]:::data
+    manifest["<b>Data versioning</b><br/><i>data.manifest</i><br/>sha256 từng file + fingerprint<br/>data/manifest.json"]:::data
+    split["<b>Partitioning</b><br/><i>data.splitting</i><br/>reference 15k, stream normal,<br/>stream drifted, feedback"]:::data
+
+    pipeline["<b>Training pipeline</b><br/><i>training.train</i>  (make train)<br/>tune → fit → holdout → gate → register"]:::train
+    retrain["<b>Retraining pipeline</b><br/><i>training.retrain</i>  (make retrain / DAG)<br/>replay baseline + feedback, challenger vs champion"]:::train
+
+    tuning["<b>HPO</b><br/><i>training.tuning</i><br/>Optuna TPE 20 trial + MedianPruner,<br/>StratifiedKFold 5-fold, objective ROC-AUC"]:::train
+    models["<b>Candidate zoo</b><br/><i>training.models</i><br/>LogReg, RandomForest, XGBoost, LightGBM"]:::train
+    fe["<b>FeatureEngineer</b><br/><i>features.feature_engineering</i><br/>+12 feature: utilization, delay trend,<br/>payment ratio, zero-payment months"]:::data
+    prep["<b>Preprocessing</b><br/><i>features.preprocessing</i><br/>ColumnTransformer: StandardScaler +<br/>OneHotEncoder trong sklearn Pipeline"]:::data
+
+    metrics["<b>Metrics</b><br/><i>evaluation.metrics</i><br/>ROC-AUC, PR-AUC, F1, recall"]:::train
+    cost["<b>Business cost</b><br/><i>evaluation.business_cost</i><br/>expected loss FN=10, FP=1,<br/>cost-optimal threshold"]:::train
+    gate["<b>Quality gate</b><br/><i>evaluation.model_validation</i><br/>ROC-AUC ≥ 0.70, drop ≤ 0.005,<br/>loss không tệ hơn + có cải thiện"]:::gate
+    registry["<b>Registry adapter</b><br/><i>training.registry + tracking</i><br/>log params, metrics, signature, lineage;<br/>register, promote, rollback alias"]:::train
+
+    fair["<b>Fairness audit</b><br/><i>responsible_ai.fairness (Fairlearn)</i><br/>DPD, EOD, DI theo SEX / AGE / EDU / MARRIAGE<br/>+ ThresholdOptimizer mitigation"]:::rai
+    explain["<b>Explainability</b><br/><i>responsible_ai.explainability</i><br/>SHAP global / local + LIME"]:::rai
+    privacy["<b>Privacy</b><br/><i>responsible_ai.privacy</i><br/>pseudonymize, generalize,<br/>retention purge 90 ngày"]:::rai
+    drift["<b>Drift detector</b><br/><i>monitoring.drift</i><br/>PSI 10 bucket (0.10 / 0.25)<br/>+ Evidently drift share ≥ 0.5"]:::mon
+
+    mlflow["<b>MLflow + MinIO</b><br/><i>[Containers]</i><br/>runs, artifacts, credit-risk-model@champion"]:::container
+    reports[("<b>reports/ + reports/figures</b><br/><i>[generated evidence]</i>")]:::store
+    dmon["<b>Drift Monitor service</b><br/><i>[Container]</i>"]:::container
+
+    raw --> loader --> valid --> manifest --> split
+    split -- "reference/train_baseline.csv" --> pipeline
+    split -- "stream_drifted + feedback" --> retrain
+    dag -- "run_retraining_pipeline(promote=False)" --> retrain
+    cfg -.-> pipeline
+    cfg -.-> retrain
+    pipeline --> tuning
+    tuning --> models
+    tuning --> fe --> prep
+    pipeline --> metrics
+    pipeline --> cost
+    metrics --> gate
+    cost --> gate
+    retrain --> gate
+    gate -- "promote / reject" --> registry
+    registry -- "MLflow client" --> mlflow
+    pipeline -- "model_comparison.md / json, figures" --> reports
+    mlflow -- "@champion" --> fair
+    mlflow -- "@champion" --> explain
+    fair --> reports
+    explain --> reports
+    split -. "data/reference làm baseline" .-> drift
+    drift -- "được dùng bởi" --> dmon
+    explain ~~~ privacy
+
+    classDef data fill:#DCEBFA,stroke:#1168BD,color:#0B2545,stroke-width:2px
+    classDef train fill:#FDEBD3,stroke:#C77700,color:#4A2C00,stroke-width:2px
+    classDef gate fill:#FFF4E5,stroke:#E08600,color:#663C00,stroke-width:3px
+    classDef rai fill:#EDE4F7,stroke:#6A4C93,color:#2E1F45,stroke-width:2px
+    classDef mon fill:#E3F4EA,stroke:#2E8B57,color:#123D26,stroke-width:2px
+    classDef cfg fill:#FFFFFF,stroke:#5B6B7F,color:#0B2545,stroke-width:1.5px,stroke-dasharray:4 3
+    classDef container fill:#438DD5,stroke:#2E6295,color:#FFFFFF,stroke-width:2px
+    classDef store fill:#2F6FB0,stroke:#1D4F82,color:#FFFFFF,stroke-width:2px

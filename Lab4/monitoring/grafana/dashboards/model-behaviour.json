@@ -1,0 +1,679 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "uid": "ddm501-model",
+  "title": "DDM501 — Model Behaviour",
+  "description": "Is the model still looking at the same world? Drift, output distribution, fairness and explanation cost.",
+  "tags": [
+    "ddm501",
+    "lab04",
+    "model"
+  ],
+  "timezone": "browser",
+  "editable": true,
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "type": "row",
+      "title": "Is the model still looking at the same world?",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Drift score (max PSI)",
+      "description": "PSI bands: <0.10 stable, 0.10-0.25 moderate, >=0.25 significant. Measured against the TRAINING distribution, frozen at build time.",
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 5,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-ddm501"
+      },
+      "targets": [
+        {
+          "expr": "ml_drift_score",
+          "legendFormat": "PSI",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-ddm501"
+          },
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "area"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.1
+              },
+              {
+                "color": "red",
+                "value": 0.25
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Drift window size",
+      "description": "Below 200 the drift statistics are noise. Not measuring must never look like nothing wrong.",
+      "gridPos": {
+        "x": 5,
+        "y": 1,
+        "w": 5,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-ddm501"
+      },
+      "targets": [
+        {
+          "expr": "ml_drift_window_size",
+          "legendFormat": "requests",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-ddm501"
+          },
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "area"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "green",
+                "value": 200
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Fairness gap",
+      "description": "Max selection-rate difference between groups. Aggregate drift can look fine while this moves.",
+      "gridPos": {
+        "x": 10,
+        "y": 1,
+        "w": 5,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-ddm501"
+      },
+      "targets": [
+        {
+          "expr": "ml_fairness_gap",
+          "legendFormat": "gap",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-ddm501"
+          },
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "area"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.05
+              },
+              {
+                "color": "red",
+                "value": 0.1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "title": "Input drift",
+      "gridPos": {
+        "x": 0,
+        "y": 6,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "PSI per feature",
+      "description": "Population Stability Index per monitored feature. The aggregate says something moved; this panel says what.",
+      "gridPos": {
+        "x": 0,
+        "y": 7,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-ddm501"
+      },
+      "targets": [
+        {
+          "expr": "ml_feature_drift_psi",
+          "legendFormat": "{{feature}}",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-ddm501"
+          }
+        }
+      ],
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "lineWidth": 2
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.1
+              },
+              {
+                "color": "red",
+                "value": 0.25
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "title": "What the model is saying",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Score distribution (p50 / p90 / p99)",
+      "description": "Output drift, observable today. The score distribution moves before any accuracy number can arrive.",
+      "gridPos": {
+        "x": 0,
+        "y": 17,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-ddm501"
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(ml_prediction_score_bucket[5m])) by (le))",
+          "legendFormat": "p50",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-ddm501"
+          }
+        },
+        {
+          "expr": "histogram_quantile(0.90, sum(rate(ml_prediction_score_bucket[5m])) by (le))",
+          "legendFormat": "p90",
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-ddm501"
+          }
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(ml_prediction_score_bucket[5m])) by (le))",
+          "legendFormat": "p99",
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-ddm501"
+          }
+        }
+      ],
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Decision mix",
+      "description": "The business-visible consequence of the scores. When this shifts, the volume of manual underwriting work shifts.",
+      "gridPos": {
+        "x": 12,
+        "y": 17,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-ddm501"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(ml_decisions_total[5m])) by (decision)",
+          "legendFormat": "{{decision}}",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-ddm501"
+          }
+        }
+      ],
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "title": "Fairness",
+      "gridPos": {
+        "x": 0,
+        "y": 25,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Selection rate by group",
+      "description": "Share of applicants in each group sent to review or decline. The rates say what is happening; the gap is what you alert on.",
+      "gridPos": {
+        "x": 0,
+        "y": 26,
+        "w": 14,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-ddm501"
+      },
+      "targets": [
+        {
+          "expr": "ml_selection_rate",
+          "legendFormat": "group {{group}}",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-ddm501"
+          }
+        }
+      ],
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Selection-rate gap between groups",
+      "description": "Max minus min selection rate across groups. Aggregate drift can look fine while this widens.",
+      "gridPos": {
+        "x": 14,
+        "y": 26,
+        "w": 10,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-ddm501"
+      },
+      "targets": [
+        {
+          "expr": "ml_fairness_gap",
+          "legendFormat": "fairness gap",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-ddm501"
+          }
+        }
+      ],
+      "options": {
+        "tooltip": {
+          "mode": "single"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "min": 0,
+          "custom": {
+            "lineWidth": 2
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.05
+              },
+              {
+                "color": "red",
+                "value": 0.1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "title": "Cost of explaining",
+      "gridPos": {
+        "x": 0,
+        "y": 34,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Explanation latency (p50 / p95 / p99)",
+      "description": "SHAP is far more expensive than a prediction. Measured separately so a slow /explain cannot hide inside prediction latency.",
+      "gridPos": {
+        "x": 0,
+        "y": 35,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-ddm501"
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(ml_explain_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p50",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-ddm501"
+          }
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(ml_explain_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95",
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-ddm501"
+          }
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(ml_explain_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p99",
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-ddm501"
+          }
+        }
+      ],
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "lineWidth": 2
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.5
+              },
+              {
+                "color": "red",
+                "value": 1.0
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Prediction errors by type",
+      "description": "Failures inside the model call, distinct from HTTP 5xx. Check the error_type label to see what is breaking.",
+      "gridPos": {
+        "x": 12,
+        "y": 35,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-ddm501"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(ml_prediction_errors_total[5m])) by (error_type)",
+          "legendFormat": "{{error_type}}",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-ddm501"
+          }
+        }
+      ],
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      }
+    }
+  ]
+}

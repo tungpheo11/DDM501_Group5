@@ -1,0 +1,15 @@
+{
+  "endpoint": "http://localhost:18020/api/v1/predict",
+  "requests": 500,
+  "errors": 0,
+  "client_ms": {
+    "mean": 13.7,
+    "p50": 12.56,
+    "p95": 20.59,
+    "p99": 29.49,
+    "max": 42.21
+  },
+  "server_model_ms_p95": 11.55,
+  "budget_p95_ms": 100.0,
+  "pass": true
+}

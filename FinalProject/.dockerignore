@@ -1,11 +1,57 @@
+# Build context is FinalProject/. The API image only needs requirements.txt,
+# src/, configs/ and models/ — everything else stays out of the context.
+
+# VCS, editors, OS
 .git
+.gitignore
+.github
+.idea
+.vscode
+**/.DS_Store
+
+# Secrets and local env files
+.env
+.env.*
+!.env.example
+secrets
+**/*.pem
+**/*.key
+
+# Python build/runtime caches
 .venv
-__pycache__
-*.pyc
-*.pyo
-*.pyd
+venv
+**/__pycache__
+**/*.py[cod]
+**/*.egg-info
+build
+dist
 .pytest_cache
+.mypy_cache
+.ruff_cache
 .coverage
+coverage.xml
 htmlcov
+
+# Data, reports and local service state (never baked into the image)
+data
+reports
+mlruns
+mlartifacts
 pg-data
 minio-data
+airflow-logs
+
+# Not needed at runtime
+docs
+notebooks
+tests
+simulations
+orchestration
+monitoring
+services
+scripts
+deploy
+Makefile
+uv.lock
+requirements-dev.txt
+*.md

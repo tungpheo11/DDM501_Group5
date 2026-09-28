@@ -1,0 +1,61 @@
+%% Component diagram of the Scoring API container (package credit_risk.serving)
+flowchart TB
+    client["<b>Loan Origination System</b><br/><i>[External]</i>"]:::external
+    airflow["<b>Airflow model_retrain</b><br/><i>[Container]</i>"]:::container
+    prom["<b>Prometheus</b><br/><i>[Container]</i>"]:::container
+
+    subgraph apibox["Scoring API container  -  FastAPI app credit_risk.serving.app"]
+        mw["<b>RequestContextMiddleware</b><br/><i>serving.middleware</i><br/>X-Request-ID, JSON access log,<br/>latency + status metrics"]:::component
+        sec["<b>API-key guard</b><br/><i>serving.security</i><br/>X-API-Key so khớp constant-time<br/>401 thiếu key, 403 sai key"]:::component
+        rhealth["<b>health router</b><br/><i>routers.health</i><br/>/health/live, /health/ready<br/>public, không cần key"]:::component
+        err["<b>Error handlers</b><br/><i>serving.errors</i><br/>schema lỗi thống nhất:<br/>code, message, details, request_id"]:::component
+
+        rpred["<b>predict router</b><br/><i>routers.predict</i><br/>/api/v1/predict, /predict/batch (≤ 500),<br/>/explain"]:::component
+        rmodel["<b>model router</b><br/><i>routers.model</i><br/>GET /api/v1/model/info<br/>POST /api/v1/model/reload"]:::component
+        metricsep["<b>/metrics endpoint</b><br/><i>serving.app</i><br/>Prometheus text format"]:::component
+
+        schemas["<b>Request schemas</b><br/><i>serving.schemas (Pydantic v2)</i><br/>23 feature, domain + range check<br/>→ 422 VALIDATION_ERROR"]:::component
+        scoring["<b>ScoringService</b><br/><i>serving.scoring</i><br/>một lần predict_proba vectorized,<br/>ghi inference log + business metrics"]:::component
+        loader["<b>ModelManager</b><br/><i>serving.model_loader</i><br/>MLflow @champion → local artifact<br/>(degraded) → none; swap atomic"]:::component
+        ready["<b>ReadinessProbe</b><br/><i>serving.readiness</i><br/>ready / degraded / not_ready,<br/>cache kết quả probe"]:::component
+
+        decision["<b>Decision engine</b><br/><i>serving.decision_engine</i><br/>PD &lt; 0.30 APPROVE, &lt; 0.60 REVIEW,<br/>còn lại DECLINE; score, tier, limit"]:::component
+        rai["<b>Explainability + guardrails</b><br/><i>responsible_ai.explainability</i><br/>SHAP permutation, fallback<br/>reference substitution"]:::component
+        db["<b>Inference log repository</b><br/><i>serving.database (SQLAlchemy)</i><br/>DB down → vẫn phục vụ,<br/>không ghi log"]:::component
+        metrics["<b>Metrics registry</b><br/><i>monitoring.metrics</i><br/>Counter, Histogram, Gauge,<br/>rolling feature stats"]:::component
+    end
+
+    mlflow["<b>MLflow Registry</b><br/><i>[Container]</i><br/>models:/credit-risk-model@champion"]:::container
+    artifact[("<b>models/credit_model_v1.joblib</b><br/><i>[local fallback artifact]</i>")]:::store
+    pg[("<b>PostgreSQL</b><br/><i>[table inference_logs]</i>")]:::store
+
+    client -- "JSON + X-API-Key" --> mw
+    airflow -- "POST /model/reload" --> mw
+    prom -- "GET /metrics" --> metricsep
+    mw --> sec
+    mw --> rhealth
+    sec --> rpred
+    sec --> rmodel
+    rpred -. "ApiError" .-> err
+    rpred --> schemas
+    rpred --> scoring
+    rpred -- "require_model" --> loader
+    rmodel --> loader
+    rhealth --> ready
+    ready --> loader
+    ready --> db
+    scoring --> decision
+    scoring --> rai
+    scoring --> db
+    scoring --> metrics
+    metricsep --> metrics
+    schemas -. "RequestValidationError" .-> err
+    loader -- "load alias" --> mlflow
+    loader -. "fallback khi MLflow down" .-> artifact
+    db -- "SQL" --> pg
+
+    classDef component fill:#85BBF0,stroke:#5D82A8,color:#0B2545,stroke-width:2px
+    classDef container fill:#438DD5,stroke:#2E6295,color:#FFFFFF,stroke-width:2px
+    classDef store fill:#2F6FB0,stroke:#1D4F82,color:#FFFFFF,stroke-width:2px
+    classDef external fill:#8C8C8C,stroke:#6B6B6B,color:#FFFFFF,stroke-width:2px
+    style apibox fill:#F7F9FC,stroke:#438DD5,stroke-width:2px,stroke-dasharray:8 4,color:#0B2545

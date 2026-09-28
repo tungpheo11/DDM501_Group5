@@ -1,0 +1,44 @@
+{
+  "GET /health/ready": {
+    "requests": 60,
+    "failures": 0,
+    "rps": 1.36,
+    "p50_ms": 2.0,
+    "p95_ms": 9.0,
+    "p99_ms": 18.0,
+    "max_ms": 17.7
+  },
+  "POST /api/v1/predict": {
+    "requests": 1151,
+    "failures": 0,
+    "rps": 26.09,
+    "p50_ms": 17.0,
+    "p95_ms": 53.0,
+    "p99_ms": 150.0,
+    "max_ms": 437.3
+  },
+  "POST /api/v1/predict/batch (10)": {
+    "requests": 110,
+    "failures": 0,
+    "rps": 2.49,
+    "p50_ms": 19.0,
+    "p95_ms": 52.0,
+    "p99_ms": 160.0,
+    "max_ms": 414.9
+  },
+  "Aggregated": {
+    "requests": 1321,
+    "failures": 0,
+    "rps": 29.95,
+    "p50_ms": 17.0,
+    "p95_ms": 50.0,
+    "p99_ms": 150.0,
+    "max_ms": 437.3
+  },
+  "config": {
+    "users": 10,
+    "spawn_rate": 10,
+    "duration": "45s",
+    "api_url": "http://localhost:18020"
+  }
+}

@@ -1,183 +1,185 @@
-name: Final Project CI/CD Pipeline
+# =============================================================================
+# Final Project (Credit Default Risk Scoring) — Continuous Integration
+#
+#   lint ──────────┐
+#   test ──────────┼──> ci-result   (single required status check)
+#   image ─────────┘    build -> Trivy (fail on CRITICAL) -> compose smoke
+#
+# Every step calls a FinalProject/Makefile target, so `make ci` reproduces this
+# pipeline locally. Also reused by final-project-cd.yml as the release gate.
+# Third-party actions are pinned to full commit SHAs (tag in the trailing comment).
+# =============================================================================
+
+name: Final Project CI
 
 on:
   push:
+    branches: ["**"]
     paths:
-      - 'FinalProject/**'
-      - '.github/workflows/final-project-ci.yml'
+      - "FinalProject/**"
+      - ".github/workflows/final-project-ci.yml"
   pull_request:
     paths:
-      - 'FinalProject/**'
-      - '.github/workflows/final-project-ci.yml'
+      - "FinalProject/**"
+      - ".github/workflows/final-project-ci.yml"
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: final-project-ci-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+env:
+  PYTHON_VERSION: "3.11"
+  UV_VERSION: "0.12.19"
+  FORCE_COLOR: "1"
+
+defaults:
+  run:
+    shell: bash
+    working-directory: FinalProject
 
 jobs:
-  # ============================================================================
-  # Stage 1: Code Quality, Comprehensive Test Suite (>80%), and Fairness Audit
-  # ============================================================================
-  lint-and-test:
-    name: Code Quality, Tests & Responsible AI Gate
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: FinalProject
-
+  lint:
+    name: Lint & type check (ruff, black, mypy)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install Astral uv
-        uses: astral-sh/setup-uv@v3
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          version: "latest"
+          persist-credentials: false
+
+      - name: Set up uv + Python (cached)
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
+          cache-dependency-glob: FinalProject/uv.lock
 
-      - name: Set up Python 3.11
-        run: uv python install 3.11
+      - name: Install locked dependencies
+        run: uv sync --frozen --dev
 
-      - name: Install dependencies
-        run: uv sync --dev
+      - name: ruff + black --check + mypy
+        run: make lint
 
-      - name: Code Style & Lint Check (flake8)
-        run: uv run flake8 src app tests scripts simulations
-
-      - name: Run Test Suite & Coverage Gate (pytest >= 80% coverage)
-        run: uv run pytest -v tests/ --cov=src --cov=app --cov-report=term-missing --cov-report=xml --cov-fail-under=80
-
-      - name: Run Responsible AI Fairness & Explainability Audit
-        run: uv run python scripts/run_fairness_audit.py
-
-      - name: Upload Test & Coverage Artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-and-coverage-reports
-          path: |
-            FinalProject/coverage.xml
-            FinalProject/reports/fairness_audit.json
-
-  # ============================================================================
-  # Stage 2: Multi-Container Docker Build Validation
-  # ============================================================================
-  docker-build:
-    name: Docker Image Build Validation
-    needs: [lint-and-test]
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: FinalProject
-
+  test:
+    name: Tests (unit, integration, data quality, model validation) + coverage >= 80%
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up uv + Python (cached)
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: FinalProject/uv.lock
+
+      - name: Install locked dependencies
+        run: uv sync --frozen --dev
+
+      - name: Test suites with combined coverage gate
+        run: make test-ci COV_MIN=80
+        env:
+          MPLBACKEND: Agg
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          if [[ -f .coverage ]]; then
+            {
+              echo "### Coverage (gate >= 80%)"
+              .venv/bin/coverage report --format=markdown --skip-covered
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload coverage + JUnit reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: final-project-coverage
+          path: FinalProject/reports/coverage/
+          if-no-files-found: warn
+          retention-days: 14
+
+  image:
+    name: Build image, Trivy scan & compose smoke test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      API_IMAGE: credit-risk-api:ci-${{ github.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
-      - name: Build API Docker image
-        uses: docker/build-push-action@v5
+      - name: Build multi-stage API image (GHA layer cache)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: FinalProject
-          file: FinalProject/Dockerfile
-          push: false
+          file: FinalProject/deploy/docker/Dockerfile.api
+          platforms: linux/amd64
           load: true
-          tags: credit-risk-api:ci-test
+          push: false
+          provenance: false
+          tags: ${{ env.API_IMAGE }}
+          cache-from: type=gha,scope=final-project-api
+          cache-to: type=gha,mode=max,scope=final-project-api
 
-      - name: Export Docker Image for Smoke Test
-        run: docker save credit-risk-api:ci-test -o /tmp/credit-risk-api.tar
+      - name: Image size
+        run: docker image ls "${API_IMAGE%%:*}" --format '| {{.Repository}}:{{.Tag}} | {{.Size}} |' >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload Docker Image Artifact
-        uses: actions/upload-artifact@v4
+      - name: Cache Trivy vulnerability DB
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          name: docker-image-artifact
-          path: /tmp/credit-risk-api.tar
-          retention-days: 1
+          path: ~/.cache/trivy
+          key: trivy-db-${{ github.run_id }}
+          restore-keys: trivy-db-
 
-  # ============================================================================
-  # Stage 3: Live Smoke Test Deployment & API Validation
-  # ============================================================================
-  smoke-test-deployment:
-    name: Deployment Smoke Test & Endpoint Verification
-    needs: [docker-build]
-    runs-on: ubuntu-latest
+      - name: Trivy scan (fails on CRITICAL)
+        run: make scan API_IMAGE="$API_IMAGE"
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Compose smoke test (up -> health -> predict -> down)
+        run: make smoke API_IMAGE="$API_IMAGE" ENV_FILE=.env.example SMOKE_TIMEOUT=300
 
-      - name: Download Docker Image Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: docker-image-artifact
-          path: /tmp
-
-      - name: Load Docker Image
-        run: docker load -i /tmp/credit-risk-api.tar
-
-      - name: Launch Model Serving Container
-        run: |
-          docker run -d --name test-api \
-            -p 8000:8000 \
-            -e MODEL_NAME=credit_model_v1.joblib \
-            -e DATABASE_URL="" \
-            credit-risk-api:ci-test
-          sleep 5
-
-      - name: Verify Health Endpoint (/health)
-        run: |
-          for i in {1..15}; do
-            if curl -s -f http://localhost:8000/health | grep -q '"status":"healthy"'; then
-              echo "✓ API Healthcheck passed!"
-              exit 0
-            fi
-            echo "Waiting for API to become healthy... ($i/15)"
-            sleep 2
-          done
-          echo "❌ API failed healthcheck timeout"
-          docker logs test-api
-          exit 1
-
-      - name: Smoke Test Credit Inference (/predict)
-        run: |
-          RESPONSE=$(curl -s -X POST http://localhost:8000/predict \
-            -H "Content-Type: application/json" \
-            -d '{
-              "LIMIT_BAL": 200000.0,
-              "SEX": 1,
-              "EDUCATION": 2,
-              "MARRIAGE": 1,
-              "AGE": 35,
-              "PAY_0": 0,
-              "PAY_2": 0,
-              "PAY_3": 0,
-              "PAY_4": 0,
-              "PAY_5": 0,
-              "PAY_6": 0,
-              "BILL_AMT1": 15000.0,
-              "BILL_AMT2": 14000.0,
-              "BILL_AMT3": 13000.0,
-              "BILL_AMT4": 12000.0,
-              "BILL_AMT5": 11000.0,
-              "BILL_AMT6": 10000.0,
-              "PAY_AMT1": 2000.0,
-              "PAY_AMT2": 2000.0,
-              "PAY_AMT3": 2000.0,
-              "PAY_AMT4": 2000.0,
-              "PAY_AMT5": 2000.0,
-              "PAY_AMT6": 2000.0
-            }')
-          echo "Inference Response: $RESPONSE"
-          echo "$RESPONSE" | grep -q '"risk_decision"' || (echo "Missing risk_decision" && exit 1)
-          echo "$RESPONSE" | grep -q '"default_probability"' || (echo "Missing default_probability" && exit 1)
-          echo "✓ Live inference endpoint verified successfully!"
-
-      - name: Smoke Test Telemetry Endpoint (/metrics)
-        run: |
-          METRICS=$(curl -s http://localhost:8000/metrics)
-          echo "$METRICS" | grep -q 'credit_prediction_requests_total' || (echo "Missing prediction metric" && exit 1)
-          echo "✓ Prometheus metrics endpoint verified!"
-
-      - name: Clean Container Teardown
+      - name: Upload Trivy report
         if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: final-project-security
+          path: FinalProject/reports/security/
+          if-no-files-found: warn
+          retention-days: 14
+
+  ci-result:
+    name: CI result
+    if: always()
+    needs: [lint, test, image]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: All required jobs passed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
         run: |
-          docker stop test-api || true
-          docker rm test-api || true
+          echo "Job results: $RESULTS"
+          for result in $RESULTS; do
+            [[ "$result" == "success" ]] || { echo "::error::CI failed ($RESULTS)"; exit 1; }
+          done

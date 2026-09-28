@@ -1,0 +1,38 @@
+# The git root is the parent DDM501_Group5 repository, so hooks are scoped to
+# FinalProject/ and the config must be passed explicitly:
+#   pre-commit install --config FinalProject/.pre-commit-config.yaml   (run from DDM501_Group5/)
+#   pre-commit run --all-files --config FinalProject/.pre-commit-config.yaml
+files: ^FinalProject/
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: check-added-large-files
+        args: [--maxkb=5000]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff
+        args: [--fix]
+
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy (FinalProject)
+        entry: bash -c 'cd FinalProject && .venv/bin/mypy'
+        language: system
+        pass_filenames: false
+        types: [python]

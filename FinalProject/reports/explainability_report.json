@@ -1,0 +1,365 @@
+{
+  "generated_at": "2026-09-28T09:53:21+00:00",
+  "model": {
+    "candidate": "logistic_regression",
+    "params": {
+      "C": 0.008433492996539142
+    },
+    "decision_threshold": 0.5,
+    "review_threshold": 0.3,
+    "decline_threshold": 0.6,
+    "artifact": "credit_model_v1.joblib",
+    "artifact_sha256": "9be37814cad4eab6481d0ada97e2aff07cbd13bfcd07c5d2d90b7e2e4e5cec68",
+    "registered_version": "1"
+  },
+  "method": {
+    "shap": "PermutationExplainer on P(default) of the full pipeline, 100 background training applicants, max_evals=500",
+    "lime": "LimeTabularExplainer, 5000 samples, discretized continuous features",
+    "serving": "PermutationExplainer against the reference applicant, max_evals=240"
+  },
+  "sample_size": 500,
+  "background_size": 100,
+  "global_importance": [
+    {
+      "feature": "PAY_0",
+      "mean_abs_shap": 0.097349,
+      "share": 0.175937
+    },
+    {
+      "feature": "PAY_AMT1",
+      "mean_abs_shap": 0.093712,
+      "share": 0.169364
+    },
+    {
+      "feature": "LIMIT_BAL",
+      "mean_abs_shap": 0.056255,
+      "share": 0.101668
+    },
+    {
+      "feature": "BILL_AMT2",
+      "mean_abs_shap": 0.046731,
+      "share": 0.084455
+    },
+    {
+      "feature": "BILL_AMT5",
+      "mean_abs_shap": 0.035543,
+      "share": 0.064235
+    },
+    {
+      "feature": "BILL_AMT6",
+      "mean_abs_shap": 0.034398,
+      "share": 0.062166
+    },
+    {
+      "feature": "AGE",
+      "mean_abs_shap": 0.027454,
+      "share": 0.049617
+    },
+    {
+      "feature": "PAY_2",
+      "mean_abs_shap": 0.025697,
+      "share": 0.046441
+    },
+    {
+      "feature": "PAY_3",
+      "mean_abs_shap": 0.018492,
+      "share": 0.03342
+    },
+    {
+      "feature": "BILL_AMT4",
+      "mean_abs_shap": 0.015831,
+      "share": 0.028611
+    },
+    {
+      "feature": "PAY_AMT4",
+      "mean_abs_shap": 0.012817,
+      "share": 0.023163
+    },
+    {
+      "feature": "SEX",
+      "mean_abs_shap": 0.011133,
+      "share": 0.02012
+    },
+    {
+      "feature": "EDUCATION",
+      "mean_abs_shap": 0.0103,
+      "share": 0.018615
+    },
+    {
+      "feature": "PAY_AMT6",
+      "mean_abs_shap": 0.009135,
+      "share": 0.01651
+    },
+    {
+      "feature": "PAY_4",
+      "mean_abs_shap": 0.00878,
+      "share": 0.015868
+    },
+    {
+      "feature": "PAY_5",
+      "mean_abs_shap": 0.008742,
+      "share": 0.015798
+    },
+    {
+      "feature": "PAY_AMT3",
+      "mean_abs_shap": 0.008677,
+      "share": 0.015681
+    },
+    {
+      "feature": "PAY_AMT2",
+      "mean_abs_shap": 0.007938,
+      "share": 0.014346
+    },
+    {
+      "feature": "PAY_6",
+      "mean_abs_shap": 0.007795,
+      "share": 0.014089
+    },
+    {
+      "feature": "PAY_AMT5",
+      "mean_abs_shap": 0.007161,
+      "share": 0.012943
+    },
+    {
+      "feature": "BILL_AMT1",
+      "mean_abs_shap": 0.005837,
+      "share": 0.010548
+    },
+    {
+      "feature": "BILL_AMT3",
+      "mean_abs_shap": 0.003206,
+      "share": 0.005795
+    },
+    {
+      "feature": "MARRIAGE",
+      "mean_abs_shap": 0.000338,
+      "share": 0.00061
+    }
+  ],
+  "local": [
+    {
+      "decision": "APPROVE",
+      "evaluation_row": 7521,
+      "probability": 0.244906,
+      "base_value": 0.438679,
+      "shap_top": [
+        {
+          "feature": "PAY_0",
+          "value": -1.0,
+          "contribution": -0.097327
+        },
+        {
+          "feature": "LIMIT_BAL",
+          "value": 40000.0,
+          "contribution": 0.08944
+        },
+        {
+          "feature": "BILL_AMT5",
+          "value": 10544.0,
+          "contribution": -0.061126
+        },
+        {
+          "feature": "PAY_3",
+          "value": -2.0,
+          "contribution": -0.050025
+        },
+        {
+          "feature": "BILL_AMT6",
+          "value": 11126.0,
+          "contribution": -0.048018
+        }
+      ],
+      "lime_top": [
+        {
+          "feature": "LIMIT_BAL",
+          "rule": "LIMIT_BAL <= 60000.00",
+          "weight": 0.197083
+        },
+        {
+          "feature": "PAY_0",
+          "rule": "PAY_0 <= -1.00",
+          "weight": -0.176221
+        },
+        {
+          "feature": "PAY_AMT1",
+          "rule": "2952.50 < PAY_AMT1 <= 10836.50",
+          "weight": 0.105599
+        },
+        {
+          "feature": "BILL_AMT5",
+          "rule": "BILL_AMT5 <= 10566.25",
+          "weight": -0.057808
+        },
+        {
+          "feature": "PAY_2",
+          "rule": "PAY_2 <= -1.00",
+          "weight": -0.055315
+        }
+      ],
+      "agreement": {
+        "k": 5,
+        "overlap_at_k": 0.6,
+        "sign_agreement": 1.0
+      },
+      "risk_factors": [
+        "LIMIT_BAL = 40,000 NTD (credit limit) increases default risk by +8.9 pp",
+        "PAY_AMT1 = 7,502 NTD (amount paid 1 month(s) ago) increases default risk by +3.8 pp",
+        "PAY_AMT3 = 0 NTD (amount paid 3 month(s) ago) increases default risk by +3.8 pp"
+      ],
+      "serving_additivity_error": 0.0
+    },
+    {
+      "decision": "REVIEW",
+      "evaluation_row": 6578,
+      "probability": 0.418424,
+      "base_value": 0.438679,
+      "shap_top": [
+        {
+          "feature": "AGE",
+          "value": 26.0,
+          "contribution": 0.042272
+        },
+        {
+          "feature": "PAY_0",
+          "value": 0.0,
+          "contribution": 0.030408
+        },
+        {
+          "feature": "LIMIT_BAL",
+          "value": 80000.0,
+          "contribution": 0.019128
+        },
+        {
+          "feature": "BILL_AMT6",
+          "value": 16276.0,
+          "contribution": -0.017868
+        },
+        {
+          "feature": "EDUCATION",
+          "value": 1.0,
+          "contribution": -0.017095
+        }
+      ],
+      "lime_top": [
+        {
+          "feature": "BILL_AMT6",
+          "rule": "10603.00 < BILL_AMT6 <= 24982.00",
+          "weight": -0.044826
+        },
+        {
+          "feature": "BILL_AMT5",
+          "rule": "10566.25 < BILL_AMT5 <= 25512.50",
+          "weight": -0.040483
+        },
+        {
+          "feature": "AGE",
+          "rule": "AGE <= 33.00",
+          "weight": 0.034304
+        },
+        {
+          "feature": "PAY_5",
+          "rule": "PAY_5 <= -1.00",
+          "weight": -0.022848
+        },
+        {
+          "feature": "BILL_AMT4",
+          "rule": "11148.00 < BILL_AMT4 <= 26048.00",
+          "weight": -0.022369
+        }
+      ],
+      "agreement": {
+        "k": 5,
+        "overlap_at_k": 0.4,
+        "sign_agreement": 1.0
+      },
+      "risk_factors": [
+        "AGE = 26 (age) increases default risk by +4.2 pp",
+        "PAY_0 = 0 (repayment status last month) increases default risk by +3.0 pp",
+        "LIMIT_BAL = 80,000 NTD (credit limit) increases default risk by +1.9 pp"
+      ],
+      "serving_additivity_error": 0.0
+    },
+    {
+      "decision": "DECLINE",
+      "evaluation_row": 560,
+      "probability": 0.784444,
+      "base_value": 0.438679,
+      "shap_top": [
+        {
+          "feature": "PAY_0",
+          "value": 2.0,
+          "contribution": 0.291046
+        },
+        {
+          "feature": "LIMIT_BAL",
+          "value": 340000.0,
+          "contribution": -0.156797
+        },
+        {
+          "feature": "BILL_AMT6",
+          "value": 239591.0,
+          "contribution": 0.140961
+        },
+        {
+          "feature": "BILL_AMT2",
+          "value": 202353.0,
+          "contribution": 0.120894
+        },
+        {
+          "feature": "PAY_AMT1",
+          "value": 27462.0,
+          "contribution": -0.075137
+        }
+      ],
+      "lime_top": [
+        {
+          "feature": "PAY_AMT1",
+          "rule": "PAY_AMT1 > 26336.00",
+          "weight": -0.277537
+        },
+        {
+          "feature": "PAY_0",
+          "rule": "PAY_0 > 0.00",
+          "weight": 0.214455
+        },
+        {
+          "feature": "LIMIT_BAL",
+          "rule": "LIMIT_BAL > 160000.00",
+          "weight": -0.17171
+        },
+        {
+          "feature": "BILL_AMT6",
+          "rule": "BILL_AMT6 > 49670.00",
+          "weight": 0.131106
+        },
+        {
+          "feature": "BILL_AMT2",
+          "rule": "BILL_AMT2 > 54455.25",
+          "weight": 0.100432
+        }
+      ],
+      "agreement": {
+        "k": 5,
+        "overlap_at_k": 1.0,
+        "sign_agreement": 1.0
+      },
+      "risk_factors": [
+        "PAY_0 = 2 (repayment status last month) increases default risk by +29.1 pp",
+        "BILL_AMT6 = 239,591 NTD (bill amount 6 month(s) ago) increases default risk by +14.1 pp",
+        "BILL_AMT2 = 202,353 NTD (bill amount 2 month(s) ago) increases default risk by +12.1 pp"
+      ],
+      "serving_additivity_error": 0.0
+    }
+  ],
+  "mean_overlap_at_k": 0.6667,
+  "figures": {
+    "shap_summary": "reports/figures/rai_shap_summary.png",
+    "shap_bar": "reports/figures/rai_shap_bar.png",
+    "shap_waterfall_approve": "reports/figures/rai_shap_waterfall_approve.png",
+    "lime_approve": "reports/figures/rai_lime_approve.png",
+    "shap_waterfall_review": "reports/figures/rai_shap_waterfall_review.png",
+    "lime_review": "reports/figures/rai_lime_review.png",
+    "shap_waterfall_decline": "reports/figures/rai_shap_waterfall_decline.png",
+    "lime_decline": "reports/figures/rai_lime_decline.png"
+  }
+}

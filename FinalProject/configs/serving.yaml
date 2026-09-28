@@ -1,0 +1,69 @@
+# Serving configuration for the FastAPI scoring service.
+
+thresholds:
+  review: 0.30    # probability >= review  -> REVIEW
+  decline: 0.60   # probability >= decline -> DECLINE
+
+# Expected loss = PD x exposure x LGD (metric credit_expected_loss_ntd_total).
+# 0.45 is the Basel II foundation-IRB LGD for senior unsecured exposures.
+business:
+  loss_given_default: 0.45
+
+# Number of most recent requests used for rolling Prometheus gauges.
+rolling_window: 200
+
+# Local artifact used when the MLflow registry is unreachable.
+fallback_model_artifact: credit_model_v1.joblib
+
+# TCP probe timeout before attempting to load from the MLflow registry.
+mlflow_probe_timeout_seconds: 0.5
+
+# Dependency probes behind GET /health/ready are cached for this many seconds.
+readiness_cache_seconds: 10
+
+# Upper bound on applicants per POST /api/v1/predict/batch call (backpressure).
+batch_max_size: 500
+
+# API-key auth for /api/v1/*. Keys come from the API_KEYS env var (comma-separated,
+# several keys allow zero-downtime rotation). API_AUTH_ENABLED=false disables auth
+# for local experiments only. With auth enabled and no key configured, every
+# protected request is rejected (fail closed).
+auth:
+  enabled: true
+
+explain:
+  top_k: 5
+  # shap: permutation SHAP against reference_profile (contributions sum to
+  #       probability - reference_probability); falls back to reference_substitution
+  #       if SHAP fails. reference_substitution: one-feature-at-a-time substitution.
+  method: shap
+  # Model evaluations per request (>= 2 * n_features + 1). 240 ~ 5 antithetic
+  # permutations: ~40 ms per request, attributions within ~0.01 of 500 evals.
+  shap_max_evals: 240
+  seed: 42
+  # Median applicant of data/reference/train_baseline.csv: the SHAP background and
+  # the substitution reference of POST /api/v1/explain.
+  reference_profile:
+    LIMIT_BAL: 100000.0
+    SEX: 2
+    EDUCATION: 2
+    MARRIAGE: 2
+    AGE: 37
+    PAY_0: 0
+    PAY_2: 0
+    PAY_3: 0
+    PAY_4: 0
+    PAY_5: 0
+    PAY_6: 0
+    BILL_AMT1: 28063.5
+    BILL_AMT2: 27383.5
+    BILL_AMT3: 26895.0
+    BILL_AMT4: 26105.0
+    BILL_AMT5: 25580.5
+    BILL_AMT6: 25088.5
+    PAY_AMT1: 10823.0
+    PAY_AMT2: 11047.0
+    PAY_AMT3: 10990.0
+    PAY_AMT4: 10886.0
+    PAY_AMT5: 10706.5
+    PAY_AMT6: 10806.5

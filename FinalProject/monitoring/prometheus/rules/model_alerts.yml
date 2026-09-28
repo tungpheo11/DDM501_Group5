@@ -1,0 +1,64 @@
+# Model lifecycle alerts: served model state, prediction distribution and the
+# Airflow retraining loop. Tested by monitoring/prometheus/tests/alerts_test.yml.
+
+groups:
+  - name: credit-risk-model
+    rules:
+      - alert: ModelNotLoaded
+        expr: credit_model_loaded{job="credit-risk-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: model
+        annotations:
+          summary: "No model is loaded in the scoring API"
+          description: "Neither the MLflow @champion nor the local fallback artifact could be loaded; /api/v1/predict returns 503."
+          runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#modelnotloaded"
+          dashboard: "http://localhost:13000/d/credit-ml-model"
+
+      - alert: ModelServedFromFallback
+        expr: credit_model_degraded{job="credit-risk-api"} == 1 and credit_model_loaded{job="credit-risk-api"} == 1
+        for: 5m
+        labels:
+          severity: warning
+          component: model
+        annotations:
+          summary: "API is serving the local fallback model instead of the registry champion"
+          description: "The MLflow registry was unreachable at the last (re)load; predictions come from the baked-in artifact."
+          runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#modelservedfromfallback"
+          dashboard: "http://localhost:13000/d/credit-ml-model"
+
+      - alert: PredictionDistributionShift
+        expr: credit_drift_prediction_psi{job="drift-monitor"} >= 0.25 and credit_drift_current_samples{job="drift-monitor"} >= 50
+        for: 2m
+        labels:
+          severity: warning
+          component: model
+        annotations:
+          summary: "Predicted default probabilities shifted (PSI {{ $value | printf \"%.2f\" }})"
+          description: "PSI between the champion's scores on the reference window and the scores of the latest inference logs is >= 0.25."
+          runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#predictiondistributionshift"
+          dashboard: "http://localhost:13000/d/credit-ml-model"
+
+      - alert: RetrainFailed
+        expr: credit_retrain_last_run_failed{job="airflow"} == 1
+        labels:
+          severity: critical
+          component: orchestration
+        annotations:
+          summary: "The last model_retrain DAG run failed"
+          description: "Training, the quality gate, promotion or the API reload failed. The previous @champion keeps serving."
+          runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#retrainfailed"
+          dashboard: "http://localhost:18080/dags/model_retrain/grid"
+
+      - alert: AirflowDagImportErrors
+        expr: airflow_dag_import_errors{job="airflow"} > 0
+        for: 5m
+        labels:
+          severity: warning
+          component: orchestration
+        annotations:
+          summary: "{{ $value }} Airflow DAG file(s) fail to import"
+          description: "A DAG in orchestration/airflow/dags cannot be parsed; its schedule is not running."
+          runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#airflowdagimporterrors"
+          dashboard: "http://localhost:18080/home"

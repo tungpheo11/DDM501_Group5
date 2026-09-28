@@ -1,0 +1,9 @@
+{
+  "candidate": "logistic_regression",
+  "params": {
+    "C": 0.008433492996539142
+  },
+  "decision_threshold": 0.5,
+  "training_session": "20260928T092715Z",
+  "registered_version": "1"
+}

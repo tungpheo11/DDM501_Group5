@@ -1,0 +1,42 @@
+# Serving SLO alerts. Windows/`for` are sized so a demo can fire and resolve an
+# alert within a few minutes; production values are discussed in
+# docs/runbooks/alerts.md. Tested by monitoring/prometheus/tests/alerts_test.yml.
+
+groups:
+  - name: credit-risk-api
+    rules:
+      - alert: APIDown
+        expr: up{job="credit-risk-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "Scoring API is down ({{ $labels.instance }})"
+          description: "Prometheus has not been able to scrape the scoring API for more than 1 minute. Credit applications cannot be scored."
+          runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#apidown"
+          dashboard: "http://localhost:13000/d/credit-infra-sla"
+
+      - alert: HighErrorRate
+        expr: credit:api_error_ratio:rate2m > 0.05 and credit:api_requests:rate2m > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "API 5xx error ratio is {{ $value | humanizePercentage }}"
+          description: "More than 5% of /api/v1/* requests returned HTTP 5xx over the last 2 minutes (SLO: 99% success)."
+          runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#higherrorrate"
+          dashboard: "http://localhost:13000/d/credit-infra-sla"
+
+      - alert: HighLatencyP95
+        expr: credit:predict_latency_seconds:p95_2m > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "POST /api/v1/predict p95 latency is {{ $value | humanizeDuration }}"
+          description: "p95 latency of single predictions stayed above the 100 ms SLO for 2 minutes."
+          runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#highlatencyp95"
+          dashboard: "http://localhost:13000/d/credit-infra-sla"
