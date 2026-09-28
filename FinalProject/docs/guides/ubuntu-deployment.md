@@ -137,9 +137,9 @@ sudo -u deploy DEPLOY_ROOT=/opt/credit-risk bash /opt/credit-risk/current/deploy
 ```
 
 `deploy` kiểm tra tag/image, ghi `.image`, symlink `.env`, lưu release đang chạy vào `previous_release`, chạy
-`docker compose config` → `pull --policy missing` → `up -d` (project `credit-risk-mlops`, volume giữ nguyên), trỏ
-`current` sang release mới và giữ 5 release gần nhất. Lần đầu build thêm image drift monitor + Airflow từ bundle
-(~10–15 phút). `model-bootstrap` tự đăng ký `models/credit_model_v1.joblib` làm `@champion` khi registry trống.
+`docker compose config` → `pull --policy missing --ignore-buildable` → `up -d --build` (project `credit-risk-mlops`,
+volume giữ nguyên), trỏ `current` sang release mới và giữ 5 release gần nhất. Image drift monitor + Airflow được build
+lại từ bundle ở mỗi lần deploy/rollback (lần đầu ~10–15 phút, các lần sau dùng cache layer nên nhanh hơn). `model-bootstrap` tự đăng ký `models/credit_model_v1.joblib` làm `@champion` khi registry trống.
 
 Kết quả mong đợi của `smoke`: `/health/live` 200, `/health/ready` `ready`/`degraded`, `POST /api/v1/predict` 200 có
 `risk_decision`.

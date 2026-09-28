@@ -77,8 +77,8 @@ Không commit giá trị thật. Tất cả cấu hình trong **Settings → Env
 | `DEPLOY_SSH_KEY` | Environment secret | ✔ | Private key OpenSSH (ed25519) của user deploy |
 | `DEPLOY_SSH_KNOWN_HOSTS` | Environment secret | ✔ | Output `ssh-keyscan -t ed25519 <host>` (đã đối chiếu fingerprint) |
 | `GHCR_PULL_TOKEN` | Environment secret | — | PAT (fine-grained, `read:packages`) nếu muốn server pull image ngoài phạm vi job; mặc định dùng `GITHUB_TOKEN` của run |
-| `TELEGRAM_BOT_TOKEN` | Repository/environment secret | — | Bot token (BotFather) để báo kết quả release; bỏ trống → bỏ qua bước notify |
-| `TELEGRAM_CHAT_ID` | Repository/environment secret | — | Chat/group nhận thông báo |
+| `TELEGRAM_BOT_TOKEN` | Repository secret | — | Bot token (BotFather) để báo kết quả release; bỏ trống → bỏ qua bước notify. Job `notify` không gắn environment nên **không** đọc được environment secret |
+| `TELEGRAM_CHAT_ID` | Repository secret | — | Chat/group nhận thông báo |
 | `DEPLOY_SSH_PORT` | Environment variable | — | Cổng SSH, mặc định `22` |
 | `DEPLOY_ROOT` | Environment variable | — | Thư mục release trên server, mặc định `/opt/credit-risk` |
 | `PRODUCTION_URL` | Environment variable | — | URL public hiển thị trên trang Deployments |
@@ -112,7 +112,7 @@ sudo chmod 600 /opt/credit-risk/shared/.env
 sudo -u deploy sh -c 'mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys' < deploy_key.pub
 ```
 
-Trong `shared/.env`: đặt `COMPOSE_PROFILES` (vd. `core,monitoring,orchestration`) để chọn nhóm service chạy trên server; thay mọi giá trị `*-change-me`. `deploy.sh` luôn xếp lớp `docker-compose.yml` → `docker-compose.prod.yml` (port chỉ bind `127.0.0.1`, không mount source — chỉ `model-bootstrap` mount read-only `data/reference` từ bundle, `restart: always`) → `docker-compose.image.yml` (API/MLflow/model-bootstrap chạy image GHCR theo digest). Service có `build:` khác (drift monitor, Airflow) được build trên server từ bundle của release ở lần deploy đầu.
+Trong `shared/.env`: đặt `COMPOSE_PROFILES` (vd. `core,monitoring,orchestration`) để chọn nhóm service chạy trên server; thay mọi giá trị `*-change-me`. `deploy.sh` luôn xếp lớp `docker-compose.yml` → `docker-compose.prod.yml` (port chỉ bind `127.0.0.1`, không mount source — chỉ `model-bootstrap` mount read-only `data/reference` từ bundle, `restart: always`) → `docker-compose.image.yml` (API/MLflow/model-bootstrap chạy image GHCR theo digest). Service có `build:` khác (drift monitor, Airflow) không có image trên registry: `deploy.sh` bỏ qua chúng khi pull (`--ignore-buildable`) và build lại trên server từ bundle của release ở mỗi lần deploy/rollback (`up --build`), nên image luôn khớp source của release đang chạy.
 
 Giá trị cho `DEPLOY_SSH_KNOWN_HOSTS`: chạy `ssh-keyscan -t ed25519 <host>` từ máy tin cậy và đối chiếu với `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` trên server. Hướng dẫn cài đặt đầy đủ (Docker, UFW, Nginx/TLS, systemd, backup, upgrade/rollback) nằm trong [`guides/ubuntu-deployment.md`](guides/ubuntu-deployment.md); script tự động hoá ở [`deploy/ubuntu/`](../deploy/ubuntu/README.md).
 
@@ -124,7 +124,7 @@ git tag -a v1.2.0 -m "Release 1.2.0" && git push origin v1.2.0   # người ph�
 
 1. CD chạy lại toàn bộ CI trên tag → build + Trivy → push `ghcr.io/<owner>/credit-risk-api:{1.2.0,1.2,sha-<short>,latest}`.
 2. Job `deploy` chờ reviewer phê duyệt trên environment `production`.
-3. Runner đóng gói `git archive $GITHUB_SHA FinalProject` → `DEPLOY_ROOT/releases/v1.2.0/`, chạy `deploy.sh deploy v1.2.0 ghcr.io/…@sha256:…`: ghi `previous_release`, `docker compose up -d` (project `credit-risk-mlops`, volume giữ nguyên), trỏ `current` → release mới, giữ 5 release gần nhất.
+3. Runner đóng gói `git archive $GITHUB_SHA FinalProject` → `DEPLOY_ROOT/releases/v1.2.0/`, chạy `deploy.sh deploy v1.2.0 ghcr.io/…@sha256:…`: ghi `previous_release`, `docker compose pull --ignore-buildable` rồi `docker compose up -d --build` (project `credit-risk-mlops`, volume giữ nguyên), trỏ `current` → release mới, giữ 5 release gần nhất.
 4. `deploy.sh smoke` kiểm tra API qua `127.0.0.1:${API_PORT}`. Fail ở bước 3 hoặc 4 → `deploy.sh rollback` đưa stack về release trước (image digest cũ) và smoke test lại; job vẫn báo **failed**.
 5. Job `notify` gửi kết quả lên Telegram (nếu có secret).
 

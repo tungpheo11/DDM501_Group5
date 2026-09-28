@@ -25,7 +25,7 @@ ENV_FILE="${ENV_FILE:-$DEPLOY_ROOT/shared/.env}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/credit-risk}"
 BACKUP_KEEP="${BACKUP_KEEP:-7}"
 COMPOSE_PROJECT="${COMPOSE_PROJECT:-credit-risk-mlops}"
-MC_IMAGE="${MC_IMAGE:-quay.io/minio/mc:RELEASE.2024-11-21T17-21-54Z}"
+MC_IMAGE="${MC_IMAGE:-pgsty/mc:RELEASE.2026-08-04T00-00-00Z@sha256:b57234d21057175b6c3358509733128e35da330094aaacf37bf33348b11d1f92}"
 # Services that write to PostgreSQL or MinIO; stopped during a restore and restarted in
 # this order. MLflow must be healthy before the API starts, otherwise the API boots on
 # the local fallback artifact instead of the registry @champion.

@@ -110,8 +110,11 @@ services:
         limits: {cpus: "1.0", memory: 512M}
     logging: *default-logging
 
+  # MinIO no longer publishes images (quay.io/minio and docker.io/minio are gone);
+  # pgsty/* are community rebuilds of the same server/mc sources. Keep minio and
+  # minio-init on the same RELEASE tag and pinned by multi-arch index digest.
   minio:
-    image: quay.io/minio/minio:RELEASE.2024-12-18T13-15-44Z
+    image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z@sha256:b6bfe7239bfc83fb90d31612d9704d86039dd714f7904b3f1ad68f211e602372
     profiles: ["core"]
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -135,7 +138,7 @@ services:
     logging: *default-logging
 
   minio-init:
-    image: quay.io/minio/mc:RELEASE.2024-11-21T17-21-54Z
+    image: pgsty/mc:RELEASE.2026-08-04T00-00-00Z@sha256:b57234d21057175b6c3358509733128e35da330094aaacf37bf33348b11d1f92
     profiles: ["core"]
     depends_on:
       minio:

@@ -82,8 +82,10 @@ cmd_deploy() {
 
   compose "$release_dir" config --quiet
   # The API image is referenced by digest, so "missing" never serves a stale image.
-  compose "$release_dir" pull --quiet --policy missing
-  compose "$release_dir" up -d --remove-orphans
+  # drift-monitor/airflow images are built on the host under a fixed :local tag: they
+  # cannot be pulled, and must be rebuilt so they match this release's source.
+  compose "$release_dir" pull --quiet --policy missing --ignore-buildable
+  compose "$release_dir" up -d --build --remove-orphans
   ln -sfn "$release_dir" "$CURRENT_LINK"
   log "stack is up on $tag"
   prune_releases
@@ -108,7 +110,7 @@ cmd_rollback() {
   release_dir="$RELEASES_DIR/$target"
   [[ -f "$release_dir/.image" ]] || die "previous release $target is incomplete ($release_dir/.image missing)"
   log "rolling back from $(current_tag || true) to $target ($(cat "$release_dir/.image"))"
-  compose "$release_dir" up -d --remove-orphans
+  compose "$release_dir" up -d --build --remove-orphans
   ln -sfn "$release_dir" "$CURRENT_LINK"
   cmd_smoke
   # Only one level of history is kept: the rollback target is now live, so there is

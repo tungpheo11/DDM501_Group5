@@ -49,6 +49,7 @@ dev = [
     "nbclient>=0.10.0",
     "nbformat>=5.10.0",
     "ipykernel>=6.29.0",
+    "locust>=2.32.0",
 ]
 
 [tool.setuptools.packages.find]
@@ -128,7 +129,8 @@ disallow_untyped_defs = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src", "services", "simulations"]
-addopts = "-ra --strict-markers --import-mode=importlib"
+# e2e/load need the running stack: `make test-e2e`, `make test-load` (a later -m on the command line wins).
+addopts = "-ra --strict-markers --import-mode=importlib -m 'not e2e and not load'"
 markers = [
     "integration: exercises the FastAPI app or several modules together",
     "data_quality: validates datasets under data/",

@@ -20,7 +20,7 @@ SIM_MODE ?= staged_progression
 SIM_COUNT ?= 30
 API_URL ?= http://localhost:18020
 
-.PHONY: help setup lock lint format typecheck test test-unit test-integration test-cov \
+.PHONY: help setup lock lint format typecheck test test-unit test-integration test-e2e test-load test-cov \
         data manifest validate train retrain registry rollback mlflow-ui drift up down logs ps simulate evidence clean
 
 help: ## Show this help
@@ -56,7 +56,7 @@ format: ## Auto-fix lint issues and format code
 typecheck: ## mypy only
 	$(BIN)/mypy
 
-test: ## Run the full test suite (hermetic, no Docker needed)
+test: ## Run the full test suite (hermetic, no Docker needed; e2e/load excluded)
 	$(BIN)/pytest
 
 test-unit: ## Unit tests only
@@ -64,6 +64,12 @@ test-unit: ## Unit tests only
 
 test-integration: ## Integration tests only
 	$(BIN)/pytest tests/integration
+
+test-e2e: ## End-to-end tests against the running stack (make up)
+	$(BIN)/pytest tests/e2e -m e2e
+
+test-load: ## Locust load test against the running API -> reports/load/ (LOAD_USERS, LOAD_DURATION, LOAD_P95_MS)
+	$(BIN)/pytest tests/load -m load
 
 test-cov: ## Tests with coverage reports in reports/coverage/
 	$(BIN)/pytest --cov --cov-report=term --cov-report=xml:reports/coverage/coverage.xml \
