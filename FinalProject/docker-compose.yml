@@ -1,0 +1,5 @@
+# Top-level Docker Compose entrypoint for DDM501 Rubric 4.2 compliance and ease of use.
+# Automatically includes the complete multi-profile orchestration stack from deploy/compose/docker-compose.yml.
+
+include:
+  - path: deploy/compose/docker-compose.yml

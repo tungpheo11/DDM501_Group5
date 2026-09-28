@@ -214,7 +214,10 @@ Dự án sẵn sàng triển khai thực tế lên máy chủ ảo Ubuntu thông
 | Tài Liệu | Nội Dung Chuyên Sâu |
 | :--- | :--- |
 | [`docs/README.md`](docs/README.md) | **Bảng đối chiếu Rubric Thầy $\to$ Bằng chứng & File tương ứng** |
+| [`PROPOSAL.md`](PROPOSAL.md) | **Đề án tốt nghiệp MLOps, bài toán kinh doanh & giải mã 3 ngưỡng** |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`docs/02-architecture.md`](docs/02-architecture.md) | Sơ đồ kiến trúc C4, data flow, tech stack, trade-offs |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Phân vai trách nhiệm 4 thành viên & quy chuẩn đóng góp |
+| [`docs/qa/test-report.md`](docs/qa/test-report.md) · [`docs/qa/test-cases.md`](docs/qa/test-cases.md) | Báo cáo kiểm thử hệ thống & thư viện bằng chứng (Evidence) |
 | [`docs/01-problem-statement.md`](docs/01-problem-statement.md) | Định nghĩa bài toán, bối cảnh kinh doanh, mục tiêu và chỉ số |
 | [`docs/04-api-reference.md`](docs/04-api-reference.md) · [`docs/openapi.yaml`](docs/openapi.yaml) | Đặc tả OpenAPI v3, hợp đồng dữ liệu, mã lỗi chuẩn |
 | [`docs/05-monitoring-alerting.md`](docs/05-monitoring-alerting.md) | Catalog metrics, 4 Dashboards, 11 Alert rules & bằng chứng fire/resolve |
