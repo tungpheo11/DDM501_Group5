@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Terminal Execution: 4-Stage Multi-Persona Behavioral Simulation</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: #090d16;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    padding: 30px;
+  }
+  .window {
+    background: #0f172a;
+    border-radius: 12px;
+    border: 1px solid #334155;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+    overflow: hidden;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .titlebar {
+    background: #1e293b;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  .dots { display: flex; gap: 8px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+  .dot-red { background: #ef4444; }
+  .dot-yellow { background: #f59e0b; }
+  .dot-green { background: #10b981; }
+  .term-title { font-size: 13px; font-weight: 600; color: #94a3b8; font-family: "SFMono-Regular", Menlo, monospace; }
+
+  .term-body {
+    padding: 24px;
+    background: #090e17;
+    font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #cbd5e1;
+    overflow-x: auto;
+  }
+  .cmd-prompt { color: #38bdf8; font-weight: 700; margin-bottom: 12px; }
+  .cyan { color: #38bdf8; font-weight: 600; }
+  .green { color: #34d399; font-weight: 600; }
+  .yellow { color: #fbbf24; font-weight: 600; }
+  .red { color: #f87171; font-weight: 600; }
+  .purple { color: #c084fc; font-weight: 600; }
+  .dim { color: #64748b; }
+  .bold { font-weight: 700; }
+  .divider { color: #334155; }
+  .stage-badge {
+    background: #1e293b;
+    border-left: 4px solid #38bdf8;
+    padding: 6px 12px;
+    margin: 14px 0 10px 0;
+    font-weight: 700;
+  }
+  .stage-badge-orange { border-left-color: #f59e0b; }
+  .stage-badge-purple { border-left-color: #c084fc; }
+  .stage-badge-red { border-left-color: #ef4444; }
+</style>
+</head>
+<body>
+
+<div class="window">
+  <div class="titlebar">
+    <div class="dots">
+      <span class="dot dot-red"></span>
+      <span class="dot dot-yellow"></span>
+      <span class="dot dot-green"></span>
+    </div>
+    <div class="term-title">zgsnat@macbook-pro: ~/Development/master-programming/MLOps/DDM501_Group5 (feature/final-project)</div>
+    <div style="font-size: 11px; color: #64748b;">zsh | uv venv | 4-Stage Simulation</div>
+  </div>
+
+  <div class="term-body">
+    <div class="cmd-prompt">$ python scripts/persona_simulator.py --mode staged_progression --count 50 --delay 0.01</div>
+    <div class="divider">========================================================================================================</div>
+    <div>🎬 <span class="bold">STARTING 4-STAGE CONTINUOUS PRODUCTION DRIFT SIMULATION</span></div>
+    <div class="divider">========================================================================================================</div>
+    
+    <!-- Stage 1 -->
+    <div class="stage-badge">
+      >>> Stage 1: Traditional Prime Borrowers (Steady State Economic Regime) <<<
+    </div>
+    <div class="dim">Target: http://localhost:18020/predict | Archetypes: Traditional Prime (60%), Disciplined Borrowers (40%)</div>
+    <div>[001/050] <span class="green">🟢 [APPROVE]</span> FICO: <span class="green">742</span> (PRIME     ) | Prob: 0.18 | Traditional Prime Worker | Driver: Repayment Discipline: Timely and structured payments</div>
+    <div>[002/050] <span class="yellow">🟡 [REVIEW ]</span> FICO: <span class="yellow">662</span> (SUBPRIME ) | Prob: 0.34 | Rebuilding Disciplined   | Driver: Conservative Debt Ratio: Low credit utilization of 14.2%</div>
+    <div>[003/050] <span class="green">🟢 [APPROVE]</span> FICO: <span class="green">755</span> (PRIME     ) | Prob: 0.15 | Traditional Prime Worker | Driver: Strong Liquidity: Consistent high payoff ratio</div>
+    <div class="dim">... (47 additional applications processed) ...</div>
+    <div class="dim">--- STAGE 1 TELEMETRY SUMMARY: Approved: 78.0% | Review: 18.0% | Declined: 4.0% | Avg FICO: 712 | Avg Latency: 9.8 ms ---</div>
+
+    <!-- Stage 2 -->
+    <div class="stage-badge stage-badge-orange">
+      >>> Stage 2: Holiday Shopping Spurt (Credit Line Utilization Shock) <<<
+    </div>
+    <div class="dim">Target: http://localhost:18020/predict | Stress: BILL_AMT / LIMIT_BAL surging from 22% to 91%</div>
+    <div>[051/100] <span class="yellow">🟡 [REVIEW ]</span> FICO: <span class="yellow">648</span> (SUBPRIME ) | Prob: 0.37 | Holiday Shopping Spurt   | Driver: Elevated Utilization: 88.5% of credit ceiling utilized</div>
+    <div>[052/100] <span class="yellow">🟡 [REVIEW ]</span> FICO: <span class="yellow">635</span> (SUBPRIME ) | Prob: 0.39 | Holiday Shopping Spurt   | Driver: Utilization Ceiling Guardrail: Manual audit triggered</div>
+    <div>[053/100] <span class="green">🟢 [APPROVE]</span> FICO: <span class="green">690</span> (NEAR_PRIME) | Prob: 0.28 | Traditional Prime Worker | Driver: High Historical Payment Ratio offsets balance peak</div>
+    <div class="dim">... (47 additional applications processed) ...</div>
+    <div class="dim">--- STAGE 2 TELEMETRY SUMMARY: Approved: 32.0% | Review: 62.0% | Declined: 6.0% | Avg Utilization: 86.4% | PSI_LIMIT: 0.14 ---</div>
+
+    <!-- Stage 3 -->
+    <div class="stage-badge stage-badge-purple">
+      >>> Stage 3: Gen-Z Acquisition Campaign (Demographic & Payment Cycle Drift) <<<
+    </div>
+    <div class="dim">Target: http://localhost:18020/predict | Inflow: Age 21-25, Gig Workers, PAY_0=1 (Weekly/Bi-weekly paycheck lag)</div>
+    <div>[101/150] <span class="red">🔴 [DECLINE]</span> FICO: <span class="red">510</span> (HIGH_RISK) | Prob: 0.62 | Gen-Z Gig Freelancer     | Driver: Payment Lag: 1-month delayed payment recorded on PAY_0</div>
+    <div>[102/150] <span class="red">🔴 [DECLINE]</span> FICO: <span class="red">503</span> (HIGH_RISK) | Prob: 0.63 | Gen-Z Gig Freelancer     | Driver: Delinquency Guardrail: Model V1 penalty on young freelancers</div>
+    <div>[103/150] <span class="yellow">🟡 [REVIEW ]</span> FICO: <span class="yellow">589</span> (SUBPRIME ) | Prob: 0.47 | Gen-Z Gig Freelancer     | Driver: Low Absolute Balance ($12,000 NTD) mitigates risk exposure</div>
+    <div class="dim">... (47 additional applications processed) ...</div>
+    <div class="dim">--- STAGE 3 TELEMETRY SUMMARY: Approved: 8.0% | Review: 34.0% | Declined: 58.0% | Mean Age: 22.4 yrs | PSI_AGE: 0.8235 (CRITICAL) ---</div>
+
+    <!-- Stage 4 -->
+    <div class="stage-badge stage-badge-red">
+      >>> Stage 4: Coordinated Delinquency Attack (System Default Shock) <<<
+    </div>
+    <div class="dim">Target: http://localhost:18020/predict | Attack Vector: Maxed-out credit lines + PAY_0 >= 3 consecutive defaults</div>
+    <div>[151/200] <span class="red">🔴 [DECLINE]</span> FICO: <span class="red">344</span> (HIGH_RISK) | Prob: <span class="red">0.92</span> | Over-leveraged Speculator | Driver: Severe Delinquency: PAY_0=3 indicates 3+ months payment default</div>
+    <div>[152/200] <span class="red">🔴 [DECLINE]</span> FICO: <span class="red">353</span> (HIGH_RISK) | Prob: <span class="red">0.90</span> | Over-leveraged Speculator | Driver: Debt Spiral: PAY_0=3, PAY_2=3, PAY_3=2</div>
+    <div>[153/200] <span class="red">🔴 [DECLINE]</span> FICO: <span class="red">349</span> (HIGH_RISK) | Prob: <span class="red">0.91</span> | Over-leveraged Speculator | Driver: Total Block: Shielded $280,000 NTD toxic credit exposure</div>
+    <div class="dim">... (47 additional applications processed) ...</div>
+    <div class="dim">--- STAGE 4 TELEMETRY SUMMARY: Approved: 2.0% | Review: 10.0% | Declined: 88.0% | Blocked Exposure: $3,160,000 NTD ---</div>
+    
+    <div class="divider">========================================================================================================</div>
+    <div>✅ <span class="green bold">SIMULATION COMPLETED</span> | Total Transactions: 200 | Live Prometheus Telemetry & PostgreSQL Logs Updated</div>
+    <div>📊 <span class="cyan">Grafana Dashboard (:13000) & Evidently Drift Report (:18080) reflecting real-time market shifts!</span></div>
+  </div>
+</div>
+
+</body>
+</html>

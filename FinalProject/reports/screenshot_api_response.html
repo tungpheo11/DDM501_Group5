@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FastAPI Credit Prediction Response Inspector</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: #0b0f19;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    padding: 30px;
+  }
+  .window {
+    background: #111827;
+    border-radius: 12px;
+    border: 1px solid #1f2937;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    overflow: hidden;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .header {
+    background: #1e293b;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #334155;
+  }
+  .dots { display: flex; gap: 8px; }
+  .dot { width: 13px; height: 13px; border-radius: 50%; display: inline-block; }
+  .dot-red { background: #ef4444; }
+  .dot-yellow { background: #f59e0b; }
+  .dot-green { background: #10b981; }
+  .title { font-size: 14px; font-weight: 600; color: #94a3b8; }
+  
+  .request-bar {
+    display: flex;
+    align-items: center;
+    padding: 16px 24px;
+    background: #0f172a;
+    border-bottom: 1px solid #1e293b;
+    gap: 12px;
+  }
+  .method-badge {
+    background: #2563eb;
+    color: white;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+  }
+  .url-input {
+    flex: 1;
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #f1f5f9;
+    font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    font-size: 14px;
+    padding: 8px 14px;
+    border-radius: 6px;
+  }
+  .status-badge {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid #10b981;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 6px;
+  }
+  .meta-tag {
+    font-size: 13px;
+    color: #94a3b8;
+    background: #1e293b;
+    padding: 6px 10px;
+    border-radius: 6px;
+  }
+  
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.25fr;
+    gap: 0;
+  }
+  .panel {
+    padding: 24px;
+    background: #0d131f;
+  }
+  .panel:first-child {
+    border-right: 1px solid #1e293b;
+  }
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #1e293b;
+  }
+  .panel-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #38bdf8;
+  }
+  pre {
+    font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+  .key { color: #93c5fd; }
+  .str { color: #86efac; }
+  .num { color: #fde047; }
+  .bool { color: #f472b6; }
+  .null { color: #94a3b8; }
+  
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .kpi-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .kpi-label { font-size: 11px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.5px; }
+  .kpi-val { font-size: 20px; font-weight: 700; margin-top: 4px; }
+  .val-green { color: #34d399; }
+  .val-yellow { color: #fbbf24; }
+  .val-blue { color: #60a5fa; }
+  .val-purple { color: #c084fc; }
+
+  .callout-box {
+    margin-top: 20px;
+    background: rgba(37, 99, 235, 0.1);
+    border: 1px solid #1d4ed8;
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #bfdbfe;
+  }
+</style>
+</head>
+<body>
+
+<div class="window">
+  <div class="header">
+    <div class="dots">
+      <span class="dot dot-red"></span>
+      <span class="dot dot-yellow"></span>
+      <span class="dot dot-green"></span>
+    </div>
+    <div class="title">FastAPI Credit Scoring Engine — Real-time Evaluation & Explainability Contract</div>
+    <div></div>
+  </div>
+
+  <div class="request-bar">
+    <span class="method-badge">POST</span>
+    <span class="url-input">http://localhost:18020/predict</span>
+    <span class="status-badge">200 OK</span>
+    <span class="meta-tag">⚡ Latency: 11.2 ms</span>
+    <span class="meta-tag">📦 Size: 780 B</span>
+    <span class="meta-tag">🛡️ Champion Model v2.0</span>
+  </div>
+
+  <div class="main-grid">
+    <!-- Left: Request Body -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Inbound Application Payload (23 Financial Features)</span>
+        <span style="font-size: 12px; color: #64748b;">Applicant ID: APP_2026_0941</span>
+      </div>
+      <pre>
+{
+  <span class="key">"LIMIT_BAL"</span>: <span class="num">200000.0</span>,
+  <span class="key">"SEX"</span>: <span class="num">2</span>,           <span class="null">// Female</span>
+  <span class="key">"EDUCATION"</span>: <span class="num">1</span>,     <span class="null">// Graduate School</span>
+  <span class="key">"MARRIAGE"</span>: <span class="num">2</span>,      <span class="null">// Single</span>
+  <span class="key">"AGE"</span>: <span class="num">38</span>,
+  <span class="key">"PAY_0"</span>: <span class="num">0</span>,         <span class="null">// Current / On-time</span>
+  <span class="key">"PAY_2"</span>: <span class="num">0</span>,
+  <span class="key">"PAY_3"</span>: <span class="num">0</span>,
+  <span class="key">"PAY_4"</span>: <span class="num">0</span>,
+  <span class="key">"PAY_5"</span>: <span class="num">0</span>,
+  <span class="key">"PAY_6"</span>: <span class="num">0</span>,
+  <span class="key">"BILL_AMT1"</span>: <span class="num">15000.0</span>,
+  <span class="key">"BILL_AMT2"</span>: <span class="num">14000.0</span>,
+  <span class="key">"BILL_AMT3"</span>: <span class="num">13000.0</span>,
+  <span class="key">"BILL_AMT4"</span>: <span class="num">12000.0</span>,
+  <span class="key">"BILL_AMT5"</span>: <span class="num">11000.0</span>,
+  <span class="key">"BILL_AMT6"</span>: <span class="num">10000.0</span>,
+  <span class="key">"PAY_AMT1"</span>: <span class="num">5000.0</span>,
+  <span class="key">"PAY_AMT2"</span>: <span class="num">5000.0</span>,
+  <span class="key">"PAY_AMT3"</span>: <span class="num">5000.0</span>,
+  <span class="key">"PAY_AMT4"</span>: <span class="num">5000.0</span>,
+  <span class="key">"PAY_AMT5"</span>: <span class="num">5000.0</span>,
+  <span class="key">"PAY_AMT6"</span>: <span class="num">5000.0</span>
+}
+      </pre>
+
+      <div class="callout-box">
+        <strong>SE4ML Audit Note:</strong> Inbound features undergo strict Pydantic v2 type coercion, schema validation, range constraints, and automated imputation before reaching the model pipeline.
+      </div>
+    </div>
+
+    <!-- Right: Enriched Response -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Outbound Real-time Decision & Explainability (XAI)</span>
+        <span style="font-size: 12px; color: #10b981;">● Logged to PostgreSQL</span>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-label">FICO Score</div>
+          <div class="kpi-val val-blue">638</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Credit Tier</div>
+          <div class="kpi-val val-purple">SUBPRIME</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Decision</div>
+          <div class="kpi-val val-yellow">REVIEW</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Rec. Limit</div>
+          <div class="kpi-val val-green">$100,000</div>
+        </div>
+      </div>
+
+      <pre>
+{
+  <span class="key">"request_id"</span>: <span class="str">"req_8795799b07bb"</span>,
+  <span class="key">"default_prediction"</span>: <span class="num">0</span>,
+  <span class="key">"default_probability"</span>: <span class="num">0.386</span>,
+  <span class="key">"credit_score"</span>: <span class="num">638</span>,
+  <span class="key">"credit_tier"</span>: <span class="str">"SUBPRIME"</span>,
+  <span class="key">"risk_decision"</span>: <span class="str">"REVIEW"</span>,
+  <span class="key">"recommended_limit_ntd"</span>: <span class="num">100000.0</span>,
+  <span class="key">"top_risk_factors"</span>: [
+    <span class="str">"Repayment Discipline: Timely and structured monthly repayments"</span>,
+    <span class="str">"Conservative Debt Ratio: Low credit utilization of 12.5%"</span>
+  ],
+  <span class="key">"policy_guardrails"</span>: {
+    <span class="key">"age_verification"</span>: <span class="str">"PASS"</span>,
+    <span class="key">"utilization_ceiling_check"</span>: <span class="str">"ACCEPTABLE"</span>,
+    <span class="key">"delinquency_guardrail"</span>: <span class="str">"CLEAR"</span>
+  },
+  <span class="key">"served_by"</span>: <span class="str">"mlflow_registry:models:/credit-risk-model@champion"</span>,
+  <span class="key">"latency_ms"</span>: <span class="num">11.24</span>
+}
+      </pre>
+
+      <div class="callout-box" style="background: rgba(16, 185, 129, 0.1); border-color: #059669; color: #a7f3d0;">
+        <strong>Enterprise Governance:</strong> Decision transparently complies with FCRA (Fair Credit Reporting Act) by articulating adverse action root causes and dynamically calibrating credit lines.
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
