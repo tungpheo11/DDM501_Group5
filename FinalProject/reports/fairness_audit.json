@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "regulatory_standard": "EEOC / CFPB Four-Fifths Rule (0.80 - 1.25)",
+  "attributes": {
+    "SEX (Gender)": {
+      "disparate_impact_ratio": 1.0465,
+      "demographic_parity_difference": 0.0351,
+      "equal_opportunity_difference": 0.0275,
+      "four_fifths_rule_passed": true,
+      "privileged_group": "Male (1)",
+      "unprivileged_group": "Female (2)"
+    },
+    "EDUCATION (Level)": {
+      "disparate_impact_ratio": 1.006,
+      "demographic_parity_difference": 0.0046,
+      "four_fifths_rule_passed": true,
+      "privileged_group": "University/Graduate (1,2)",
+      "unprivileged_group": "High School/Other (3,4...)"
+    },
+    "AGE (Cohort)": {
+      "disparate_impact_ratio": 1.0,
+      "demographic_parity_difference": 0.0,
+      "four_fifths_rule_passed": true,
+      "privileged_group": "Age >= 30",
+      "unprivileged_group": "Age < 30"
+    }
+  },
+  "sample_count": 5000
+}
