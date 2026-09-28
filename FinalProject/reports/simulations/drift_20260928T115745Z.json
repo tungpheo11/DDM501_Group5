@@ -1,0 +1,45 @@
+{
+  "scenario": "drift",
+  "started_at": "2026-09-28T11:57:45.655001+00:00",
+  "finished_at": "2026-09-28T11:57:54.762731+00:00",
+  "api_url": "http://localhost:18020",
+  "traffic": {
+    "requests": 600,
+    "success": 600,
+    "errors": 0,
+    "status_codes": {
+      "200": 600
+    },
+    "decisions": {
+      "REVIEW": 308,
+      "DECLINE": 205,
+      "APPROVE": 87
+    },
+    "decision_share": {
+      "REVIEW": 0.513,
+      "DECLINE": 0.342,
+      "APPROVE": 0.145
+    },
+    "mean_default_probability": 0.5212,
+    "latency_ms": {
+      "p50": 26.0,
+      "p95": 38.4,
+      "p99": 55.3,
+      "max": 96.7
+    }
+  },
+  "drift": {
+    "status": "success",
+    "is_drifted": true,
+    "drift_share": 0.7391,
+    "max_psi": 3.3354,
+    "prediction_psi": 0.24,
+    "prediction_shift": false,
+    "reasons": [
+      "psi_critical:AGE",
+      "drift_share:0.74"
+    ],
+    "report": "drift_report_20260928T115754Z.html",
+    "current_samples": 500
+  }
+}

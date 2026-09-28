@@ -1,0 +1,292 @@
+# promtool unit tests: every alert fires, then resolves.
+#   make alerts-test
+# Series notation: `a+bxn` = n+1 samples starting at a, step b (one sample per `interval`).
+
+rule_files:
+  - ../rules/recording_rules.yml
+  - ../rules/api_alerts.yml
+  - ../rules/model_alerts.yml
+  - ../rules/drift_alerts.yml
+
+evaluation_interval: 15s
+
+tests:
+  # APIDown: scrape fails from 1m30s to 4m30s.
+  - interval: 30s
+    input_series:
+      - series: 'up{job="credit-risk-api",instance="api:8000"}'
+        values: "1x2 0x6 1x6"
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: APIDown
+        exp_alerts: []
+      - eval_time: 3m
+        alertname: APIDown
+        exp_alerts:
+          - exp_labels: {severity: critical, component: api, job: credit-risk-api, instance: "api:8000"}
+            exp_annotations:
+              summary: "Scoring API is down (api:8000)"
+              description: "Prometheus has not been able to scrape the scoring API for more than 1 minute. Credit applications cannot be scored."
+              runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#apidown"
+              dashboard: "http://localhost:13000/d/credit-infra-sla"
+      - eval_time: 7m
+        alertname: APIDown
+        exp_alerts: []
+
+  # HighErrorRate: 2 rps OK throughout, 1 rps of 503 between 2m30s and 7m30s.
+  - interval: 30s
+    input_series:
+      - series: 'credit_api_requests_total{job="credit-risk-api",method="POST",endpoint="/api/v1/predict",status="200"}'
+        values: "0+60x30"
+      - series: 'credit_api_requests_total{job="credit-risk-api",method="POST",endpoint="/api/v1/predict",status="503"}'
+        values: "0x4 30+30x10 330x16"
+      - series: 'credit_api_requests_total{job="credit-risk-api",method="GET",endpoint="/health/ready",status="503"}'
+        values: "0+30x30"
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: HighErrorRate
+        exp_alerts: []
+      - eval_time: 6m
+        alertname: HighErrorRate
+        exp_alerts:
+          - exp_labels: {severity: critical, component: api}
+            exp_annotations:
+              summary: "API 5xx error ratio is 33.33%"
+              description: "More than 5% of /api/v1/* requests returned HTTP 5xx over the last 2 minutes (SLO: 99% success)."
+              runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#higherrorrate"
+              dashboard: "http://localhost:13000/d/credit-infra-sla"
+      - eval_time: 12m
+        alertname: HighErrorRate
+        exp_alerts: []
+
+  # Health-probe 503s alone never count as API errors.
+  - interval: 30s
+    input_series:
+      - series: 'credit_api_requests_total{job="credit-risk-api",method="POST",endpoint="/api/v1/predict",status="200"}'
+        values: "0+60x30"
+      - series: 'credit_api_requests_total{job="credit-risk-api",method="GET",endpoint="/health/ready",status="503"}'
+        values: "0+60x30"
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: HighErrorRate
+        exp_alerts: []
+
+  # HighLatencyP95: fast (<50 ms) until 5m, slow (100-250 ms) until 10m, fast again.
+  - interval: 30s
+    input_series:
+      - series: 'credit_api_request_duration_seconds_bucket{job="credit-risk-api",method="POST",endpoint="/api/v1/predict",le="0.05"}'
+        values: "0+60x10 600x9 660+60x10"
+      - series: 'credit_api_request_duration_seconds_bucket{job="credit-risk-api",method="POST",endpoint="/api/v1/predict",le="0.1"}'
+        values: "0+60x10 600x9 660+60x10"
+      - series: 'credit_api_request_duration_seconds_bucket{job="credit-risk-api",method="POST",endpoint="/api/v1/predict",le="0.25"}'
+        values: "0+60x30"
+      - series: 'credit_api_request_duration_seconds_bucket{job="credit-risk-api",method="POST",endpoint="/api/v1/predict",le="+Inf"}'
+        values: "0+60x30"
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: HighLatencyP95
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: HighLatencyP95
+        exp_alerts:
+          - exp_labels: {severity: warning, component: api}
+            exp_annotations:
+              summary: "POST /api/v1/predict p95 latency is 242.5ms"
+              description: "p95 latency of single predictions stayed above the 100 ms SLO for 2 minutes."
+              runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#highlatencyp95"
+              dashboard: "http://localhost:13000/d/credit-infra-sla"
+      - eval_time: 15m
+        alertname: HighLatencyP95
+        exp_alerts: []
+
+  # ModelNotLoaded: no model between 1m30s and 4m30s.
+  - interval: 30s
+    input_series:
+      - series: 'credit_model_loaded{job="credit-risk-api",instance="api:8000"}'
+        values: "1x2 0x6 1x6"
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: ModelNotLoaded
+        exp_alerts:
+          - exp_labels: {severity: critical, component: model, job: credit-risk-api, instance: "api:8000"}
+            exp_annotations:
+              summary: "No model is loaded in the scoring API"
+              description: "Neither the MLflow @champion nor the local fallback artifact could be loaded; /api/v1/predict returns 503."
+              runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#modelnotloaded"
+              dashboard: "http://localhost:13000/d/credit-ml-model"
+      - eval_time: 7m
+        alertname: ModelNotLoaded
+        exp_alerts: []
+
+  # ModelServedFromFallback: local artifact served between 1m30s and 7m30s.
+  - interval: 30s
+    input_series:
+      - series: 'credit_model_loaded{job="credit-risk-api",instance="api:8000"}'
+        values: "1x20"
+      - series: 'credit_model_degraded{job="credit-risk-api",instance="api:8000"}'
+        values: "0x2 1x12 0x6"
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: ModelServedFromFallback
+        exp_alerts: []
+      - eval_time: 7m
+        alertname: ModelServedFromFallback
+        exp_alerts:
+          - exp_labels: {severity: warning, component: model, job: credit-risk-api, instance: "api:8000"}
+            exp_annotations:
+              summary: "API is serving the local fallback model instead of the registry champion"
+              description: "The MLflow registry was unreachable at the last (re)load; predictions come from the baked-in artifact."
+              runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#modelservedfromfallback"
+              dashboard: "http://localhost:13000/d/credit-ml-model"
+      - eval_time: 10m
+        alertname: ModelServedFromFallback
+        exp_alerts: []
+
+  # PredictionDistributionShift: prediction PSI 0.9 between 1m30s and 5m30s.
+  - interval: 30s
+    input_series:
+      - series: 'credit_drift_prediction_psi{job="drift-monitor",instance="drift-monitor:8085"}'
+        values: "0.02x2 0.9x8 0.03x6"
+      - series: 'credit_drift_current_samples{job="drift-monitor",instance="drift-monitor:8085"}'
+        values: "500x16"
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: PredictionDistributionShift
+        exp_alerts:
+          - exp_labels: {severity: warning, component: model, job: drift-monitor, instance: "drift-monitor:8085"}
+            exp_annotations:
+              summary: "Predicted default probabilities shifted (PSI 0.90)"
+              description: "PSI between the champion's scores on the reference window and the scores of the latest inference logs is >= 0.25."
+              runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#predictiondistributionshift"
+              dashboard: "http://localhost:13000/d/credit-ml-model"
+      - eval_time: 8m
+        alertname: PredictionDistributionShift
+        exp_alerts: []
+
+  # RetrainFailed: fires immediately, resolves after the next successful run.
+  - interval: 30s
+    input_series:
+      - series: 'credit_retrain_last_run_failed{job="airflow",instance="statsd-exporter:9102"}'
+        values: "0x2 1x4 0x4"
+    alert_rule_test:
+      - eval_time: 30s
+        alertname: RetrainFailed
+        exp_alerts: []
+      - eval_time: 2m
+        alertname: RetrainFailed
+        exp_alerts:
+          - exp_labels: {severity: critical, component: orchestration, job: airflow, instance: "statsd-exporter:9102"}
+            exp_annotations:
+              summary: "The last model_retrain DAG run failed"
+              description: "Training, the quality gate, promotion or the API reload failed. The previous @champion keeps serving."
+              runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#retrainfailed"
+              dashboard: "http://localhost:18080/dags/model_retrain/grid"
+      - eval_time: 5m
+        alertname: RetrainFailed
+        exp_alerts: []
+
+  # AirflowDagImportErrors: one broken DAG between 1m30s and 8m30s.
+  - interval: 30s
+    input_series:
+      - series: 'airflow_dag_import_errors{job="airflow",instance="statsd-exporter:9102"}'
+        values: "0x2 1x14 0x4"
+    alert_rule_test:
+      - eval_time: 8m
+        alertname: AirflowDagImportErrors
+        exp_alerts:
+          - exp_labels: {severity: warning, component: orchestration, job: airflow, instance: "statsd-exporter:9102"}
+            exp_annotations:
+              summary: "1 Airflow DAG file(s) fail to import"
+              description: "A DAG in orchestration/airflow/dags cannot be parsed; its schedule is not running."
+              runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#airflowdagimporterrors"
+              dashboard: "http://localhost:18080/home"
+      - eval_time: 10m
+        alertname: AirflowDagImportErrors
+        exp_alerts: []
+
+  # DataDriftDetected: drift between 1m30s and 5m30s.
+  - interval: 30s
+    input_series:
+      - series: 'credit_drift_detected{job="drift-monitor",instance="drift-monitor:8085"}'
+        values: "0x2 1x8 0x6"
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: DataDriftDetected
+        exp_alerts: []
+      - eval_time: 4m
+        alertname: DataDriftDetected
+        exp_alerts:
+          - exp_labels: {severity: warning, component: drift, job: drift-monitor, instance: "drift-monitor:8085"}
+            exp_annotations:
+              summary: "Data drift detected on the latest inference window"
+              description: "A key feature PSI reached 0.25 or at least 50% of features drifted (Evidently). The drift_monitoring DAG will trigger model_retrain."
+              runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#datadriftdetected"
+              dashboard: "http://localhost:13000/d/credit-drift"
+      - eval_time: 8m
+        alertname: DataDriftDetected
+        exp_alerts: []
+
+  # DriftMonitorDown: scrape fails between 1m30s and 5m30s.
+  - interval: 30s
+    input_series:
+      - series: 'up{job="drift-monitor",instance="drift-monitor:8085"}'
+        values: "1x2 0x8 1x6"
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: DriftMonitorDown
+        exp_alerts:
+          - exp_labels: {severity: warning, component: drift, job: drift-monitor, instance: "drift-monitor:8085"}
+            exp_annotations:
+              summary: "Drift monitor is down"
+              description: "Drift is not being measured; DataDriftDetected and PredictionDistributionShift cannot fire."
+              runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#driftmonitordown"
+              dashboard: "http://localhost:13000/d/credit-drift"
+      - eval_time: 8m
+        alertname: DriftMonitorDown
+        exp_alerts: []
+
+  # DriftAnalysisStale: analyses stop at 5m30s and resume at 31m.
+  - interval: 30s
+    input_series:
+      - series: 'credit_drift_last_analysis_timestamp_seconds{job="drift-monitor",instance="drift-monitor:8085"}'
+        values: "30+30x10 330x50 1860+30x10"
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: DriftAnalysisStale
+        exp_alerts: []
+      - eval_time: 29m
+        alertname: DriftAnalysisStale
+        exp_alerts:
+          - exp_labels: {severity: warning, component: drift, job: drift-monitor, instance: "drift-monitor:8085"}
+            exp_annotations:
+              summary: "No successful drift analysis for more than 15 minutes"
+              description: "The background analysis loop is failing (database unreachable or analysis errors)."
+              runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#driftanalysisstale"
+              dashboard: "http://localhost:13000/d/credit-drift"
+      - eval_time: 32m
+        alertname: DriftAnalysisStale
+        exp_alerts: []
+
+  # DriftAnalysisStale after a restart into a broken database: the gauge stays 0 until 25m30s.
+  - interval: 30s
+    input_series:
+      - series: 'credit_drift_last_analysis_timestamp_seconds{job="drift-monitor",instance="drift-monitor:8085"}'
+        values: "0x50 1530+30x10"
+      - series: 'process_start_time_seconds{job="drift-monitor",instance="drift-monitor:8085"}'
+        values: "0x60"
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: DriftAnalysisStale
+        exp_alerts: []
+      - eval_time: 21m
+        alertname: DriftAnalysisStale
+        exp_alerts:
+          - exp_labels: {severity: warning, component: drift, job: drift-monitor, instance: "drift-monitor:8085"}
+            exp_annotations:
+              summary: "No successful drift analysis for more than 15 minutes"
+              description: "The background analysis loop is failing (database unreachable or analysis errors)."
+              runbook_url: "https://github.com/tungpheo11/DDM501_Group5/blob/main/FinalProject/docs/runbooks/alerts.md#driftanalysisstale"
+              dashboard: "http://localhost:13000/d/credit-drift"
+      - eval_time: 27m
+        alertname: DriftAnalysisStale
+        exp_alerts: []

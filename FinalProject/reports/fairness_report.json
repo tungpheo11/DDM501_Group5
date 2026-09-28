@@ -1,0 +1,745 @@
+{
+  "generated_at": "2026-09-28T09:53:21+00:00",
+  "model": {
+    "candidate": "logistic_regression",
+    "params": {
+      "C": 0.008433492996539142
+    },
+    "decision_threshold": 0.5,
+    "review_threshold": 0.3,
+    "decline_threshold": 0.6,
+    "artifact": "credit_model_v1.joblib",
+    "artifact_sha256": "9be37814cad4eab6481d0ada97e2aff07cbd13bfcd07c5d2d90b7e2e4e5cec68",
+    "registered_version": "1"
+  },
+  "costs": {
+    "false_negative": 10.0,
+    "false_positive": 1.0
+  },
+  "config": {
+    "attributes": [
+      "SEX",
+      "age_group",
+      "EDUCATION",
+      "MARRIAGE"
+    ],
+    "thresholds": {
+      "demographic_parity_difference": 0.1,
+      "equalized_odds_difference": 0.1,
+      "disparate_impact_ratio": 0.8
+    },
+    "mitigation_attributes": [
+      "age_group",
+      "SEX"
+    ],
+    "fit_fraction": 0.5,
+    "threshold_optimizer": {
+      "constraints": "equalized_odds",
+      "objective": "balanced_accuracy_score"
+    },
+    "random_state": 42
+  },
+  "overall": {
+    "rows": 10000,
+    "default_rate": 0.2433,
+    "roc_auc": 0.75126,
+    "flagged_rate": 0.3404,
+    "approve_rate": 0.2126
+  },
+  "composition": {
+    "SEX": [
+      {
+        "group": "female",
+        "count": 6107,
+        "default_rate": 0.23383
+      },
+      {
+        "group": "male",
+        "count": 3893,
+        "default_rate": 0.258156
+      }
+    ],
+    "age_group": [
+      {
+        "group": "<30",
+        "count": 5000,
+        "default_rate": 0.258
+      },
+      {
+        "group": "30-39",
+        "count": 3263,
+        "default_rate": 0.247931
+      },
+      {
+        "group": "40-49",
+        "count": 1310,
+        "default_rate": 0.203817
+      },
+      {
+        "group": "50+",
+        "count": 427,
+        "default_rate": 0.156909
+      }
+    ],
+    "EDUCATION": [
+      {
+        "group": "graduate_school",
+        "count": 3504,
+        "default_rate": 0.230594
+      },
+      {
+        "group": "high_school",
+        "count": 1598,
+        "default_rate": 0.261577
+      },
+      {
+        "group": "others",
+        "count": 162,
+        "default_rate": 0.265432
+      },
+      {
+        "group": "university",
+        "count": 4736,
+        "default_rate": 0.245777
+      }
+    ],
+    "MARRIAGE": [
+      {
+        "group": "married",
+        "count": 4595,
+        "default_rate": 0.24679
+      },
+      {
+        "group": "others",
+        "count": 137,
+        "default_rate": 0.277372
+      },
+      {
+        "group": "single",
+        "count": 5268,
+        "default_rate": 0.23937
+      }
+    ]
+  },
+  "sources": {
+    "stream_normal": 5000,
+    "stream_drifted+feedback": 5000
+  },
+  "audit": {
+    "SEX": {
+      "attribute": "SEX",
+      "groups": [
+        {
+          "group": "female",
+          "count": 6107,
+          "base_rate": 0.23383,
+          "selection_rate": 0.304732,
+          "approve_rate": 0.239725,
+          "review_rate": 0.551498,
+          "decline_rate": 0.208777,
+          "tpr": 0.607843,
+          "fpr": 0.212225,
+          "fnr": 0.392157,
+          "roc_auc": 0.75834,
+          "expected_loss": 1.079581
+        },
+        {
+          "group": "male",
+          "count": 3893,
+          "base_rate": 0.258156,
+          "selection_rate": 0.396352,
+          "approve_rate": 0.170049,
+          "review_rate": 0.57796,
+          "decline_rate": 0.251991,
+          "tpr": 0.645771,
+          "fpr": 0.309557,
+          "fnr": 0.354229,
+          "roc_auc": 0.738943,
+          "expected_loss": 1.144105
+        }
+      ],
+      "summary": {
+        "demographic_parity_difference": 0.09162,
+        "demographic_parity_ratio": 0.768842,
+        "equalized_odds_difference": 0.097332,
+        "tpr_difference": 0.037928,
+        "fpr_difference": 0.097332,
+        "approval_rate_difference": 0.069676,
+        "disparate_impact_ratio": 0.70935,
+        "roc_auc_difference": 0.019397
+      },
+      "status": "WARN",
+      "violations": [
+        "disparate_impact_ratio"
+      ]
+    },
+    "age_group": {
+      "attribute": "age_group",
+      "groups": [
+        {
+          "group": "<30",
+          "count": 5000,
+          "base_rate": 0.258,
+          "selection_rate": 0.3838,
+          "approve_rate": 0.168,
+          "review_rate": 0.5814,
+          "decline_rate": 0.2506,
+          "tpr": 0.648062,
+          "fpr": 0.291914,
+          "fnr": 0.351938,
+          "roc_auc": 0.748748,
+          "expected_loss": 1.1246
+        },
+        {
+          "group": "30-39",
+          "count": 3263,
+          "base_rate": 0.247931,
+          "selection_rate": 0.329758,
+          "approve_rate": 0.213607,
+          "review_rate": 0.565431,
+          "decline_rate": 0.220962,
+          "tpr": 0.618047,
+          "fpr": 0.234719,
+          "fnr": 0.381953,
+          "roc_auc": 0.747627,
+          "expected_loss": 1.123506
+        },
+        {
+          "group": "40-49",
+          "count": 1310,
+          "base_rate": 0.203817,
+          "selection_rate": 0.248092,
+          "approve_rate": 0.315267,
+          "review_rate": 0.514504,
+          "decline_rate": 0.170229,
+          "tpr": 0.539326,
+          "fpr": 0.173538,
+          "fnr": 0.460674,
+          "roc_auc": 0.753287,
+          "expected_loss": 1.077099
+        },
+        {
+          "group": "50+",
+          "count": 427,
+          "base_rate": 0.156909,
+          "selection_rate": 0.196721,
+          "approve_rate": 0.412178,
+          "review_rate": 0.449649,
+          "decline_rate": 0.138173,
+          "tpr": 0.552239,
+          "fpr": 0.130556,
+          "fnr": 0.447761,
+          "roc_auc": 0.742164,
+          "expected_loss": 0.812646
+        }
+      ],
+      "summary": {
+        "demographic_parity_difference": 0.187079,
+        "demographic_parity_ratio": 0.512562,
+        "equalized_odds_difference": 0.161358,
+        "tpr_difference": 0.108736,
+        "fpr_difference": 0.161358,
+        "approval_rate_difference": 0.244178,
+        "disparate_impact_ratio": 0.407591,
+        "roc_auc_difference": 0.011122
+      },
+      "status": "WARN",
+      "violations": [
+        "demographic_parity_difference",
+        "equalized_odds_difference",
+        "disparate_impact_ratio"
+      ]
+    },
+    "EDUCATION": {
+      "attribute": "EDUCATION",
+      "groups": [
+        {
+          "group": "graduate_school",
+          "count": 3504,
+          "base_rate": 0.230594,
+          "selection_rate": 0.294521,
+          "approve_rate": 0.263984,
+          "review_rate": 0.538242,
+          "decline_rate": 0.197774,
+          "tpr": 0.590347,
+          "fpr": 0.205861,
+          "fnr": 0.409653,
+          "roc_auc": 0.75585,
+          "expected_loss": 1.103025
+        },
+        {
+          "group": "high_school",
+          "count": 1598,
+          "base_rate": 0.261577,
+          "selection_rate": 0.409262,
+          "approve_rate": 0.155194,
+          "review_rate": 0.586984,
+          "decline_rate": 0.257822,
+          "tpr": 0.686603,
+          "fpr": 0.311017,
+          "fnr": 0.313397,
+          "roc_auc": 0.765297,
+          "expected_loss": 1.049437
+        },
+        {
+          "group": "others",
+          "count": 162,
+          "base_rate": 0.265432,
+          "selection_rate": 0.364198,
+          "approve_rate": 0.197531,
+          "review_rate": 0.580247,
+          "decline_rate": 0.222222,
+          "tpr": 0.674419,
+          "fpr": 0.252101,
+          "fnr": 0.325581,
+          "roc_auc": 0.799883,
+          "expected_loss": 1.049383
+        },
+        {
+          "group": "university",
+          "count": 4736,
+          "base_rate": 0.245777,
+          "selection_rate": 0.350296,
+          "approve_rate": 0.194468,
+          "review_rate": 0.570101,
+          "decline_rate": 0.235431,
+          "tpr": 0.621993,
+          "fpr": 0.261758,
+          "fnr": 0.378007,
+          "roc_auc": 0.740685,
+          "expected_loss": 1.126478
+        }
+      ],
+      "summary": {
+        "demographic_parity_difference": 0.114741,
+        "demographic_parity_ratio": 0.719639,
+        "equalized_odds_difference": 0.105156,
+        "tpr_difference": 0.096256,
+        "fpr_difference": 0.105156,
+        "approval_rate_difference": 0.10879,
+        "disparate_impact_ratio": 0.587892,
+        "roc_auc_difference": 0.059198
+      },
+      "status": "WARN",
+      "violations": [
+        "demographic_parity_difference",
+        "equalized_odds_difference",
+        "disparate_impact_ratio"
+      ]
+    },
+    "MARRIAGE": {
+      "attribute": "MARRIAGE",
+      "groups": [
+        {
+          "group": "married",
+          "count": 4595,
+          "base_rate": 0.24679,
+          "selection_rate": 0.343852,
+          "approve_rate": 0.210881,
+          "review_rate": 0.561045,
+          "decline_rate": 0.228074,
+          "tpr": 0.622575,
+          "fpr": 0.252528,
+          "fnr": 0.377425,
+          "roc_auc": 0.747201,
+          "expected_loss": 1.121654
+        },
+        {
+          "group": "others",
+          "count": 137,
+          "base_rate": 0.277372,
+          "selection_rate": 0.372263,
+          "approve_rate": 0.226277,
+          "review_rate": 0.510949,
+          "decline_rate": 0.262774,
+          "tpr": 0.736842,
+          "fpr": 0.232323,
+          "fnr": 0.263158,
+          "roc_auc": 0.790803,
+          "expected_loss": 0.89781
+        },
+        {
+          "group": "single",
+          "count": 5268,
+          "base_rate": 0.23937,
+          "selection_rate": 0.33656,
+          "approve_rate": 0.213743,
+          "review_rate": 0.563781,
+          "decline_rate": 0.222475,
+          "tpr": 0.620936,
+          "fpr": 0.247068,
+          "fnr": 0.379064,
+          "roc_auc": 0.753612,
+          "expected_loss": 1.095292
+        }
+      ],
+      "summary": {
+        "demographic_parity_difference": 0.035702,
+        "demographic_parity_ratio": 0.904094,
+        "equalized_odds_difference": 0.115906,
+        "tpr_difference": 0.115906,
+        "fpr_difference": 0.020205,
+        "approval_rate_difference": 0.015396,
+        "disparate_impact_ratio": 0.93196,
+        "roc_auc_difference": 0.043602
+      },
+      "status": "WARN",
+      "violations": [
+        "equalized_odds_difference"
+      ]
+    }
+  },
+  "mitigation": {
+    "age_group": {
+      "fit_rows": 5000,
+      "test_rows": 5000,
+      "variants": [
+        {
+          "variant": "champion",
+          "description": "Served champion, no mitigation",
+          "roc_auc": 0.759895,
+          "expected_loss": 1.0734,
+          "recall": 0.635168,
+          "flagged_rate": 0.34,
+          "demographic_parity_difference": 0.181722,
+          "equalized_odds_difference": 0.146122,
+          "approval_rate_difference": 0.181722,
+          "disparate_impact_ratio": 0.772313
+        },
+        {
+          "variant": "retrained",
+          "description": "Refit on train + fit split, no weights (control)",
+          "roc_auc": 0.759943,
+          "expected_loss": 1.0906,
+          "recall": 0.624486,
+          "flagged_rate": 0.3286,
+          "demographic_parity_difference": 0.178417,
+          "equalized_odds_difference": 0.141974,
+          "approval_rate_difference": 0.178417,
+          "disparate_impact_ratio": 0.777761
+        },
+        {
+          "variant": "reweighing",
+          "description": "Refit with Kamiran & Calders weights (pre-processing)",
+          "roc_auc": 0.759271,
+          "expected_loss": 1.1302,
+          "recall": 0.599836,
+          "flagged_rate": 0.3022,
+          "demographic_parity_difference": 0.067174,
+          "equalized_odds_difference": 0.06936,
+          "approval_rate_difference": 0.067174,
+          "disparate_impact_ratio": 0.910575
+        },
+        {
+          "variant": "unawareness",
+          "description": "Refit without SEX/AGE/EDUCATION/MARRIAGE (set to constants)",
+          "roc_auc": 0.758463,
+          "expected_loss": 1.1346,
+          "recall": 0.596549,
+          "flagged_rate": 0.2978,
+          "demographic_parity_difference": 0.054879,
+          "equalized_odds_difference": 0.047651,
+          "approval_rate_difference": 0.054879,
+          "disparate_impact_ratio": 0.926483
+        },
+        {
+          "variant": "threshold_optimizer",
+          "description": "Champion + ThresholdOptimizer (equalized_odds, balanced_accuracy_score) (post-processing)",
+          "roc_auc": 0.713705,
+          "expected_loss": 1.1288,
+          "recall": 0.610518,
+          "flagged_rate": 0.3294,
+          "demographic_parity_difference": 0.025258,
+          "equalized_odds_difference": 0.083502,
+          "approval_rate_difference": 0.025258,
+          "disparate_impact_ratio": 0.963235
+        }
+      ]
+    },
+    "SEX": {
+      "fit_rows": 5000,
+      "test_rows": 5000,
+      "variants": [
+        {
+          "variant": "champion",
+          "description": "Served champion, no mitigation",
+          "roc_auc": 0.740096,
+          "expected_loss": 1.1456,
+          "recall": 0.606086,
+          "flagged_rate": 0.335,
+          "demographic_parity_difference": 0.076635,
+          "equalized_odds_difference": 0.088529,
+          "approval_rate_difference": 0.076635,
+          "disparate_impact_ratio": 0.889706
+        },
+        {
+          "variant": "retrained",
+          "description": "Refit on train + fit split, no weights (control)",
+          "roc_auc": 0.739209,
+          "expected_loss": 1.1502,
+          "recall": 0.601151,
+          "flagged_rate": 0.3264,
+          "demographic_parity_difference": 0.063793,
+          "equalized_odds_difference": 0.070745,
+          "approval_rate_difference": 0.063793,
+          "disparate_impact_ratio": 0.908662
+        },
+        {
+          "variant": "reweighing",
+          "description": "Refit with Kamiran & Calders weights (pre-processing)",
+          "roc_auc": 0.737859,
+          "expected_loss": 1.1622,
+          "recall": 0.596217,
+          "flagged_rate": 0.3252,
+          "demographic_parity_difference": 0.004071,
+          "equalized_odds_difference": 0.045125,
+          "approval_rate_difference": 0.004071,
+          "disparate_impact_ratio": 0.993989
+        },
+        {
+          "variant": "unawareness",
+          "description": "Refit without SEX/AGE/EDUCATION/MARRIAGE (set to constants)",
+          "roc_auc": 0.736399,
+          "expected_loss": 1.1884,
+          "recall": 0.577303,
+          "flagged_rate": 0.3008,
+          "demographic_parity_difference": 0.024939,
+          "equalized_odds_difference": 0.025703,
+          "approval_rate_difference": 0.024939,
+          "disparate_impact_ratio": 0.96482
+        },
+        {
+          "variant": "threshold_optimizer",
+          "description": "Champion + ThresholdOptimizer (equalized_odds, balanced_accuracy_score) (post-processing)",
+          "roc_auc": 0.700983,
+          "expected_loss": 1.1604,
+          "recall": 0.59375,
+          "flagged_rate": 0.3168,
+          "demographic_parity_difference": 0.012193,
+          "equalized_odds_difference": 0.068064,
+          "approval_rate_difference": 0.012193,
+          "disparate_impact_ratio": 0.982346
+        }
+      ]
+    }
+  },
+  "dataset": {
+    "dataset": {
+      "name": "Default of Credit Card Clients (UCI ML Repository, id 350)",
+      "url": "https://archive.ics.uci.edu/dataset/350/default+of+credit+card+clients",
+      "license": "CC BY 4.0",
+      "citation": "Yeh, I. C., & Lien, C. H. (2009). Expert Systems with Applications, 36(2), 2473-2480."
+    },
+    "fingerprint": "3df05ace93a33597",
+    "raw_rows": 30000,
+    "raw_columns": 24,
+    "raw_default_rate": 0.2329,
+    "raw_missing_values": 0,
+    "age_range": [
+      21,
+      79
+    ],
+    "codes": {
+      "SEX": {
+        "1": 11808,
+        "2": 18192
+      },
+      "EDUCATION": {
+        "1": 10674,
+        "2": 14046,
+        "3": 4826,
+        "4": 454
+      },
+      "MARRIAGE": {
+        "1": 13718,
+        "2": 15876,
+        "3": 406
+      },
+      "PAY_0": {
+        "-2": 2740,
+        "-1": 5665,
+        "0": 16107,
+        "1": 3873,
+        "2": 1371,
+        "3": 199,
+        "4": 13,
+        "5": 7,
+        "6": 6,
+        "7": 6,
+        "8": 13
+      }
+    },
+    "partitions": [
+      {
+        "path": "raw/credit_default.csv",
+        "rows": 30000,
+        "sha256": "756d0c82d6e9",
+        "age_min": 21,
+        "age_max": 79,
+        "default_rate": 0.2329
+      },
+      {
+        "path": "reference/train_baseline.csv",
+        "rows": 15000,
+        "sha256": "636c6ebaffdb",
+        "age_min": 30,
+        "age_max": 79,
+        "default_rate": 0.222733
+      },
+      {
+        "path": "processed/ground_truth_feedback.csv",
+        "rows": 5000,
+        "sha256": "51a664945d28",
+        "age_min": null,
+        "age_max": null,
+        "default_rate": 0.258
+      },
+      {
+        "path": "processed/stream_drifted.csv",
+        "rows": 5000,
+        "sha256": "92cfdefd1e92",
+        "age_min": 21,
+        "age_max": 29,
+        "default_rate": null
+      },
+      {
+        "path": "processed/stream_normal.csv",
+        "rows": 5000,
+        "sha256": "a66b20ad1415",
+        "age_min": 30,
+        "age_max": 79,
+        "default_rate": 0.2286
+      }
+    ]
+  },
+  "privacy": {
+    "pii_inventory": {
+      "LIMIT_BAL": {
+        "category": "financial",
+        "sensitivity": "high",
+        "treatment": "generalize to band in exports"
+      },
+      "SEX": {
+        "category": "protected_attribute",
+        "sensitivity": "special",
+        "treatment": "fairness audit only; drop"
+      },
+      "EDUCATION": {
+        "category": "protected_attribute",
+        "sensitivity": "high",
+        "treatment": "fairness audit only; drop"
+      },
+      "MARRIAGE": {
+        "category": "protected_attribute",
+        "sensitivity": "special",
+        "treatment": "fairness audit only; drop"
+      },
+      "AGE": {
+        "category": "protected_attribute",
+        "sensitivity": "high",
+        "treatment": "generalize to age band"
+      },
+      "PAY_0": {
+        "category": "financial_behaviour",
+        "sensitivity": "high",
+        "treatment": "keep (model input)"
+      },
+      "PAY_2": {
+        "category": "financial_behaviour",
+        "sensitivity": "high",
+        "treatment": "keep (model input)"
+      },
+      "PAY_3": {
+        "category": "financial_behaviour",
+        "sensitivity": "high",
+        "treatment": "keep (model input)"
+      },
+      "PAY_4": {
+        "category": "financial_behaviour",
+        "sensitivity": "high",
+        "treatment": "keep (model input)"
+      },
+      "PAY_5": {
+        "category": "financial_behaviour",
+        "sensitivity": "high",
+        "treatment": "keep (model input)"
+      },
+      "PAY_6": {
+        "category": "financial_behaviour",
+        "sensitivity": "high",
+        "treatment": "keep (model input)"
+      },
+      "BILL_AMT1": {
+        "category": "financial",
+        "sensitivity": "high",
+        "treatment": "keep (model input)"
+      },
+      "BILL_AMT2": {
+        "category": "financial",
+        "sensitivity": "high",
+        "treatment": "keep (model input)"
+      },
+      "BILL_AMT3": {
+        "category": "financial",
+        "sensitivity": "high",
+        "treatment": "keep (model input)"
+      },
+      "BILL_AMT4": {
+        "category": "financial",
+        "sensitivity": "high",
+        "treatment": "keep (model input)"
+      },
+      "BILL_AMT5": {
+        "category": "financial",
+        "sensitivity": "high",
+        "treatment": "keep (model input)"
+      },
+      "BILL_AMT6": {
+        "category": "financial",
+        "sensitivity": "high",
+        "treatment": "keep (model input)"
+      },
+      "PAY_AMT1": {
+        "category": "financial",
+        "sensitivity": "high",
+        "treatment": "keep (model input)"
+      },
+      "PAY_AMT2": {
+        "category": "financial",
+        "sensitivity": "high",
+        "treatment": "keep (model input)"
+      },
+      "PAY_AMT3": {
+        "category": "financial",
+        "sensitivity": "high",
+        "treatment": "keep (model input)"
+      },
+      "PAY_AMT4": {
+        "category": "financial",
+        "sensitivity": "high",
+        "treatment": "keep (model input)"
+      },
+      "PAY_AMT5": {
+        "category": "financial",
+        "sensitivity": "high",
+        "treatment": "keep (model input)"
+      },
+      "PAY_AMT6": {
+        "category": "financial",
+        "sensitivity": "high",
+        "treatment": "keep (model input)"
+      },
+      "request_id": {
+        "category": "pseudonymous_identifier",
+        "sensitivity": "medium",
+        "treatment": "HMAC pseudonym"
+      }
+    },
+    "inference_log_retention_days": 90
+  },
+  "figures": {
+    "group_metrics": "reports/figures/rai_fairness_group_metrics.png",
+    "decisions_by_age": "reports/figures/rai_decisions_by_age_group.png",
+    "mitigation_tradeoff": "reports/figures/rai_mitigation_tradeoff.png"
+  }
+}

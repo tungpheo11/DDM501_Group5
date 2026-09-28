@@ -1,0 +1,81 @@
+%% Deployment - single Ubuntu 24.04 host (VPS or Multipass/UTM VM): Nginx + TLS, systemd, Docker Compose prod overlay, volumes, backup
+flowchart LR
+    user["<b>Client / Loan Origination System</b><br/><i>HTTPS 443</i>"]:::external
+    ops["<b>MLOps Engineer</b><br/><i>SSH key-only + tunnel</i>"]:::person
+    gh["<b>GitHub Actions CD</b><br/><i>tag v* → environment production<br/>(required reviewers)</i>"]:::external
+    ghcr["<b>GHCR</b><br/><i>ghcr.io/&lt;owner&gt;/credit-risk-api@sha256</i>"]:::external
+    le["<b>Let's Encrypt</b><br/><i>ACME HTTP-01</i>"]:::external
+    tg["<b>Telegram Bot API</b>"]:::external
+    offsite[("<b>Off-site backup</b><br/><i>S3 bucket / máy khác (rsync)</i>")]:::store
+
+    subgraph host["Ubuntu 24.04 LTS host - /opt/credit-risk"]
+        direction LR
+        ufw{{"<b>UFW</b><br/>allow 22, 80, 443<br/>deny mọi port khác"}}:::fw
+
+        subgraph edge["Edge (systemd services trên host)"]
+            direction TB
+            nginx["<b>Nginx</b> reverse proxy<br/><i>deploy/ubuntu/nginx/credit-risk.conf</i><br/>TLS 1.2+, HSTS, rate limit /api,<br/>gzip, client_max_body_size"]:::host
+            certbot["<b>certbot.timer</b><br/>renew cert 2 lần/ngày"]:::host
+            unit["<b>credit-risk.service</b> (systemd)<br/><i>deploy/ubuntu/systemd/</i><br/>ExecStart: docker compose -f base -f prod<br/>-f image up -d; Restart=on-failure"]:::host
+            backup["<b>credit-risk-backup.timer</b><br/><i>deploy/ubuntu/backup.sh</i> 02:00 hằng ngày<br/>pg_dump + mc mirror, giữ 7 bản"]:::host
+        end
+
+        subgraph docker["Docker Engine - compose project credit-risk-mlops (ports chỉ bind 127.0.0.1)"]
+            direction TB
+            api["api<br/>127.0.0.1:18020"]:::ctr
+            graf["grafana<br/>127.0.0.1:13000"]:::ctr
+            mlf["mlflow<br/>127.0.0.1:15040"]:::ctr
+            af["airflow-webserver<br/>127.0.0.1:18080"]:::ctr
+            rest["postgres, minio, drift-monitor, prometheus,<br/>alertmanager, alert-webhook, statsd-exporter,<br/>airflow-scheduler (restart: always)"]:::ctr
+        end
+
+        subgraph vols["Docker named volumes"]
+            direction TB
+            v1[("pgdata")]:::vol
+            v2[("miniodata")]:::vol
+            v3[("prometheus-data<br/>retention 15d")]:::vol
+            v4[("grafana-data, alertmanager-data,<br/>drift-reports, airflow-logs")]:::vol
+        end
+
+        subgraph fs["Filesystem layout"]
+            direction TB
+            rel["releases/&lt;tag&gt;/  (giữ 5 bản)<br/>current → releases/&lt;tag&gt;<br/>previous_release (rollback target)"]:::file
+            env["shared/.env  (chmod 600, secrets,<br/>không bao giờ vào git)"]:::file
+            bk["/var/backups/credit-risk/<br/>YYYYMMDD/{postgres.sql.gz, minio/}"]:::file
+        end
+    end
+
+    user -- "443 api.&lt;domain&gt;" --> ufw
+    ops -- "22 SSH, ssh -L cho MLflow/Airflow/Prometheus" --> ufw
+    ufw --> nginx
+    nginx -- "/api/ , /health/ → proxy_pass" --> api
+    nginx -- "grafana.&lt;domain&gt; (Grafana login)" --> graf
+    nginx -. "mlflow / airflow chỉ qua SSH tunnel<br/>(hoặc basic auth + IP allowlist)" .-> mlf
+    nginx -.-> af
+    certbot -- "ACME" --> le
+    gh -- "SSH: upload bundle → deploy.sh deploy / smoke<br/>(fail → deploy.sh rollback)" --> rel
+    rel -- "docker compose pull (digest)" --> ghcr
+    unit -- "up -d khi boot" --> docker
+    env -. "--env-file" .-> docker
+    rest --- v1
+    rest --- v2
+    rest --- v3
+    rest --- v4
+    backup -- "docker exec pg_dump / mc mirror" --> rest
+    backup --> bk
+    bk -- "rsync / aws s3 sync" --> offsite
+    rest -- "Alertmanager → Bot API (443 outbound)" --> tg
+
+    classDef person fill:#08427B,stroke:#052E56,color:#FFFFFF,stroke-width:2px
+    classDef external fill:#8C8C8C,stroke:#6B6B6B,color:#FFFFFF,stroke-width:2px
+    classDef host fill:#E8F1FB,stroke:#1168BD,color:#0B2545,stroke-width:2px
+    classDef ctr fill:#438DD5,stroke:#2E6295,color:#FFFFFF,stroke-width:2px
+    classDef vol fill:#2F6FB0,stroke:#1D4F82,color:#FFFFFF,stroke-width:2px
+    classDef store fill:#2F6FB0,stroke:#1D4F82,color:#FFFFFF,stroke-width:2px
+    classDef file fill:#FFFFFF,stroke:#9AA9BC,color:#0B2545,stroke-width:1.5px
+    classDef fw fill:#FDECEA,stroke:#C62828,color:#7F1D1D,stroke-width:2px
+    style host fill:#F7F9FC,stroke:#1168BD,stroke-width:2px,color:#0B2545
+    style edge fill:#FFFFFF,stroke:#C5D3E3,color:#0B2545
+    style docker fill:#EEF4FB,stroke:#9AA9BC,color:#0B2545
+    style vols fill:#FFFFFF,stroke:#C5D3E3,color:#0B2545
+    style fs fill:#FFFFFF,stroke:#C5D3E3,color:#0B2545

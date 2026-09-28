@@ -1,0 +1,47 @@
+groups:
+  - name: credit_risk_operational_alerts
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Microservice {{ $labels.instance }} is DOWN"
+          description: "Target {{ $labels.job }} at {{ $labels.instance }} has been unreachable for > 30 seconds."
+
+      - alert: HighInferenceLatency
+        expr: histogram_quantile(0.95, sum(rate(credit_prediction_latency_seconds_bucket[2m])) by (le)) > 0.200
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Credit Risk API p95 Latency > 200ms"
+          description: "p95 inference latency has exceeded 200 milliseconds for 1 minute."
+
+      - alert: HighApiErrorRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[2m])) / sum(rate(http_requests_total[2m])) > 0.05
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High API Error Rate (> 5%)"
+          description: "Server 5xx errors exceed 5% of total inbound request traffic."
+
+      - alert: CriticalDataDriftDetected
+        expr: credit_data_drift_status >= 2 or evidently_data_drift_detected > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical Statistical Data Drift Detected (PSI >= 0.25)"
+          description: "Population Stability Index or KS-test indicates significant distribution shift. Automated retraining loop required."
+
+      - alert: AbnormalDefaultSurge
+        expr: sum(rate(credit_predictions_total{risk_level="DECLINE"}[5m])) / sum(rate(credit_predictions_total[5m])) > 0.60
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Credit Rejection Spike (> 60%)"
+          description: "The proportion of loan applications declined exceeded 60% over 5 minutes. Potential macroeconomic shock or coordinated attack."

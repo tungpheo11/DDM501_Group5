@@ -1,0 +1,108 @@
+%% End-to-end data flow with edge cases (offline training, online scoring, monitoring feedback loop)
+flowchart TB
+    subgraph offline["1 - Offline: data → model (make validate / make train)"]
+        direction LR
+        raw[("data/raw<br/>credit_default.csv")]:::store
+        v{{"pandera<br/>schema + domain<br/>+ target rate"}}:::decision
+        m{{"manifest<br/>sha256 khớp?"}}:::decision
+        split["split: reference 15k /<br/>stream normal / drifted / feedback"]:::step
+        tune["4 candidate × Optuna 20 trial<br/>StratifiedKFold 5-fold"]:::step
+        g1{{"gate<br/>ROC-AUC ≥ 0.70 và<br/>tốt hơn champion?"}}:::decision
+        mlr{{"MLflow<br/>reachable?"}}:::decision
+        reg["register version<br/>alias @champion"]:::ok
+        e1["DỪNG: exit ≠ 0<br/>reports/data_validation.json<br/>liệt kê dòng + cột lỗi"]:::edge
+        e2["DỪNG: data version lệch,<br/>chạy make manifest sau khi review"]:::edge
+        e3["giữ champion hiện tại,<br/>version mới = @challenger"]:::warn
+        e4["log vào mlruns/ local (SQLite),<br/>vẫn lưu models/*.joblib"]:::warn
+        raw --> v
+        v -- "pass" --> m
+        v -- "sai schema / ngoài domain" --> e1
+        m -- "khớp" --> split --> tune --> g1
+        m -- "lệch" --> e2
+        g1 -- "promote" --> mlr
+        g1 -- "reject" --> e3
+        mlr -- "có" --> reg
+        mlr -- "không" --> e4
+    end
+
+    subgraph startup["2 - Model loading (startup + POST /model/reload)"]
+        direction LR
+        st["ModelManager.load_champion()"]:::step
+        q1{{"MLflow<br/>reachable + load OK?"}}:::decision
+        q2{{"đang phục vụ model<br/>từ registry?"}}:::decision
+        q3{{"models/credit_model_v1.joblib<br/>load được?"}}:::decision
+        okm["serve @champion<br/>readiness = ready"]:::ok
+        keep["giữ nguyên model registry đang chạy<br/>(không downgrade), reload = failure"]:::warn
+        deg["serve local fallback<br/>readiness = degraded<br/>alert ModelServedFromFallback"]:::warn
+        none["không có model → 503"]:::edge
+        st --> q1
+        q1 -- "có" --> okm
+        q1 -- "MLflow down" --> q2
+        q2 -- "có" --> keep
+        q2 -- "không" --> q3
+        q3 -- "có" --> deg
+        q3 -- "không / hỏng" --> none
+    end
+
+    subgraph online["3 - Online: request → decision (Scoring API)"]
+        direction LR
+        req["POST /api/v1/predict<br/>JSON 23 feature"]:::io
+        a{{"X-API-Key<br/>hợp lệ?"}}:::decision
+        s{{"Pydantic<br/>schema + range"}}:::decision
+        b{{"batch ≤ 500?"}}:::decision
+        ml{{"model đã load?"}}:::decision
+        score["predict_proba → PD<br/>decision engine: APPROVE / REVIEW / DECLINE<br/>credit score, tier, limit, risk factors"]:::step
+        resp["200 OK + request_id<br/>model_version, served_by"]:::ok
+        log{{"PostgreSQL<br/>ghi inference_logs?"}}:::decision
+        r401["401 MISSING_API_KEY<br/>403 INVALID_API_KEY"]:::edge
+        r422["422 VALIDATION_ERROR<br/>details theo từng field"]:::edge
+        r413["413 BATCH_TOO_LARGE"]:::edge
+        r503["503 MODEL_UNAVAILABLE<br/>readiness = not_ready<br/>alert ModelNotLoaded"]:::edge
+        wlog["vẫn trả kết quả, không ghi log<br/>readiness = degraded (database_unavailable)"]:::warn
+        req --> a
+        a -- "thiếu / sai" --> r401
+        a -- "ok" --> s
+        s -- "sai kiểu, thiếu field,<br/>AGE &lt; 18, SEX ∉ {1,2}" --> r422
+        s -- "ok" --> b
+        b -- "quá lớn" --> r413
+        b -- "ok" --> ml
+        ml -- "không có model nào" --> r503
+        ml -- "có" --> score --> resp
+        score --> log
+        log -- "DB down" --> wlog
+    end
+
+    subgraph loop["4 - Monitoring + feedback loop"]
+        direction LR
+        dm{{"drift monitor mỗi 60s:<br/>≥ 50 log trong window 500?"}}:::decision
+        an["PSI key features + Evidently drift share<br/>+ prediction PSI → /metrics"]:::step
+        prom["Prometheus rules<br/>DataDriftDetected, PredictionDistributionShift,<br/>APIDown, HighErrorRate, HighLatencyP95 …"]:::step
+        am{{"Alertmanager:<br/>TELEGRAM_BOT_TOKEN có?"}}:::decision
+        tg["Telegram + webhook"]:::ok
+        wh["chỉ alert-webhook<br/>(fallback, luôn nhận)"]:::warn
+        dag["Airflow drift_monitoring<br/>→ model_retrain (cooldown 60 phút)"]:::step
+        sk["status = skipped<br/>(insufficient_samples /<br/>database_unavailable), không fail"]:::warn
+        stale["không có analysis mới<br/>→ alert DriftAnalysisStale"]:::edge
+        dm -- "đủ" --> an --> prom --> am
+        dm -- "thiếu / DB down" --> sk --> stale
+        am -- "có" --> tg
+        am -- "không" --> wh
+        an -- "dataset drift" --> dag
+    end
+
+    offline == "@champion trong MLflow Registry<br/>hoặc models/*.joblib" ==> startup
+    startup == "model đang phục vụ" ==> online
+    online == "inference_logs (PostgreSQL)" ==> loop
+    loop -. "drift → model_retrain → gate → promote → POST /model/reload" .-> startup
+
+    classDef store fill:#2F6FB0,stroke:#1D4F82,color:#FFFFFF,stroke-width:2px
+    classDef step fill:#E8F1FB,stroke:#1168BD,color:#0B2545,stroke-width:1.5px
+    classDef io fill:#FFFFFF,stroke:#1168BD,color:#0B2545,stroke-width:2px
+    classDef decision fill:#FFFFFF,stroke:#5B6B7F,color:#0B2545,stroke-width:1.5px
+    classDef ok fill:#E8F5E9,stroke:#2E7D32,color:#1B5E20,stroke-width:2px
+    classDef warn fill:#FFF4E5,stroke:#E08600,color:#663C00,stroke-width:2px
+    classDef edge fill:#FDECEA,stroke:#C62828,color:#7F1D1D,stroke-width:2px
+    style offline fill:#F7F9FC,stroke:#9AA9BC,color:#0B2545
+    style online fill:#F7F9FC,stroke:#9AA9BC,color:#0B2545
+    style startup fill:#F7F9FC,stroke:#9AA9BC,color:#0B2545
+    style loop fill:#F7F9FC,stroke:#9AA9BC,color:#0B2545

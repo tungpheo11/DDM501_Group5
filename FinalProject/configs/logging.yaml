@@ -1,0 +1,43 @@
+# Python logging dictConfig. Loaded by credit_risk.config.logging.setup_logging().
+# LOG_LEVEL env var overrides the root level; LOG_FORMAT=json|text picks the
+# console formatter (json by default).
+version: 1
+disable_existing_loggers: false
+
+formatters:
+  json:
+    (): credit_risk.config.logging.JsonFormatter
+  text:
+    format: "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+    datefmt: "%Y-%m-%dT%H:%M:%S%z"
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: json
+    stream: ext://sys.stdout
+
+loggers:
+  credit_risk:
+    level: INFO
+    handlers: [console]
+    propagate: false
+  uvicorn:
+    level: INFO
+    handlers: [console]
+    propagate: false
+  uvicorn.error:
+    level: INFO
+    handlers: [console]
+    propagate: false
+  # The API writes its own access log (without client IPs); uvicorn's is disabled.
+  uvicorn.access:
+    level: WARNING
+    handlers: [console]
+    propagate: false
+  httpx:
+    level: WARNING
+
+root:
+  level: INFO
+  handlers: [console]

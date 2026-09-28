@@ -1,0 +1,35 @@
+{
+  "scenario": "outage",
+  "started_at": "2026-09-28T12:14:10.511239+00:00",
+  "finished_at": "2026-09-28T12:16:13.326746+00:00",
+  "api_url": "http://localhost:18020",
+  "target": "api",
+  "down_seconds": 94.1,
+  "recovery_seconds": 7.1,
+  "traffic": {
+    "requests": 470,
+    "success": 76,
+    "errors": 394,
+    "status_codes": {
+      "200": 76,
+      "ConnectionError": 394
+    },
+    "decisions": {
+      "REVIEW": 42,
+      "DECLINE": 17,
+      "APPROVE": 17
+    },
+    "decision_share": {
+      "REVIEW": 0.553,
+      "DECLINE": 0.224,
+      "APPROVE": 0.224
+    },
+    "mean_default_probability": 0.4714,
+    "latency_ms": {
+      "p50": 7.8,
+      "p95": 37.9,
+      "p99": 82.4,
+      "max": 361.9
+    }
+  }
+}

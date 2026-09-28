@@ -1,0 +1,15 @@
+# APP_ENV=local — processes on the host talking to the Docker Compose stack
+# through its published ports (see .env.example).
+mlflow:
+  tracking_uri: http://localhost:15040
+  s3_endpoint_url: http://localhost:19040
+  # Without the Compose stack, training logs to a local SQLite store under mlruns/
+  # (browse with `make mlflow-ui`) so `make train` works on a clean machine.
+  local_fallback: true
+
+database:
+  host: localhost
+  port: 15434
+
+serving:
+  api_url: http://localhost:18020

@@ -1,0 +1,113 @@
+# Production overlay (single Ubuntu VPS behind a reverse proxy / SSH tunnel).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file ../../.env up -d
+#   (or: make up-prod)
+#
+# Differences from the development stack:
+# * no source bind mounts: containers run only what is baked into the images
+#   (model-bootstrap still mounts the read-only reference dataset);
+# * every published port binds to 127.0.0.1 (expose through nginx/Caddy or `ssh -L`);
+# * restart: always, stricter log rotation, secrets must be set explicitly
+#   (no fallback defaults for passwords);
+# * DAGs are baked into the Airflow image instead of mounted.
+# `!reset` / `!override` need Docker Compose >= 2.24.4.
+
+x-prod-logging: &prod-logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+
+services:
+  postgres:
+    restart: always
+    ports: !override
+      - "127.0.0.1:${POSTGRES_PORT:-15434}:5432"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required in production}
+    logging: *prod-logging
+
+  minio:
+    restart: always
+    ports: !override
+      - "127.0.0.1:${MINIO_API_PORT:-19040}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-19041}:9001"
+    environment:
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required in production}
+    logging: *prod-logging
+
+  mlflow:
+    restart: always
+    ports: !override
+      - "127.0.0.1:${MLFLOW_PORT:-15040}:5000"
+    logging: *prod-logging
+
+  # Keeps the read-only data/reference mount from the base file: the reference
+  # dataset ships in the release bundle, not in the image (see .dockerignore).
+  model-bootstrap:
+    logging: *prod-logging
+
+  api:
+    restart: always
+    ports: !override
+      - "127.0.0.1:${API_PORT:-18020}:8000"
+    volumes: !reset []
+    environment:
+      PSEUDONYMIZATION_KEY: ${PSEUDONYMIZATION_KEY:?PSEUDONYMIZATION_KEY is required in production}
+      LOG_FORMAT: json
+    logging: *prod-logging
+
+  drift-monitor:
+    restart: always
+    ports: !override
+      - "127.0.0.1:${DRIFT_MONITOR_PORT:-18085}:8085"
+    logging: *prod-logging
+
+  prometheus:
+    restart: always
+    ports: !override
+      - "127.0.0.1:${PROMETHEUS_PORT:-19090}:9090"
+    logging: *prod-logging
+
+  alertmanager:
+    restart: always
+    ports: !override
+      - "127.0.0.1:${ALERTMANAGER_PORT:-19093}:9093"
+    logging: *prod-logging
+
+  alert-webhook:
+    restart: always
+    ports: !override
+      - "127.0.0.1:${ALERT_WEBHOOK_PORT:-19095}:9095"
+    logging: *prod-logging
+
+  grafana:
+    restart: always
+    ports: !override
+      - "127.0.0.1:${GRAFANA_PORT:-13000}:3000"
+    logging: *prod-logging
+
+  statsd-exporter:
+    restart: always
+    ports: !override
+      - "127.0.0.1:${STATSD_EXPORTER_PORT:-19102}:9102"
+    logging: *prod-logging
+
+  airflow-init:
+    volumes: !override
+      - airflow-logs:/opt/airflow/logs
+    logging: *prod-logging
+
+  airflow-webserver:
+    restart: always
+    ports: !override
+      - "127.0.0.1:${AIRFLOW_PORT:-18080}:8080"
+    volumes: !override
+      - airflow-logs:/opt/airflow/logs
+    logging: *prod-logging
+
+  airflow-scheduler:
+    restart: always
+    volumes: !override
+      - airflow-logs:/opt/airflow/logs
+    logging: *prod-logging

@@ -3,23 +3,49 @@
 env/
 venv/
 
-# Python cache
+# Python cache / build
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.egg-info/
+build/
+dist/
 
-# Test & coverage
+# Tooling caches
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .coverage
+coverage.xml
 htmlcov/
+reports/coverage/
+reports/security/
 
-# Local databases & storage
+# Local MLflow / databases / storage
+mlruns/
+mlartifacts/
 *.db
 *.sqlite
 pg-data/
 minio-data/
 *.log
+orchestration/airflow/logs/
+orchestration/airflow/dags/_chaos_*.py
 
-# Sensitive environment variables
+# Notebooks
+.ipynb_checkpoints/
+
+# Grafana review screenshots (only "after/" is referenced by the docs)
+docs/assets/screenshots/grafana/before/
+
+# Secrets
 .env
+.env.*
+!.env.example
+secrets/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/

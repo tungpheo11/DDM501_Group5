@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Credit Default Risk Scoring — MLOps end-to-end · DDM501 Group 5</title>
+<!-- Template: html-anything deck-tech-sharing (GitHub-dark + JetBrains Mono). Canvas 1920×1080, scaled to fit. -->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+:root{
+  --bg:#0d1117;--bg-soft:#161b22;--surface:#161b22;--surface-2:#1c2230;
+  --border:rgba(139,148,158,.22);--border-strong:rgba(139,148,158,.4);
+  --text-1:#e6edf3;--text-2:#9da7b3;--text-3:#6e7681;
+  --accent:#7ee787;--accent-2:#79c0ff;--accent-3:#ff7b72;--accent-4:#d2a8ff;--warn:#e3b341;
+  --grad:linear-gradient(120deg,#7ee787 0%,#79c0ff 60%,#d2a8ff 100%);
+  --radius:14px;--ease:cubic-bezier(.4,0,.2,1);
+  --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  --font-mono:'JetBrains Mono','IBM Plex Mono',SFMono-Regular,Menlo,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#010409;color:var(--text-1);font-family:var(--font-sans);
+  -webkit-font-smoothing:antialiased;overflow:hidden}
+img{display:block;max-width:100%}
+code,.mono{font-family:var(--font-mono)}
+
+/* ---------- stage: fixed 1920×1080 canvas scaled to the window ---------- */
+.stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+.deck{position:relative;width:1920px;height:1080px;flex:none;transform-origin:center center;background:var(--bg);overflow:hidden}
+.slide{position:absolute;inset:0;padding:84px 112px 96px;display:flex;flex-direction:column;
+  opacity:0;pointer-events:none;transform:translateX(30px);transition:opacity .45s var(--ease),transform .45s var(--ease);background:var(--bg)}
+.slide.is-active{opacity:1;pointer-events:auto;transform:none;z-index:2}
+.slide.is-prev{transform:translateX(-30px)}
+.slide::before{content:"";position:absolute;inset:0;pointer-events:none;background:
+  radial-gradient(60% 50% at 92% 8%,rgba(121,192,255,.10),transparent 60%),
+  radial-gradient(50% 50% at 8% 92%,rgba(126,231,135,.07),transparent 60%)}
+.slide>*{position:relative;z-index:1}
+.notes{display:none}
+
+/* ---------- typography ---------- */
+.kicker{font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--accent);margin:0 0 14px}
+.kicker::before{content:"> "}
+.h1{font-size:92px;line-height:1.03;font-weight:800;letter-spacing:-.03em;color:#fff;margin:0}
+.h2{font-size:58px;line-height:1.1;font-weight:700;letter-spacing:-.025em;color:#fff;margin:0 0 8px}
+h3{font-size:32px;line-height:1.2;font-weight:700;color:#fff;margin:0 0 10px}
+h4{font-size:26px;line-height:1.25;font-weight:600;color:#fff;margin:0 0 8px}
+.lede{font-size:32px;line-height:1.45;color:var(--text-2);font-weight:400;margin:0;max-width:60ch}
+p{margin:0}
+.dim{color:var(--text-2)}
+.grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.good{color:var(--accent)}.blue{color:var(--accent-2)}.bad{color:var(--accent-3)}.warn{color:var(--warn)}.violet{color:var(--accent-4)}
+
+/* ---------- layout ---------- */
+.grid{display:grid;gap:28px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.g-5-7{grid-template-columns:5fr 7fr}.g-7-5{grid-template-columns:7fr 5fr}.g-4-8{grid-template-columns:4fr 8fr}
+.fill{flex:1;min-height:0}
+.mt-s{margin-top:12px}.mt-m{margin-top:24px}.mt-l{margin-top:40px}
+.stack>*+*{margin-top:16px}
+.row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.center{align-items:center;justify-content:center;text-align:center}
+
+/* ---------- components ---------- */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px 30px}
+.card-accent{border-top:4px solid var(--accent)}
+.card-blue{border-top:4px solid var(--accent-2)}
+.card-red{border-top:4px solid var(--accent-3)}
+.card-violet{border-top:4px solid var(--accent-4)}
+.card-warn{border-top:4px solid var(--warn)}
+.card p,.card li{font-size:24px;line-height:1.45;color:var(--text-2)}
+.card ul{margin:8px 0 0;padding-left:26px}
+.card li+li{margin-top:6px}
+.tag{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:8px;font-family:var(--font-mono);
+  font-size:20px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-2)}
+.tag.good{color:var(--accent);border-color:rgba(126,231,135,.35);background:rgba(126,231,135,.08)}
+.tag.bad{color:var(--accent-3);border-color:rgba(255,123,114,.35);background:rgba(255,123,114,.08)}
+.tag.warn{color:var(--warn);border-color:rgba(227,179,65,.35);background:rgba(227,179,65,.08)}
+.tag.blue{color:var(--accent-2);border-color:rgba(121,192,255,.35);background:rgba(121,192,255,.08)}
+.metric{font-size:64px;font-weight:800;letter-spacing:-.03em;line-height:1;color:#fff}
+.metric small{font-size:28px;font-weight:600;color:var(--text-2);margin-left:6px}
+.metric-label{font-family:var(--font-mono);font-size:20px;color:var(--text-3);margin-top:10px}
+
+.figure{background:#fff;border-radius:var(--radius);padding:18px;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0}
+.figure img{max-height:100%;width:auto;object-fit:contain}
+.shot{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:#111217;min-height:0;display:flex}
+.shot img{width:100%;height:100%;object-fit:cover;object-position:top left}
+.caption{font-family:var(--font-mono);font-size:18px;color:var(--text-3);margin-top:10px}
+
+table.t{width:100%;border-collapse:collapse;font-size:23px}
+table.t th{font-family:var(--font-mono);font-size:18px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);text-align:left;padding:10px 14px;border-bottom:1px solid var(--border-strong)}
+table.t td{padding:12px 14px;border-bottom:1px dashed var(--border);color:var(--text-1);vertical-align:top}
+table.t td.num,table.t th.num{text-align:right;font-family:var(--font-mono)}
+table.t tr.sel td{background:rgba(126,231,135,.07)}
+table.t td .dim{font-size:20px}
+
+.terminal{background:#010409;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;font-family:var(--font-mono);font-size:22px;line-height:1.6}
+.terminal .bar{display:flex;align-items:center;gap:8px;padding:12px 16px;background:#161b22;border-bottom:1px solid var(--border);font-size:16px;color:var(--text-3)}
+.terminal .dot{width:12px;height:12px;border-radius:50%;background:#ff5f56}
+.terminal .dot:nth-child(2){background:#ffbd2e}.terminal .dot:nth-child(3){background:#27c93f}
+.terminal pre{margin:0;padding:22px 28px;color:#e6edf3;white-space:pre}
+.cmt{color:#8b949e}.kw{color:#ff7b72}.fn{color:#d2a8ff}.str{color:#a5d6ff}.num{color:#79c0ff}
+
+.agenda-row{display:flex;align-items:baseline;gap:28px;padding:15px 0;border-bottom:1px dashed var(--border);font-family:var(--font-mono)}
+.agenda-row .n{color:var(--accent);width:56px;font-size:24px;flex:none}
+.agenda-row .t{color:#fff;font-size:32px;flex:1;font-family:var(--font-sans);font-weight:600}
+.agenda-row .d{color:var(--text-3);font-size:22px;width:340px}
+.agenda-row .m{color:var(--accent-2);font-size:22px;width:110px;text-align:right}
+
+.flow{display:flex;align-items:stretch;gap:0}
+.flow .step{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 18px;font-size:22px;color:var(--text-2)}
+.flow .step b{display:block;color:#fff;font-size:24px;margin-bottom:6px}
+.flow .arrow{flex:none;width:40px;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:28px}
+
+.pipe{display:flex;flex-wrap:wrap;align-items:center;gap:10px 0}
+.pipe-note{font-size:20px;color:var(--text-3);margin:10px 0 0}
+.chip{display:inline-flex;align-items:baseline;gap:8px;font-family:var(--font-mono);font-size:21px;padding:9px 14px;border-radius:9px;
+  background:var(--surface-2);border:1px solid var(--border-strong);color:#fff}
+.chip em{font-style:normal;font-size:16px;color:var(--warn)}
+.chip.good{border-color:rgba(126,231,135,.5);background:rgba(126,231,135,.10)}
+.chip.bad{border-color:rgba(255,123,114,.5);background:rgba(255,123,114,.10)}
+.chip.warn{border-color:rgba(227,179,65,.5);background:rgba(227,179,65,.10)}
+.chip.violet{border-color:rgba(210,168,255,.5);background:rgba(210,168,255,.10)}
+.to{color:var(--text-3);font-size:22px;padding:0 10px}
+.branch{border-left:2px dashed var(--border-strong);margin-left:18px;padding-left:22px}
+.branch>div{display:flex;align-items:center;flex-wrap:wrap;margin-top:12px}
+.branch .lbl{font-family:var(--font-mono);font-size:18px;width:58px;color:var(--text-3)}
+.speaker{display:flex;align-items:center;gap:18px;margin-top:48px}
+.speaker .av{width:72px;height:72px;border-radius:50%;background:var(--grad)}
+.speaker b{display:block;color:#fff;font-size:28px}
+.speaker span{color:var(--text-3);font-size:22px;font-family:var(--font-mono)}
+
+/* ---------- chrome ---------- */
+.deck-footer{position:absolute;left:112px;right:112px;bottom:36px;display:flex;justify-content:space-between;
+  font-family:var(--font-mono);font-size:18px;color:var(--text-3);z-index:5;pointer-events:none}
+.progress{position:absolute;left:0;bottom:0;height:5px;background:var(--accent);transition:width .3s var(--ease);z-index:6}
+.notes-overlay{position:fixed;left:0;right:0;bottom:0;max-height:40vh;overflow:auto;background:rgba(13,17,23,.97);color:#e6edf3;
+  border-top:1px solid var(--border-strong);padding:20px 32px;font-size:17px;line-height:1.6;transform:translateY(100%);transition:transform .25s var(--ease);z-index:50}
+.notes-overlay.open{transform:none}
+.notes-overlay h5{margin:0 0 8px;font-family:var(--font-mono);color:var(--accent);font-size:14px}
+.overview{position:fixed;inset:0;z-index:60;background:rgba(1,4,9,.95);display:none;padding:32px;overflow:auto;
+  grid-template-columns:repeat(5,1fr);gap:16px;align-content:start}
+.overview.open{display:grid}
+.overview button{all:unset;cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;
+  font:600 15px var(--font-sans);color:#fff;aspect-ratio:16/9;display:flex;flex-direction:column;justify-content:space-between}
+.overview button span{font-family:var(--font-mono);color:var(--accent);font-size:13px}
+.overview button:focus-visible,.overview button:hover{outline:2px solid var(--accent-2)}
+.help{position:fixed;right:16px;top:12px;font:12px var(--font-mono);color:var(--text-3);z-index:40;opacity:.7}
+@media (max-width:900px),(pointer:coarse){.help{display:none}}
+
+/* ---------- export / print: every slide one page ---------- */
+body.export .stage{position:static;display:block}
+body.export .deck{transform:none!important}
+body.export .help,body.export .notes-overlay{display:none}
+@media print{
+  @page{size:1920px 1080px;margin:0}
+  html,body{overflow:visible;height:auto;background:var(--bg)}
+  .stage{position:static;display:block}
+  .deck{transform:none!important;height:auto;overflow:visible}
+  .slide{position:relative;opacity:1;transform:none;height:1080px;page-break-after:always;break-after:page}
+  .help,.notes-overlay,.overview,.progress{display:none!important}
+}
+@media (prefers-reduced-motion:reduce){.slide{transition:none}}
+</style>
+</head>
+<body>
+<div class="help" aria-hidden="true">← → điều hướng · N ghi chú · O tổng quan · F toàn màn hình</div>
+<div class="stage"><div class="deck" id="deck">
+
+<!-- 1. Cover -->
+<section class="slide center" data-title="Mở đầu" style="justify-content:center">
+  <p class="kicker">ddm501 / final-project / group-5</p>
+  <h1 class="h1">Credit Default Risk Scoring<br><span class="grad">từ notebook đến production</span></h1>
+  <p class="lede mt-m" style="margin-left:auto;margin-right:auto">Hệ thống MLOps end-to-end: train → registry → serving → monitoring → drift → retrain có quality gate, triển khai trên Ubuntu.</p>
+  <div class="row mt-l" style="justify-content:center">
+    <span class="tag">UCI Credit Default · 30k hồ sơ</span><span class="tag">FastAPI · MLflow · Airflow</span><span class="tag">Prometheus · Grafana · Evidently</span><span class="tag">Docker Compose · GitHub Actions</span>
+  </div>
+  <div class="speaker" style="justify-content:center"><div class="av"></div><div style="text-align:left"><b>DDM501 · Group 5</b><span>FSB · 15–20 phút + 10 phút Q&amp;A</span></div></div>
+  <aside class="notes">Chào hội đồng. Nhóm 5 trình bày hệ thống chấm điểm rủi ro vỡ nợ thẻ tín dụng, trọng tâm không phải model tốt nhất mà là hệ thống vận hành được: có kiểm thử, giám sát, tự retrain an toàn và triển khai lặp lại được. (~30 giây)</aside>
+</section>
+
+<!-- 2. Agenda -->
+<section class="slide" data-title="Agenda">
+  <p class="kicker">agenda.yaml · ~19 phút</p>
+  <h2 class="h2">Lộ trình trình bày</h2>
+  <div class="mt-m">
+    <div class="agenda-row"><span class="n">01</span><span class="t">Problem &amp; yêu cầu</span><span class="d">bài toán, cost, SLO</span><span class="m">2′</span></div>
+    <div class="agenda-row"><span class="n">02</span><span class="t">Architecture</span><span class="d">ngữ cảnh · container · ADR</span><span class="m">2.5′</span></div>
+    <div class="agenda-row"><span class="n">03</span><span class="t">ML Pipeline</span><span class="d">train · HPO · quality gate</span><span class="m">2′</span></div>
+    <div class="agenda-row"><span class="n">04</span><span class="t">Deployment</span><span class="d">API · Docker · Ubuntu · CD</span><span class="m">1.5′</span></div>
+    <div class="agenda-row"><span class="n">05</span><span class="t">Monitoring</span><span class="d">4 dashboard · 11 alert · drift</span><span class="m">2′</span></div>
+    <div class="agenda-row"><span class="n">06</span><span class="t">Testing / CI-CD</span><span class="d">test pyramid · gate · rollback</span><span class="m">1.5′</span></div>
+    <div class="agenda-row"><span class="n">07</span><span class="t">Responsible AI</span><span class="d">fairness · SHAP · privacy</span><span class="m">2′</span></div>
+    <div class="agenda-row"><span class="n">08</span><span class="t">Live demo</span><span class="d">drift → retrain → quality gate</span><span class="m">4′</span></div>
+    <div class="agenda-row"><span class="n">09</span><span class="t">Lessons learned</span><span class="d">điều nhóm sẽ làm khác</span><span class="m">1′</span></div>
+  </div>
+  <aside class="notes">Thứ tự bám đúng rubric. Demo trực tiếp khoảng 4 phút ở gần cuối; nếu demo gặp sự cố có ảnh/log dự phòng.</aside>
+</section>
+
+<!-- 3. Problem -->
+<section class="slide" data-title="Problem">
+  <p class="kicker">01 · problem</p>
+  <h2 class="h2">Duyệt thẻ tín dụng: bỏ sót một người vỡ nợ<br>đắt gấp <span class="bad">10 lần</span> từ chối nhầm một người tốt.</h2>
+  <div class="grid g3 mt-l">
+    <div class="card card-blue"><h4>Bối cảnh</h4><p>Ngân hàng phát hành thẻ cần chấm điểm hồ sơ theo thời gian thực từ hệ thống LOS. Dữ liệu: UCI Default of Credit Card Clients (Đài Loan) — 30.000 hồ sơ, default rate ≈ 22%.</p></div>
+    <div class="card card-red"><h4>Chi phí bất đối xứng</h4><p>Cost matrix <b class="bad">FN = 10</b>, <b class="warn">FP = 1</b>. Model được chọn theo ROC-AUC nhưng đánh giá thêm bằng <b>expected loss</b> trên mỗi hồ sơ.</p></div>
+    <div class="card card-accent"><h4>Quyết định 3 mức</h4><p><span class="good">APPROVE</span> khi PD &lt; 0.30 · <span class="warn">REVIEW</span> khi &lt; 0.60 · <span class="bad">DECLINE</span> còn lại. REVIEW luôn qua người duyệt (human-in-the-loop).</p></div>
+  </div>
+  <p class="lede mt-l">Model chỉ là 5–10% hệ thống — phần còn lại là dữ liệu, serving, giám sát và vận hành.</p>
+  <aside class="notes">Nhấn mạnh cost matrix: vì FN đắt gấp 10, ta không tối ưu accuracy. Vùng REVIEW là thiết kế có chủ đích để con người xử lý ca không chắc chắn — liên quan phần Responsible AI.</aside>
+</section>
+
+<!-- 4. Requirements -->
+<section class="slide" data-title="Yêu cầu & kết quả">
+  <p class="kicker">01 · requirements → evidence</p>
+  <h2 class="h2">Yêu cầu đo được, và kết quả đạt</h2>
+  <table class="t mt-m">
+    <thead><tr><th>Yêu cầu</th><th>Mục tiêu</th><th>Đạt được</th><th>Bằng chứng</th></tr></thead>
+    <tbody>
+      <tr><td>Chất lượng model</td><td>ROC-AUC ≥ 0.70 (quality floor)</td><td><b class="good">CV 0.7513 · holdout 0.7700</b></td><td class="dim"><code>reports/model_comparison.md</code></td></tr>
+      <tr><td>Độ trễ serving</td><td>p95 &lt; 100 ms</td><td><b class="good">p95 18.8 ms</b> <span class="dim">(server 8.8 ms)</span></td><td class="dim"><code>make bench</code></td></tr>
+      <tr><td>Độ sẵn sàng</td><td>error &lt; 5% · uptime 99.9%</td><td><b class="good">0 lỗi / 2.500 request mô phỏng</b></td><td class="dim">Grafana Infra &amp; SLA</td></tr>
+      <tr><td>Phát hiện drift</td><td>PSI ≥ 0.25 hoặc drift share ≥ 50%</td><td><b class="good">phân tích mỗi 30 phút</b></td><td class="dim">DAG <code>drift_monitoring</code></td></tr>
+      <tr><td>Retrain an toàn</td><td>không promote model kém hơn</td><td><b class="good">gate + tự rollback</b></td><td class="dim">DAG <code>model_retrain</code></td></tr>
+      <tr><td>Công bằng</td><td>DI ≥ 0.8 (four-fifths)</td><td><b class="warn">WARN: AGE DI 0.41</b></td><td class="dim"><code>reports/fairness_report.md</code></td></tr>
+    </tbody>
+  </table>
+  <aside class="notes">Mọi con số trên slide đều sinh tự động từ report trong repo, không nhập tay. Nói thẳng dòng fairness đang WARN — phần RAI sẽ giải thích nguyên nhân và mitigation.</aside>
+</section>
+
+<!-- 5. System context -->
+<section class="slide" data-title="Ngữ cảnh hệ thống">
+  <p class="kicker">02 · architecture · ngữ cảnh hệ thống</p>
+  <div class="grid g-4-8 fill" style="align-items:stretch">
+    <div>
+      <h2 class="h2">Ai dùng hệ thống, và hệ thống phụ thuộc vào đâu</h2>
+      <div class="stack mt-m">
+        <div class="card card-blue"><p><b style="color:#fff">3 nhóm người dùng:</b> Loan Officer (chấm điểm, giải thích), MLOps Engineer (vận hành, retrain), Risk &amp; Compliance (fairness, audit).</p></div>
+        <div class="card"><p><b style="color:#fff">Hệ thống ngoài:</b> LOS / simulator gọi API; UCI dataset; GitHub Actions + GHCR cho CI/CD; Telegram nhận alert.</p></div>
+      </div>
+    </div>
+    <div class="figure"><img src="../assets/diagrams/01-system-context.svg" alt="Sơ đồ ngữ cảnh hệ thống"></div>
+  </div>
+  <aside class="notes">Ở sơ đồ ngữ cảnh, hệ thống là một hộp đen. Điểm quan trọng: Risk &amp; Compliance là người dùng hạng nhất, không phải phần phụ — họ đọc fairness report và model card.</aside>
+</section>
+
+<!-- 6. Containers -->
+<section class="slide" data-title="Sơ đồ container">
+  <p class="kicker">02 · architecture · container</p>
+  <div class="grid g-4-8 fill" style="align-items:stretch">
+    <div>
+      <h2 class="h2">15 service, 3 profile Compose</h2>
+      <div class="stack mt-m">
+        <div class="card card-blue"><p><b class="blue">core</b> — API FastAPI, MLflow, PostgreSQL, MinIO (+ 2 job khởi tạo)</p></div>
+        <div class="card card-accent"><p><b class="good">monitoring</b> — Prometheus, Alertmanager, Grafana, drift-monitor (Evidently), statsd-exporter, alert-webhook</p></div>
+        <div class="card card-violet"><p><b class="violet">orchestration</b> — Airflow 2.10 webserver + scheduler (+ init)</p></div>
+      </div>
+      <p class="caption mt-m">make up · make health · 12 long-running + 3 one-shot</p>
+    </div>
+    <div class="figure"><img src="../assets/diagrams/02-container.svg" alt="Sơ đồ container"></div>
+  </div>
+  <aside class="notes">Tách profile để máy yếu vẫn chạy được core. Model artifact nằm ở MinIO qua MLflow registry; API load alias @champion. Sơ đồ component cho API và ML pipeline có trong docs/assets/diagrams.</aside>
+</section>
+
+<!-- 7. ADR -->
+<section class="slide" data-title="Quyết định kiến trúc">
+  <p class="kicker">02 · architecture · adr</p>
+  <h2 class="h2">6 quyết định kiến trúc, mỗi cái có trade-off</h2>
+  <div class="grid g3 mt-m">
+    <div class="card card-blue"><h4>FastAPI serving</h4><p>Async, OpenAPI tự sinh, Pydantic validate schema → lỗi 422 rõ ràng. <span class="dim">Đổi lại: tự lo batching.</span></p></div>
+    <div class="card card-blue"><h4>MLflow + Postgres + MinIO</h4><p>Registry có alias <code>@champion</code>, artifact S3-compatible, chạy offline. <span class="dim">Thêm 3 container.</span></p></div>
+    <div class="card card-violet"><h4>Airflow thay cron</h4><p>DAG có retry, trigger rule, lịch sử run, metric statsd. <span class="dim">Thêm 3 container, nặng hơn cron.</span></p></div>
+    <div class="card card-accent"><h4>Evidently + PSI</h4><p>PSI cho feature chính (dễ giải thích), Evidently cho drift share toàn bộ. <span class="dim">Cần ≥ 50 mẫu/cửa sổ.</span></p></div>
+    <div class="card card-warn"><h4>Compose thay Kubernetes</h4><p>1 máy Ubuntu, deploy/rollback bằng release dir. <span class="dim">Không auto-scale, không HA.</span></p></div>
+    <div class="card"><h4>src layout + config phân lớp</h4><p>Package <code>credit_risk</code>, YAML theo môi trường, bí mật chỉ qua <code>.env</code>. <span class="dim">Nhiều file config hơn.</span></p></div>
+  </div>
+  <p class="caption mt-m">docs/adr/0001 … 0006</p>
+  <aside class="notes">Nhấn quyết định Compose thay K8s: phù hợp quy mô đồ án và 1 VM, chấp nhận không HA. Nếu hỏi về scale: API stateless nên có thể nhân bản sau Nginx.</aside>
+</section>
+
+<!-- 8. ML pipeline -->
+<section class="slide" data-title="ML pipeline">
+  <p class="kicker">03 · ml pipeline</p>
+  <h2 class="h2">4 thuật toán, cùng một quy trình tái lập</h2>
+  <div class="flow mt-m">
+    <div class="step"><b>Validate</b>schema + range, manifest fingerprint <code>3df05ace</code></div><div class="arrow">→</div>
+    <div class="step"><b>Features</b>23 gốc + 12 engineered (utilization, delay…)</div><div class="arrow">→</div>
+    <div class="step"><b>HPO</b>Optuna TPE 20 trial · StratifiedKFold 5</div><div class="arrow">→</div>
+    <div class="step"><b>Evaluate</b>ROC/PR-AUC, F1, recall, expected loss</div><div class="arrow">→</div>
+    <div class="step"><b>Register</b>MLflow run + model version + alias</div>
+  </div>
+  <table class="t mt-l">
+    <thead><tr><th>Model</th><th class="num">CV ROC-AUC</th><th class="num">Holdout ROC-AUC</th><th class="num">PR-AUC</th><th class="num">Recall</th><th class="num">Expected loss</th></tr></thead>
+    <tbody>
+      <tr class="sel"><td><b class="good">Logistic Regression ✓</b></td><td class="num">0.7513 ± 0.015</td><td class="num">0.7700</td><td class="num">0.5688</td><td class="num">0.621</td><td class="num"><b class="good">1.003</b></td></tr>
+      <tr><td>XGBoost</td><td class="num">0.7509 ± 0.013</td><td class="num">0.7671</td><td class="num">0.5671</td><td class="num">0.563</td><td class="num">1.097</td></tr>
+      <tr><td>LightGBM</td><td class="num">0.7488 ± 0.012</td><td class="num">0.7678</td><td class="num">0.5705</td><td class="num">0.579</td><td class="num">1.079</td></tr>
+      <tr><td>Random Forest</td><td class="num">0.7472 ± 0.011</td><td class="num">0.7657</td><td class="num">0.5635</td><td class="num">0.534</td><td class="num">1.143</td></tr>
+    </tbody>
+  </table>
+  <p class="lede mt-m" style="font-size:28px">LR thắng CV ROC-AUC, có expected loss thấp nhất và dễ giải thích — boosting không đáng thêm độ phức tạp.</p>
+  <aside class="notes">Chênh lệch ROC-AUC giữa 4 model nằm trong 1 độ lệch chuẩn, nên tiêu chí phụ (expected loss, khả năng giải thích, latency) quyết định. Train chỉ trên khách ≥ 30 tuổi theo thiết kế drift — điều này quay lại ở phần fairness.</aside>
+</section>
+
+<!-- 9. Quality gate + retrain -->
+<section class="slide" data-title="Quality gate & retrain">
+  <p class="kicker">03 · champion / challenger</p>
+  <div class="grid g-5-7 fill" style="align-items:stretch">
+    <div>
+      <h2 class="h2">Retrain tự động, nhưng không bao giờ promote model kém hơn</h2>
+      <div class="card card-accent mt-m"><h4>PromotionPolicy</h4>
+        <ul><li>ROC-AUC challenger ≥ <b style="color:#fff">0.70</b> (floor)</li><li>không giảm quá <b style="color:#fff">0.005</b> so với champion</li><li>expected loss không tệ hơn champion</li></ul></div>
+      <div class="card card-red mt-m"><h4>Khi thất bại</h4>
+        <ul><li>dưới floor → giữ champion, alert <code>RetrainFailed</code></li><li>API không nạp đúng version → <code>rollback_champion</code></li><li>trigger từ drift có cooldown 60 phút</li></ul></div>
+    </div>
+    <div class="card" style="padding:30px 34px">
+      <p class="kicker" style="color:var(--accent-4)">dag: drift_monitoring · */30 phút</p>
+      <div class="pipe">
+        <span class="chip">run_drift_analysis</span><span class="to">→</span><span class="chip">decide</span><span class="to">→</span><span class="chip warn">check_retrain_cooldown<em>60′</em></span><span class="to">→</span><span class="chip violet">trigger_model_retrain</span>
+      </div>
+      <p class="pipe-note">không drift / chưa đủ 50 mẫu → skip · chỉ prediction shift → alert, không retrain</p>
+      <p class="kicker mt-l" style="color:var(--accent-2)">dag: model_retrain</p>
+      <div class="pipe">
+        <span class="chip">train_challenger</span><span class="to">→</span><span class="chip warn">quality_gate<em>floor 0.70</em></span><span class="to">→</span><span class="chip">decide_promotion</span>
+      </div>
+      <div class="branch mt-s">
+        <div><span class="lbl good">pass</span><span class="chip good">promote_champion</span><span class="to">→</span><span class="chip good">reload_api<em>check version</em></span><span class="to">→</span><span class="chip">refresh_drift_reference</span><span class="to">→</span><span class="chip">notify</span></div>
+        <div><span class="lbl">keep</span><span class="chip">keep_champion</span><span class="pipe-note" style="margin:0 0 0 14px">challenger không tốt hơn → notify, giữ nguyên</span></div>
+        <div><span class="lbl bad">fail</span><span class="chip bad">rollback_champion</span><span class="pipe-note" style="margin:0 0 0 14px">ONE_FAILED: API không đổi version → trả alias về bản cũ</span></div>
+        <div><span class="lbl bad">floor</span><span class="chip bad">run failed</span><span class="pipe-note" style="margin:0 0 0 14px">ROC-AUC &lt; floor → champion giữ nguyên, alert RetrainFailed</span></div>
+      </div>
+      <p class="caption mt-m">Sequence đầy đủ: docs/assets/diagrams/06-retrain-sequence.svg</p>
+    </div>
+  </div>
+  <aside class="notes">drift_monitoring chạy mỗi 30 phút; chỉ khi dataset drift (không phải chỉ prediction shift) và qua cooldown mới trigger model_retrain. Trong model_retrain: floor 0.70 chặn cứng; so sánh với champion quyết định promote hay keep; reload_api kiểm tra API thật sự phục vụ version mới, nếu không thì rollback_champion trả alias về bản cũ. Demo chạy nhánh pass bằng make retrain-dag và nhánh floor bằng make retrain-fail.</aside>
+</section>
+
+<!-- 10. Serving -->
+<section class="slide" data-title="Serving API">
+  <p class="kicker">04 · deployment · serving</p>
+  <h2 class="h2">API không bao giờ “chết im lặng”</h2>
+  <div class="grid g2 mt-m">
+    <div class="terminal">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span>POST /api/v1/predict</span></div>
+<pre><span class="cmt"># X-API-Key bắt buộc · batch tối đa 500</span>
+{
+  <span class="str">"default_probability"</span>: <span class="num">0.41</span>,
+  <span class="str">"credit_score"</span>: <span class="num">612</span>,
+  <span class="str">"risk_decision"</span>: <span class="str">"REVIEW"</span>,
+  <span class="str">"model_version"</span>: <span class="str">"1"</span>,
+  <span class="str">"served_by"</span>: <span class="str">"mlflow_registry"</span>
+}
+<span class="kw">401</span> MISSING_API_KEY   <span class="kw">403</span> INVALID_API_KEY
+<span class="kw">422</span> VALIDATION_ERROR  <span class="kw">413</span> BATCH_TOO_LARGE
+<span class="kw">503</span> MODEL_UNAVAILABLE</pre>
+    </div>
+    <div class="stack">
+      <div class="card card-blue"><h4>Chuỗi nạp model (ModelManager)</h4><p>MLflow <code>@champion</code> → file joblib cục bộ (<span class="warn">degraded</span>) → không có model (<span class="bad">503</span>). Không bao giờ hạ cấp khi đang chạy model từ registry.</p></div>
+      <div class="card card-accent"><h4>Health rõ nghĩa</h4><p><code>/health/live</code>: process còn sống. <code>/health/ready</code>: ready / degraded / not_ready — Docker healthcheck và smoke test dùng endpoint này.</p></div>
+      <div class="grid g2"><div class="card"><div class="metric">18.8<small>ms</small></div><div class="metric-label">p95 client</div></div><div class="card"><div class="metric">8.8<small>ms</small></div><div class="metric-label">p95 server</div></div></div>
+    </div>
+  </div>
+  <aside class="notes">Fallback là tính năng đo được: khi chạy file cục bộ, metric credit_model_degraded = 1 và alert ModelServedFromFallback bật. Latency đo bằng make bench, ngân sách 100 ms.</aside>
+</section>
+
+<!-- 11. Ubuntu + CD -->
+<section class="slide" data-title="Ubuntu & CD">
+  <p class="kicker">04 · deployment · ubuntu + cd</p>
+  <h2 class="h2">Tag <code class="good">v*</code> → image đã scan → deploy có rollback</h2>
+  <div class="figure mt-s" style="height:580px;padding:8px"><img src="../assets/diagrams/07-deployment-ubuntu.svg" alt="Ubuntu deployment diagram" style="width:100%;height:auto;max-height:100%"></div>
+  <div class="flow mt-m">
+    <div class="step"><b>CI</b>lint · test · coverage ≥ 80%</div><div class="arrow">→</div>
+    <div class="step"><b>Publish</b>build → GHCR · Trivy chặn CRITICAL</div><div class="arrow">→</div>
+    <div class="step"><b>Deploy</b>SSH · <code>releases/&lt;tag&gt;</code> · symlink <code>current</code></div><div class="arrow">→</div>
+    <div class="step"><b>Smoke</b>health → predict thật</div><div class="arrow">→</div>
+    <div class="step"><b class="bad">Rollback</b>smoke fail → <code>previous_release</code></div>
+  </div>
+  <aside class="notes">Mọi cổng container bind 127.0.0.1, chỉ Nginx + TLS mở ra ngoài. Bí mật nằm ở shared/.env trên host, không vào image. Cấu hình Nginx, unit systemd và script backup trong deploy/ubuntu bám đúng sơ đồ này.</aside>
+</section>
+
+<!-- 12. Monitoring dashboards -->
+<section class="slide" data-title="Dashboards">
+  <p class="kicker">05 · monitoring · grafana</p>
+  <div class="grid g-4-8 fill" style="align-items:stretch">
+    <div>
+      <h2 class="h2">4 dashboard, 4 câu hỏi</h2>
+      <div class="stack mt-m">
+        <div class="card card-accent"><p><b style="color:#fff">Business</b> — duyệt/từ chối bao nhiêu, rủi ro NT$ bao nhiêu?</p></div>
+        <div class="card card-blue"><p><b style="color:#fff">ML model</b> — model nào đang chạy, phân phối điểm có lệch?</p></div>
+        <div class="card card-violet"><p><b style="color:#fff">Drift</b> — dữ liệu mới còn giống dữ liệu train không?</p></div>
+        <div class="card card-warn"><p><b style="color:#fff">Infra &amp; SLA</b> — API sống, nhanh, ít lỗi?</p></div>
+      </div>
+      <p class="caption mt-m">Dashboard sinh từ code · màu quyết định cố định · ngưỡng = ngưỡng alert</p>
+    </div>
+    <div class="shot"><img src="../assets/screenshots/grafana/after/credit-business-desktop-full.png" alt="Grafana business dashboard"></div>
+  </div>
+  <aside class="notes">Dashboard sinh bằng scripts/build_grafana_dashboards.py nên không lệch giữa các môi trường. Quy ước: xanh/vàng/đỏ cho APPROVE/REVIEW/DECLINE giống nhau mọi nơi; nền xanh/cam/đỏ chỉ dùng cho SLO.</aside>
+</section>
+
+<!-- 13. Alerting + orchestration -->
+<section class="slide" data-title="Alerting & Airflow">
+  <p class="kicker">05 · monitoring · alerting</p>
+  <h2 class="h2">11 alert, mỗi alert có runbook</h2>
+  <div class="grid g2 mt-m">
+    <table class="t">
+      <thead><tr><th>Nhóm</th><th>Alert</th></tr></thead>
+      <tbody>
+        <tr><td class="blue">Service</td><td>APIDown · HighErrorRate &gt; 5% · HighLatencyP95 &gt; 100 ms</td></tr>
+        <tr><td class="good">Model</td><td>ModelNotLoaded · ModelServedFromFallback · PredictionDistributionShift (PSI ≥ 0.25)</td></tr>
+        <tr><td class="violet">Drift</td><td>DataDriftDetected · DriftMonitorDown · DriftAnalysisStale</td></tr>
+        <tr><td class="warn">Pipeline</td><td>RetrainFailed · AirflowDagImportErrors</td></tr>
+      </tbody>
+    </table>
+    <div class="stack">
+      <div class="card card-accent"><h4>Luồng cảnh báo</h4><p>Prometheus rule → Alertmanager → webhook → Telegram. Rule có unit test bằng <code>promtool</code>.</p></div>
+      <div class="card card-violet"><h4>Airflow DAG</h4><p><code>drift_monitoring</code> (*/30) · <code>model_retrain</code> · <code>service_health_check</code>. Metric DAG qua statsd-exporter lên Grafana.</p></div>
+      <div class="card card-red"><h4>Chaos đã tập</h4><p><code>make chaos-api-down</code>, <code>chaos-model-unloaded</code>, <code>chaos-latency</code>, <code>chaos-drift-down</code> → alert bật → <code>chaos-restore</code>.</p></div>
+    </div>
+  </div>
+  <aside class="notes">Mỗi alert có summary, description, runbook_url và link dashboard. Chaos target giúp chứng minh alert thực sự bật chứ không chỉ viết cho có.</aside>
+</section>
+
+<!-- 14. Data flow & edge cases -->
+<section class="slide" data-title="Data flow & edge cases">
+  <p class="kicker">05 · data flow · edge cases</p>
+  <h2 class="h2">Luồng dữ liệu, và điều gì xảy ra khi nó gãy</h2>
+  <div class="grid fill mt-s" style="grid-template-columns:1.45fr 1fr;align-items:stretch">
+    <div class="figure" style="padding:10px"><img src="../assets/diagrams/05-data-flow.svg" alt="End-to-end data flow diagram"></div>
+    <div class="stack">
+      <div class="card card-warn"><h4>Sai schema</h4><p>Pydantic chặn → <b style="color:#fff">422 VALIDATION_ERROR</b>, không chạm model, đếm trong metric HTTP.</p></div>
+      <div class="card card-red"><h4>Model chưa nạp</h4><p><b style="color:#fff">503 MODEL_UNAVAILABLE</b>, ready = not_ready, alert <code>ModelNotLoaded</code>.</p></div>
+      <div class="card card-blue"><h4>MLflow sập</h4><p>Giữ model registry đang chạy; khởi động lạnh → joblib <span class="warn">degraded</span> + <code>ModelServedFromFallback</code>.</p></div>
+    </div>
+  </div>
+  <aside class="notes">Bốn làn: offline train, nạp model, online inference, vòng giám sát. Mỗi edge case đều có tín hiệu quan sát được trên dashboard — không có lỗi nào chỉ nằm trong log.</aside>
+</section>
+
+<!-- 15. Testing & CI/CD -->
+<section class="slide" data-title="Testing & CI/CD">
+  <p class="kicker">06 · testing / ci-cd</p>
+  <h2 class="h2">Test cả code, dữ liệu và model</h2>
+  <div class="grid g-5-7 mt-m">
+    <div class="stack">
+      <div class="card card-accent"><div class="metric">289<small>test pass</small></div><div class="metric-label">unit 214 · integration 61 · data_quality 10 · model_validation 4</div></div>
+      <div class="card card-blue"><div class="metric">91<small>%</small></div><div class="metric-label">coverage gộp · CI chặn dưới 80%</div></div>
+      <div class="card"><p>+ e2e, load test, <code>promtool</code> cho alert rule, <code>--check</code> cho dashboard, actionlint cho workflow.</p></div>
+    </div>
+    <div class="stack">
+      <div class="terminal">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span>make ci  # chạy local đúng thứ tự GitHub Actions</span></div>
+<pre><span class="fn">lint</span>     ruff · black --check · mypy
+<span class="fn">test</span>     4 suite + coverage gate ≥ <span class="num">80</span>%
+<span class="fn">image</span>    multi-stage build · Trivy <span class="kw">CRITICAL</span> = fail
+<span class="fn">smoke</span>    compose up → /health/ready → predict
+<span class="cmt"># tag v*  →  CD: publish GHCR → SSH deploy → smoke → rollback</span></pre>
+      </div>
+      <div class="card card-violet"><p><b style="color:#fff">model_validation</b> kiểm tra model đạt ngưỡng chấp nhận; <b style="color:#fff">data_quality</b> kiểm tra schema, range và manifest khớp dữ liệu.</p></div>
+    </div>
+  </div>
+  <aside class="notes">Điểm khác của ML so với phần mềm thường: dữ liệu và model cũng là artifact cần test. Action được pin theo commit SHA; image được scan trước khi publish.</aside>
+</section>
+
+<!-- 16. RAI fairness -->
+<section class="slide" data-title="RAI · Fairness">
+  <p class="kicker">07 · responsible ai · fairness</p>
+  <h2 class="h2">Audit trên 10.000 hồ sơ: cả 4 thuộc tính đều <span class="warn">WARN</span></h2>
+  <div class="figure mt-m" style="height:300px"><img src="../../reports/figures/rai_fairness_group_metrics.png" alt="Fairness metrics by group"></div>
+  <div class="grid g2 mt-m">
+    <table class="t">
+      <thead><tr><th>Thuộc tính</th><th class="num">DPD</th><th class="num">EOD</th><th class="num">DI</th></tr></thead>
+      <tbody>
+        <tr><td><b>Tuổi</b></td><td class="num warn">0.187</td><td class="num warn">0.161</td><td class="num bad">0.408</td></tr>
+        <tr><td>Học vấn</td><td class="num warn">0.115</td><td class="num warn">0.105</td><td class="num bad">0.588</td></tr>
+        <tr><td>Giới tính</td><td class="num">0.092</td><td class="num">0.097</td><td class="num bad">0.709</td></tr>
+        <tr><td>Hôn nhân</td><td class="num">0.036</td><td class="num warn">0.116</td><td class="num">0.932</td></tr>
+      </tbody>
+    </table>
+    <div class="card card-warn"><h4>Vì sao</h4><ul><li>Model dùng trực tiếp SEX/AGE/EDUCATION/MARRIAGE</li><li>Dữ liệu train chỉ có khách ≥ 30 tuổi → nhóm &lt; 30 là out-of-distribution</li><li>Base rate khác nhau giữa các nhóm</li></ul><p class="mt-s dim" style="font-size:20px">Ngưỡng: DPD/EOD &gt; 0.1, DI &lt; 0.8</p></div>
+  </div>
+  <aside class="notes">Không giấu kết quả xấu. Nhóm dưới 30 tuổi được duyệt 16.8% so với 41.2% ở nhóm 50+, trong khi default rate chỉ chênh 25.8% vs 15.7%.</aside>
+</section>
+
+<!-- 17. RAI mitigation + explain + privacy -->
+<section class="slide" data-title="RAI · Mitigation, XAI, privacy">
+  <p class="kicker">07 · responsible ai · mitigation</p>
+  <h2 class="h2">Giảm bias gần như miễn phí về ROC-AUC</h2>
+  <div class="grid g-7-5 mt-m">
+    <div>
+      <table class="t">
+        <thead><tr><th>Nhóm tuổi</th><th class="num">ROC-AUC</th><th class="num">DPD</th><th class="num">DI</th><th class="num">Exp. loss</th></tr></thead>
+        <tbody>
+          <tr><td>Champion</td><td class="num">0.7599</td><td class="num warn">0.182</td><td class="num">0.772</td><td class="num">1.073</td></tr>
+          <tr class="sel"><td><b class="good">Reweighing</b></td><td class="num">0.7593</td><td class="num good">0.067</td><td class="num good">0.911</td><td class="num">1.130</td></tr>
+          <tr><td>Unawareness</td><td class="num">0.7585</td><td class="num good">0.055</td><td class="num good">0.926</td><td class="num">1.135</td></tr>
+          <tr><td>ThresholdOptimizer</td><td class="num bad">0.7137</td><td class="num good">0.025</td><td class="num good">0.963</td><td class="num">1.129</td></tr>
+        </tbody>
+      </table>
+      <p class="caption mt-s">ThresholdOptimizer cần thuộc tính nhạy cảm lúc ra quyết định → không khuyến nghị cho production.</p>
+      <div class="figure mt-m" style="height:340px;padding:10px"><img src="../../reports/figures/rai_mitigation_tradeoff.png" alt="Fairness mitigation trade-off chart"></div>
+    </div>
+    <div class="stack">
+      <div class="card card-blue"><h4>Explainability</h4><p>SHAP (global + local) và LIME đồng thuận; SHAP nối vào <code>POST /api/v1/explain</code> để trả lý do cho từng hồ sơ.</p></div>
+      <div class="card card-accent"><h4>Privacy</h4><p>Log redact mọi trường hồ sơ · HMAC pseudonym với khoá trong <code>.env</code> · inference log giữ 90 ngày.</p></div>
+      <div class="card card-violet"><h4>Ethics</h4><p>REVIEW luôn qua người duyệt · DECLINE kèm lý do và kênh khiếu nại.</p></div>
+    </div>
+  </div>
+  <aside class="notes">Reweighing giảm DPD gần 3 lần, ROC-AUC chỉ mất 0.0006; cái giá là expected loss tăng khoảng 5%. Đây là quyết định nghiệp vụ, nhóm đề xuất chứ không tự áp. Khung pháp lý: Nghị định 13/2023 và Luật Bảo vệ dữ liệu cá nhân.</aside>
+</section>
+
+<!-- 18. Demo -->
+<section class="slide" data-title="Live demo">
+  <p class="kicker">08 · live demo · ~4 phút</p>
+  <h2 class="h2">Từ drift đến quality gate, trên stack đang chạy</h2>
+  <div class="grid g-7-5 mt-m">
+    <div class="terminal">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span>docs/presentation/demo-script.md</span></div>
+<pre><span class="cmt"># 1 · hệ thống sống: REVIEW 0.36 · DECLINE 0.99</span>
+python scripts/sample_predict.py
+<span class="cmt"># 2 · dữ liệu lệch → Drift dashboard + DataDriftDetected</span>
+make simulate SCENARIO=drift
+<span class="cmt"># 3 · retrain qua quality gate → promote hoặc giữ champion</span>
+make drift-dag &amp;&amp; make registry
+<span class="cmt"># 4 · gate fail → champion không đổi + RetrainFailed</span>
+make retrain-fail &amp;&amp; make alerts
+<span class="cmt"># 5 · (tuỳ giờ) API sập → DOWN → phục hồi</span>
+make chaos-api-down &amp;&amp; make chaos-restore</pre>
+    </div>
+    <div class="stack">
+      <div class="card card-accent"><h4>Mở sẵn 6 tab</h4><p>Grafana kiosk ×3 (Infra, Drift, ML) :13000 · Airflow :18080 · Swagger :18020/docs · MLflow :15040</p></div>
+      <div class="card card-warn"><h4>Dự phòng</h4><p>Mỗi bước có ảnh chụp và output mẫu trong demo script; nếu DAG chậm, chuyển sang bước tiếp và quay lại.</p></div>
+    </div>
+  </div>
+  <aside class="notes">Chạy theo demo-script.md: Thịnh dẫn lời, Tùng gõ lệnh, Hoa theo dõi alert và Airflow, Hòa giải thích MLflow và quality gate ở cảnh retrain. Nếu có sự cố quá 30 giây: dùng ảnh dự phòng, không debug trước hội đồng.</aside>
+</section>
+
+<!-- 19. Lessons learned -->
+<section class="slide" data-title="Lessons learned">
+  <p class="kicker">09 · lessons learned</p>
+  <h2 class="h2">Điều nhóm học được</h2>
+  <div class="grid g2 mt-l">
+    <div class="card card-accent"><h4>1 · Số liệu phải sinh ra, không được gõ vào</h4><p>Report, model card, docs đều render từ JSON do pipeline tạo. Khi retrain, tài liệu tự đúng theo.</p></div>
+    <div class="card card-blue"><h4>2 · Fallback chỉ có giá trị khi quan sát được</h4><p>Chế độ degraded mà không có metric + alert thì chỉ là lỗi bị giấu đi.</p></div>
+    <div class="card card-violet"><h4>3 · Observability cũng cần ngân sách</h4><p>Grafana 13 chạm trần 384 MiB khiến dashboard không mở được — phát hiện khi rà soát dashboard, nâng lên 768 MiB và tắt plugin thừa.</p></div>
+    <div class="card card-warn"><h4>4 · Fairness phải đo từ sớm</h4><p>Thiết kế chia dữ liệu theo tuổi (để mô phỏng drift) vô tình tạo ra bias tuổi. Audit sớm hơn sẽ đổi cách chia.</p></div>
+  </div>
+  <aside class="notes">Nếu còn thời gian: hướng tiếp theo là shadow deployment cho challenger, lập lịch purge-logs và fairness metric trong Airflow, và HA cho API.</aside>
+</section>
+
+<!-- 20. Q&A -->
+<section class="slide center" data-title="Q&A" style="justify-content:center">
+  <div class="mono" style="font-size:160px;color:var(--accent);font-weight:800;line-height:1">?</div>
+  <h2 class="h2 mt-m">Hỏi &amp; đáp</h2>
+  <p class="lede mt-s" style="margin-left:auto;margin-right:auto">Cảm ơn hội đồng đã lắng nghe.</p>
+  <div class="row mt-l" style="justify-content:center">
+    <span class="tag">ARCHITECTURE.md</span><span class="tag">docs/assets/diagrams/</span><span class="tag">docs/06-responsible-ai.md</span><span class="tag">docs/runbooks/alerts.md</span>
+  </div>
+  <aside class="notes">Câu hỏi dự kiến: vì sao LR mà không phải XGBoost; vì sao Compose; nếu MLflow mất dữ liệu thì sao (backup Postgres + MinIO); drift threshold chọn thế nào (PSI 0.1/0.25 là chuẩn ngành); làm sao tránh retrain liên tục (cooldown 60 phút + gate).</aside>
+</section>
+
+<div class="deck-footer"><span>Credit Default Risk Scoring · DDM501 Group 5</span><span id="pageNo"></span></div>
+<div class="progress" id="progress"></div>
+</div></div>
+
+<div class="notes-overlay" id="notesOverlay" role="region" aria-label="Ghi chú người trình bày"><h5 id="notesTitle"></h5><div id="notesBody"></div></div>
+<div class="overview" id="overview" role="dialog" aria-label="Tổng quan slide"></div>
+
+<script>
+(() => {
+  const deck = document.getElementById('deck');
+  const slides = [...deck.querySelectorAll('.slide')];
+  const total = slides.length;
+  const params = new URLSearchParams(location.search);
+  const pageNo = document.getElementById('pageNo');
+  const progress = document.getElementById('progress');
+  const notesOverlay = document.getElementById('notesOverlay');
+  const overview = document.getElementById('overview');
+  let index = 0;
+
+  function fit() {
+    if (document.body.classList.contains('export')) return;
+    const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    deck.style.transform = `scale(${scale})`;
+  }
+
+  function show(next) {
+    index = Math.max(0, Math.min(total - 1, next));
+    slides.forEach((s, i) => {
+      s.classList.toggle('is-active', i === index);
+      s.classList.toggle('is-prev', i < index);
+      s.setAttribute('aria-hidden', i === index ? 'false' : 'true');
+    });
+    pageNo.textContent = `${String(index + 1).padStart(2, '0')} / ${total}`;
+    progress.style.width = `${((index + 1) / total) * 100}%`;
+    const note = slides[index].querySelector('.notes');
+    document.getElementById('notesTitle').textContent = `${index + 1}. ${slides[index].dataset.title}`;
+    document.getElementById('notesBody').textContent = note ? note.textContent : '';
+    if (location.hash !== `#${index + 1}`) history.replaceState(null, '', `#${index + 1}`);
+  }
+
+  overview.innerHTML = slides.map((s, i) => `<button data-i="${i}"><span>${String(i + 1).padStart(2, '0')}</span>${s.dataset.title}</button>`).join('');
+  overview.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (b) { show(Number(b.dataset.i)); overview.classList.remove('open'); }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key;
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(k)) { e.preventDefault(); show(index + 1); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(k)) { e.preventDefault(); show(index - 1); }
+    else if (k === 'Home') show(0);
+    else if (k === 'End') show(total - 1);
+    else if (k === 'n' || k === 'N') notesOverlay.classList.toggle('open');
+    else if (k === 'o' || k === 'O') overview.classList.toggle('open');
+    else if (k === 'Escape') { overview.classList.remove('open'); notesOverlay.classList.remove('open'); }
+    else if (k === 'f' || k === 'F') {
+      if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen();
+    }
+  });
+  let touchX = null;
+  document.addEventListener('touchstart', (e) => { touchX = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if (touchX === null) return;
+    const dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 50) show(index + (dx < 0 ? 1 : -1));
+    touchX = null;
+  });
+
+  if (params.has('export')) document.body.classList.add('export');
+  window.addEventListener('resize', fit);
+  window.deckShow = show;
+  window.deckTotal = total;
+  fit();
+  show((parseInt(location.hash.slice(1), 10) || 1) - 1);
+})();
+</script>
+</body>
+</html>

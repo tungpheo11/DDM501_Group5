@@ -1,0 +1,52 @@
+{
+  "generated_at": "2026-09-28T09:27:13+00:00",
+  "data_version": "3df05ace93a33597",
+  "passed": true,
+  "datasets": [
+    {
+      "dataset": "raw/credit_default.csv",
+      "rows": 30000,
+      "passed": true,
+      "total_failures": 0,
+      "target_rate": 0.2329,
+      "failures": [],
+      "manifest_hash_match": true
+    },
+    {
+      "dataset": "reference/train_baseline.csv",
+      "rows": 15000,
+      "passed": true,
+      "total_failures": 0,
+      "target_rate": 0.22273333333333334,
+      "failures": [],
+      "manifest_hash_match": true
+    },
+    {
+      "dataset": "processed/stream_normal.csv",
+      "rows": 5000,
+      "passed": true,
+      "total_failures": 0,
+      "target_rate": 0.2286,
+      "failures": [],
+      "manifest_hash_match": true
+    },
+    {
+      "dataset": "processed/stream_drifted.csv",
+      "rows": 5000,
+      "passed": true,
+      "total_failures": 0,
+      "target_rate": null,
+      "failures": [],
+      "manifest_hash_match": true
+    },
+    {
+      "dataset": "processed/ground_truth_feedback.csv",
+      "rows": 5000,
+      "passed": true,
+      "total_failures": 0,
+      "target_rate": 0.258,
+      "failures": [],
+      "manifest_hash_match": true
+    }
+  ]
+}

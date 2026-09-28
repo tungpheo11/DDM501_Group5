@@ -1,0 +1,20 @@
+# Override: run a prebuilt API image instead of building from source.
+#
+#   API_IMAGE=credit-risk-api:ci docker compose -f docker-compose.yml -f docker-compose.image.yml up -d --no-build api
+#
+# Used by `make smoke` (CI tests the exact image Trivy scanned) and by
+# deploy/ubuntu/deploy.sh (API_IMAGE = ghcr.io/<owner>/credit-risk-api@sha256:...).
+# Source bind mounts are dropped so the container runs only what is baked into the
+# image. `!reset` needs Docker Compose >= 2.24.4.
+services:
+  mlflow:
+    image: ${API_IMAGE:?set API_IMAGE to the prebuilt API image}
+    build: !reset null
+
+  model-bootstrap:
+    image: ${API_IMAGE:?set API_IMAGE to the prebuilt API image}
+
+  api:
+    image: ${API_IMAGE:?set API_IMAGE to the prebuilt API image}
+    build: !reset null
+    volumes: !reset []

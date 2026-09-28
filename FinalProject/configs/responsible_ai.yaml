@@ -1,0 +1,33 @@
+# Responsible AI analysis (`make responsible-ai`): fairness audit, mitigation,
+# SHAP/LIME explanations. Outputs: reports/fairness_report.{json,md},
+# reports/explainability_report.{json,md}, reports/figures/rai_*.png.
+
+random_state: 42
+
+# Evaluation set = processed/stream_normal.csv (AGE >= 30) + processed/stream_drifted.csv
+# joined with ground_truth_feedback.csv (AGE < 30). None of it was used for training,
+# and together they cover every age group.
+fairness:
+  attributes: [SEX, age_group, EDUCATION, MARRIAGE]
+  # Tolerances that flag an attribute as WARN (the 0.8 ratio is the "four-fifths rule").
+  thresholds:
+    demographic_parity_difference: 0.10
+    equalized_odds_difference: 0.10
+    disparate_impact_ratio: 0.80
+
+mitigation:
+  attributes: [age_group, SEX]
+  # Share of the evaluation set used to fit ThresholdOptimizer (and added to the
+  # training data of the retrained variants); the rest is the common test split.
+  fit_fraction: 0.5
+  threshold_optimizer:
+    constraints: equalized_odds
+    objective: balanced_accuracy_score
+
+explainability:
+  background_size: 100    # training applicants used as the SHAP background
+  sample_size: 500        # evaluation applicants explained for the global plots
+  max_evals: 500          # permutation SHAP model evaluations per applicant
+  top_k: 5                # features compared between SHAP and LIME
+  lime_num_features: 10
+  lime_num_samples: 5000
