@@ -1,0 +1,83 @@
+# syntax=docker/dockerfile:1.7
+# =============================================================================
+# Credit Default Risk Scoring API image (Compose also runs the MLflow server
+# from it with a different command).
+#
+#   docker build -f deploy/docker/Dockerfile.api -t credit-risk-api:dev .
+#
+# Build context: FinalProject/. Base image pinned by version AND multi-arch
+# digest; bump both together (docker buildx imagetools inspect python:<tag>).
+# =============================================================================
+
+ARG PYTHON_IMAGE=python:3.11.16-slim-trixie@sha256:e41613d42d4891e4930f79523f93f81bbc7632584ec65e36ab055f41a800b41e
+
+# -----------------------------------------------------------------------------
+# Stage 1 — builder: resolve and install locked dependencies into a venv.
+# -----------------------------------------------------------------------------
+FROM ${PYTHON_IMAGE} AS builder
+
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_DEFAULT_TIMEOUT=120 \
+    PIP_RETRIES=10 \
+    PYTHONDONTWRITEBYTECODE=1
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:${PATH}"
+
+# The pip cache lives in a BuildKit cache mount, so it never lands in a layer.
+COPY requirements.txt /tmp/requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade "pip>=25.2" "setuptools>=78.1.1" "wheel>=0.46.2" \
+    && pip install --requirement /tmp/requirements.txt
+
+# The runtime never installs packages; dropping pip also drops its vendored libs.
+RUN python -m pip uninstall --yes --quiet pip
+
+# -----------------------------------------------------------------------------
+# Stage 2 — runtime: venv + application code only, non-root, no build tools.
+# -----------------------------------------------------------------------------
+FROM ${PYTHON_IMAGE} AS runtime
+
+# First layer on top of the base image, identical in the drift monitor and Airflow
+# images, so the ~3 GB venv is stored once on disk for all three.
+COPY --from=builder /opt/venv /opt/venv
+
+ARG APP_UID=10001
+ARG APP_GID=10001
+
+LABEL org.opencontainers.image.title="credit-risk-api" \
+      org.opencontainers.image.description="Credit Default Risk Scoring API (FastAPI + scikit-learn)" \
+      org.opencontainers.image.source="https://github.com/tungpheo11/DDM501_Group5"
+
+# The app runs from /opt/venv; the base interpreter's bundled setuptools/wheel are
+# unused and only add scanner findings.
+RUN groupadd --system --gid "${APP_GID}" app \
+    && useradd --system --uid "${APP_UID}" --gid app --create-home --home-dir /home/app \
+       --shell /usr/sbin/nologin app \
+    && python -m pip uninstall --yes --quiet setuptools wheel \
+    && rm -rf /root/.cache
+
+WORKDIR /app
+COPY --chown=root:root --chmod=0755 src/ ./src/
+COPY --chown=root:root --chmod=0755 configs/ ./configs/
+COPY --chown=root:root --chmod=0755 models/ ./models/
+
+# Code and models stay root-owned and read-only for the runtime user.
+ENV PATH="/opt/venv/bin:${PATH}" \
+    PYTHONPATH=/app/src \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    APP_ENV=docker \
+    CREDIT_RISK_HOME=/app \
+    LOG_FORMAT=json \
+    HOME=/home/app
+
+USER app:app
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=4)"]
+
+CMD ["uvicorn", "credit_risk.serving.app:app", "--host", "0.0.0.0", "--port", "8000", \
+     "--no-access-log", "--timeout-graceful-shutdown", "20"]

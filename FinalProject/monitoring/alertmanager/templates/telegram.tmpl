@@ -1,0 +1,18 @@
+{{/* Telegram message for the credit-risk stack, rendered with parse_mode HTML.
+     Free text (summary/description/labels) goes through telegram.credit.escape:
+     Telegram rejects the whole message when a bare <, > or & appears. */}}
+{{ define "telegram.credit.escape" }}{{ . | reReplaceAll "&" "&amp;" | reReplaceAll "<" "&lt;" | reReplaceAll ">" "&gt;" }}{{ end }}
+
+{{ define "telegram.credit.message" -}}
+{{ if eq .Status "firing" }}<b>[FIRING:{{ .Alerts.Firing | len }}]</b>{{ else }}<b>[RESOLVED]</b>{{ end }} {{ template "telegram.credit.escape" (or .CommonLabels.alertname "alerts") }}
+{{ range .Alerts }}
+<b>{{ template "telegram.credit.escape" .Labels.alertname }}</b> · {{ if eq .Status "firing" }}FIRING{{ else }}RESOLVED{{ end }}
+Severity: <b>{{ template "telegram.credit.escape" (or .Labels.severity "-" | toUpper) }}</b> · Service: <code>{{ template "telegram.credit.escape" (or .Labels.service .Labels.component .Labels.job "-") }}</code>
+{{ with .Annotations.summary }}{{ template "telegram.credit.escape" . }}
+{{ end }}{{ with .Annotations.description }}<i>{{ template "telegram.credit.escape" . }}</i>
+{{ end }}Bắt đầu: {{ .StartsAt.Local.Format "2006-01-02 15:04:05 MST" }}{{ if eq .Status "resolved" }}
+Kết thúc: {{ .EndsAt.Local.Format "2006-01-02 15:04:05 MST" }}{{ end }}{{ with .Labels.instance }}
+Instance: <code>{{ template "telegram.credit.escape" . }}</code>{{ end }}{{ with .Annotations.runbook_url }}
+<a href="{{ . }}">Runbook</a>{{ end }}{{ with .Annotations.dashboard }} · <a href="{{ . }}">Dashboard</a>{{ end }}
+{{ end }}
+{{- end }}

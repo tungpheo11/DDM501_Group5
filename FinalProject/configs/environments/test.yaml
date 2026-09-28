@@ -1,0 +1,14 @@
+# APP_ENV=test — hermetic test runs: no external services are contacted.
+# The MLflow URI points at a closed port so the API falls back to the local
+# model artifact, and inference logs go to an in-memory SQLite database.
+mlflow:
+  tracking_uri: http://127.0.0.1:9
+  s3_endpoint_url: http://127.0.0.1:9
+  local_fallback: false
+
+database:
+  url: "sqlite://"
+
+serving:
+  api_url: http://127.0.0.1:9
+  api_keys: ["test-api-key"]

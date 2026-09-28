@@ -1,0 +1,41 @@
+# Recording rules: pre-computed SLI series shared by the alert rules and the
+# Grafana dashboards. Business endpoints only (health probes and /metrics
+# scrapes are excluded so they cannot mask or inflate the SLIs).
+
+groups:
+  - name: credit-risk-sli
+    interval: 15s
+    rules:
+      - record: credit:api_requests:rate2m
+        expr: sum(rate(credit_api_requests_total{job="credit-risk-api",endpoint=~"/api/v1/.*"}[2m]))
+
+      - record: credit:api_errors:rate2m
+        expr: sum(rate(credit_api_requests_total{job="credit-risk-api",endpoint=~"/api/v1/.*",status=~"5.."}[2m]))
+
+      - record: credit:api_error_ratio:rate2m
+        expr: credit:api_errors:rate2m / credit:api_requests:rate2m
+
+      - record: credit:predict_latency_seconds:p50_2m
+        expr: >-
+          histogram_quantile(0.50, sum by (le)
+          (rate(credit_api_request_duration_seconds_bucket{job="credit-risk-api",endpoint="/api/v1/predict"}[2m])))
+
+      - record: credit:predict_latency_seconds:p95_2m
+        expr: >-
+          histogram_quantile(0.95, sum by (le)
+          (rate(credit_api_request_duration_seconds_bucket{job="credit-risk-api",endpoint="/api/v1/predict"}[2m])))
+
+      - record: credit:predict_latency_seconds:p99_2m
+        expr: >-
+          histogram_quantile(0.99, sum by (le)
+          (rate(credit_api_request_duration_seconds_bucket{job="credit-risk-api",endpoint="/api/v1/predict"}[2m])))
+
+      - record: credit:decision_share:rate15m
+        expr: >-
+          sum by (decision) (rate(credit_prediction_requests_total{job="credit-risk-api"}[15m]))
+          / ignoring(decision) group_left sum(rate(credit_prediction_requests_total{job="credit-risk-api"}[15m]))
+
+      - record: credit:default_probability:mean15m
+        expr: >-
+          sum(rate(credit_prediction_default_probability_sum{job="credit-risk-api"}[15m]))
+          / sum(rate(credit_prediction_default_probability_count{job="credit-risk-api"}[15m]))

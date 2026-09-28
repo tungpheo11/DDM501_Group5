@@ -1,0 +1,8 @@
+# Chaos overlay: the drift monitor loses its database (fires DriftAnalysisStale).
+#
+#   make chaos-drift-stale   # apply   -> analyses skipped, alert after ~20 min (15 min stale + 5 min for)
+#   make chaos-restore       # restore -> next analysis succeeds, alert resolves
+services:
+  drift-monitor:
+    environment:
+      DATABASE_URL: postgresql://nobody:nothing@postgres-unreachable.invalid:5432/none

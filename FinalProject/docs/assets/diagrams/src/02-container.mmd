@@ -1,0 +1,63 @@
+%% Container diagram (Docker Compose project `credit-risk-mlops`)
+%% Màu theo Compose profile: xanh dương = core, xanh lá = monitoring, tím = orchestration
+flowchart TB
+    client["<b>Loan Origination System</b><br/><i>[External / persona simulator]</i><br/>gửi hồ sơ cần chấm điểm"]:::external
+    engineer["<b>MLOps Engineer</b><br/><i>[Person]</i><br/>vận hành qua Grafana, MLflow, Airflow UI"]:::person
+
+    subgraph platform["Credit Default Risk Scoring Platform  -  docker compose project credit-risk-mlops"]
+        api["<b>Scoring API</b>  <i>[core]</i><br/><i>FastAPI, Python 3.11, :8000</i><br/>/api/v1 predict, batch, explain,<br/>model/info, model/reload, health"]:::core
+        graf["<b>Grafana</b>  <i>[monitoring]</i><br/><i>v13, :3000</i><br/>4 dashboard provisioned:<br/>business, ml-model, drift, infra-sla"]:::mon
+        web["<b>Airflow Webserver</b>  <i>[orchestration]</i><br/><i>Airflow 2.10, :8080</i><br/>UI + REST API"]:::orch
+
+        mlflow["<b>MLflow Server</b>  <i>[core]</i><br/><i>MLflow 3, :5000</i><br/>Tracking + Model Registry<br/>alias @champion / @challenger"]:::core
+        drift["<b>Drift Monitor</b>  <i>[monitoring]</i><br/><i>FastAPI + Evidently, :8085</i><br/>PSI + drift share mỗi 60s,<br/>lưu HTML report"]:::mon
+        prom["<b>Prometheus</b>  <i>[monitoring]</i><br/><i>v3, :9090</i><br/>scrape 10-15s, recording rules,<br/>11 alert rules"]:::mon
+        sched["<b>Airflow Scheduler</b>  <i>[orchestration]</i><br/><i>LocalExecutor</i><br/>service_health_check, drift_monitoring,<br/>model_retrain"]:::orch
+
+        pg[("<b>PostgreSQL 16</b>  <i>[core]</i><br/>mlflow metadata, inference_logs,<br/>airflow metadata")]:::coreStore
+        minio[("<b>MinIO</b>  <i>[core]</i><br/>S3 bucket mlflow:<br/>model artifacts")]:::coreStore
+        am["<b>Alertmanager</b>  <i>[monitoring]</i><br/><i>v0.28, :9093</i><br/>group, inhibit, route"]:::mon
+        statsd["<b>statsd-exporter</b>  <i>[monitoring]</i><br/><i>:9125 udp → :9102</i><br/>Airflow + credit_retrain_* gauges"]:::mon
+
+        bootstrap["<b>model-bootstrap</b>  <i>[core, one-shot]</i><br/>đăng ký model baked-in<br/>làm @champion lần đầu"]:::job
+        hook["<b>alert-webhook</b>  <i>[monitoring]</i><br/><i>Python receiver, :9095</i><br/>fallback, luôn nhận mọi alert"]:::mon
+    end
+
+    telegram["<b>Telegram Bot API</b><br/><i>[External, optional]</i><br/>bật khi có TELEGRAM_BOT_TOKEN"]:::external
+
+    client -- "HTTPS JSON + X-API-Key" --> api
+    engineer -- "dashboards" --> graf
+    engineer -- "trigger / theo dõi DAG" --> web
+
+    api -- "load @champion" --> mlflow
+    api -- "INSERT inference_logs" --> pg
+    mlflow -- "backend store" --> pg
+    mlflow -- "artifacts (S3 API)" --> minio
+    bootstrap -- "register + alias" --> mlflow
+
+    drift -- "SELECT 500 log mới nhất" --> pg
+    drift -- "score reference" --> mlflow
+    graf -- "PromQL" --> prom
+    prom -- "GET /metrics" --> api
+    prom -- "GET /metrics" --> drift
+    prom -- "scrape" --> statsd
+    prom -- "firing / resolved" --> am
+    am -- "webhook" --> hook
+    am -. "Bot API" .-> telegram
+
+    web --- sched
+    sched -- "POST /analyze" --> drift
+    sched -- "retrain, promote, rollback" --> mlflow
+    sched -- "POST /model/reload" --> api
+    sched -- "StatsD" --> statsd
+    sched -- "metadata" --> pg
+    sched -. "notify" .-> telegram
+
+    classDef person fill:#08427B,stroke:#052E56,color:#FFFFFF,stroke-width:2px
+    classDef external fill:#8C8C8C,stroke:#6B6B6B,color:#FFFFFF,stroke-width:2px
+    classDef core fill:#1168BD,stroke:#0B4884,color:#FFFFFF,stroke-width:2px
+    classDef coreStore fill:#0B4884,stroke:#062F57,color:#FFFFFF,stroke-width:2px
+    classDef mon fill:#2E8B57,stroke:#1E5E3A,color:#FFFFFF,stroke-width:2px
+    classDef orch fill:#6A4C93,stroke:#48326A,color:#FFFFFF,stroke-width:2px
+    classDef job fill:#FFFFFF,stroke:#1168BD,color:#0B2545,stroke-width:2px,stroke-dasharray:5 4
+    style platform fill:#F7F9FC,stroke:#1168BD,stroke-width:2px,stroke-dasharray:8 4,color:#0B2545

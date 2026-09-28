@@ -1,0 +1,281 @@
+# =============================================================================
+# Final Project (Credit Default Risk Scoring) — Continuous Delivery
+#
+# Trigger: push of a tag v* (e.g. git tag v1.2.0 && git push origin v1.2.0).
+#
+#   ci (reusable final-project-ci.yml)
+#     └─> publish   build -> Trivy gate -> push ghcr.io/<owner>/credit-risk-api (+SBOM, provenance)
+#           └─> deploy   [environment: production, required reviewers]
+#                 SSH upload release -> deploy.sh deploy -> deploy.sh smoke
+#                 └─(on failure)─> deploy.sh rollback
+#                       └─> notify   Telegram (skipped when secrets are not set)
+#
+# Secrets/variables are documented in FinalProject/docs/07-testing-cicd.md.
+# =============================================================================
+
+name: Final Project CD
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: final-project-cd-production
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: credit-risk-api
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  ci:
+    name: CI gate
+    uses: ./.github/workflows/final-project-ci.yml
+    permissions:
+      contents: read
+
+  publish:
+    name: Publish image to GHCR
+    needs: ci
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.ref.outputs.image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image tags and labels
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+          flavor: |
+            latest=auto
+
+      - name: Build image for scanning (GHA layer cache)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: FinalProject
+          file: FinalProject/deploy/docker/Dockerfile.api
+          platforms: linux/amd64
+          load: true
+          push: false
+          provenance: false
+          tags: ${{ env.IMAGE_NAME }}:release-scan
+          cache-from: type=gha,scope=final-project-api
+
+      - name: Cache Trivy vulnerability DB
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ github.run_id }}
+          restore-keys: trivy-db-
+
+      - name: Trivy gate on the release image (fails on CRITICAL)
+        working-directory: FinalProject
+        run: make scan API_IMAGE="$IMAGE_NAME:release-scan"
+
+      - name: Push to GHCR (SBOM + provenance attestations)
+        id: push
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: FinalProject
+          file: FinalProject/deploy/docker/Dockerfile.api
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=final-project-api
+          provenance: mode=max
+          sbom: true
+
+      - name: Immutable image reference
+        id: ref
+        env:
+          OWNER: ${{ github.repository_owner }}
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          image="$REGISTRY/${OWNER,,}/$IMAGE_NAME@$DIGEST"
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Published image"
+            echo '```'
+            echo "$image"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Trivy report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: final-project-release-security
+          path: FinalProject/reports/security/
+          if-no-files-found: warn
+          retention-days: 30
+
+  deploy:
+    name: Deploy to Ubuntu (production)
+    needs: publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+    permissions:
+      contents: read
+      packages: read
+    env:
+      RELEASE: ${{ github.ref_name }}
+      IMAGE: ${{ needs.publish.outputs.image }}
+      DEPLOY_ROOT: ${{ vars.DEPLOY_ROOT || '/opt/credit-risk' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Configure SSH (pinned host key, key-only auth)
+        env:
+          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+          SSH_PORT: ${{ vars.DEPLOY_SSH_PORT || '22' }}
+        run: |
+          for name in SSH_HOST SSH_USER SSH_KEY SSH_KNOWN_HOSTS; do
+            [[ -n "${!name}" ]] || { echo "::error::secret DEPLOY_${name} is not configured on the production environment"; exit 1; }
+          done
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host production
+            HostName $SSH_HOST
+            User $SSH_USER
+            Port $SSH_PORT
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            BatchMode yes
+            ServerAliveInterval 30
+          EOF
+
+      # Remote commands below are expanded on the runner on purpose (SC2029): RELEASE
+      # comes from the v* tag and deploy.sh re-validates it before using it.
+      - name: Upload release bundle
+        run: |
+          # shellcheck disable=SC2029
+          ssh production "set -e; rm -rf '$DEPLOY_ROOT/releases/$RELEASE'; mkdir -p '$DEPLOY_ROOT/releases/$RELEASE'"
+          git archive --format=tar.gz -o "$RUNNER_TEMP/release.tar.gz" "$GITHUB_SHA" FinalProject
+          scp -q "$RUNNER_TEMP/release.tar.gz" "production:$DEPLOY_ROOT/releases/$RELEASE.tar.gz"
+          # shellcheck disable=SC2029
+          ssh production "set -e; cd '$DEPLOY_ROOT/releases'; tar -xzf '$RELEASE.tar.gz' -C '$RELEASE' --strip-components=1; rm -f '$RELEASE.tar.gz'"
+
+      - name: Log in to GHCR on the server
+        env:
+          REGISTRY_USER: ${{ github.actor }}
+          REGISTRY_TOKEN: ${{ secrets.GHCR_PULL_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          # shellcheck disable=SC2029
+          printf '%s' "$REGISTRY_TOKEN" | ssh production "docker login $REGISTRY -u '$REGISTRY_USER' --password-stdin"
+
+      - name: Deploy release
+        id: deploy
+        run: |
+          # shellcheck disable=SC2029
+          ssh production "DEPLOY_ROOT='$DEPLOY_ROOT' bash '$DEPLOY_ROOT/releases/$RELEASE/deploy/ubuntu/deploy.sh' deploy '$RELEASE' '$IMAGE'"
+
+      - name: Post-deploy smoke test
+        id: smoke
+        run: |
+          # shellcheck disable=SC2029
+          ssh production "DEPLOY_ROOT='$DEPLOY_ROOT' bash '$DEPLOY_ROOT/current/deploy/ubuntu/deploy.sh' smoke"
+
+      - name: Roll back to the previous release
+        if: failure() && (steps.deploy.outcome == 'failure' || steps.smoke.outcome == 'failure')
+        run: |
+          echo "::error::Release $RELEASE failed; rolling back"
+          # shellcheck disable=SC2029
+          ssh production "DEPLOY_ROOT='$DEPLOY_ROOT' bash '$DEPLOY_ROOT/releases/$RELEASE/deploy/ubuntu/deploy.sh' rollback"
+
+      - name: Release status
+        if: always() && steps.deploy.outcome != 'skipped'
+        run: |
+          {
+            echo "### Production release status"
+            echo '```'
+            # shellcheck disable=SC2029
+            ssh production "DEPLOY_ROOT='$DEPLOY_ROOT' bash '$DEPLOY_ROOT/releases/$RELEASE/deploy/ubuntu/deploy.sh' status" || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Clean up credentials
+        if: always()
+        run: |
+          # shellcheck disable=SC2029
+          ssh production "docker logout $REGISTRY" >/dev/null 2>&1 || true
+          rm -f ~/.ssh/deploy_key
+
+  notify:
+    name: Notify Telegram
+    needs: [ci, publish, deploy]
+    if: always() && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Send deployment result
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          CI_RESULT: ${{ needs.ci.result }}
+          PUBLISH_RESULT: ${{ needs.publish.result }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+          IMAGE: ${{ needs.publish.outputs.image }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RELEASE: ${{ github.ref_name }}
+        run: |
+          if [[ "$DEPLOY_RESULT" == "success" ]]; then icon="OK"; else icon="FAILED"; fi
+          text="[$icon] credit-risk-api $RELEASE
+          ci=$CI_RESULT publish=$PUBLISH_RESULT deploy=$DEPLOY_RESULT
+          image=${IMAGE:-n/a}
+          $RUN_URL"
+          echo "$text"
+          if [[ -z "$TELEGRAM_BOT_TOKEN" || -z "$TELEGRAM_CHAT_ID" ]]; then
+            echo "::notice::TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not configured; skipping Telegram notification"
+            exit 0
+          fi
+          curl --silent --show-error --fail --max-time 15 \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${text}" \
+            --data-urlencode "disable_web_page_preview=true" > /dev/null

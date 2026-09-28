@@ -1,0 +1,22 @@
+# Chaos overlay: recreate the API with no loadable model (fires ModelNotLoaded).
+#
+#   make chaos-model-unloaded   # apply   -> /health/ready 503, credit_model_loaded 0
+#   make chaos-restore          # restore -> normal API, alert resolves
+#
+# MLflow is pointed at an unroutable address and the local fallback directory is
+# empty, so neither the registry champion nor the baked-in artifact can load.
+# The healthcheck is replaced by a liveness probe so the container keeps running
+# (and exporting metrics) while it is not ready.
+services:
+  api:
+    depends_on: !override
+      postgres:
+        condition: service_healthy
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow-unreachable.invalid:5000
+      MODELS_DIR: /tmp/no-models
+    volumes: !override
+      - ../../src:/app/src:ro
+      - ../../configs:/app/configs:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=4)"]

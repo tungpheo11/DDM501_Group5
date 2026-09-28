@@ -1,0 +1,14 @@
+# Build context is FinalProject/. Allow-list: requirements, package, configs,
+# models, the service code and the reference window only.
+*
+!requirements.txt
+!src/
+!configs/
+!models/
+!services/drift_monitor/
+!data/reference/
+**/__pycache__
+**/*.py[cod]
+**/*.egg-info
+**/.DS_Store
+services/drift_monitor/Dockerfile*

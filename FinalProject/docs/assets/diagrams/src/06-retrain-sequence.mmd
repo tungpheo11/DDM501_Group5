@@ -1,0 +1,66 @@
+%% Drift → retrain → quality gate → promote / keep / rollback → hot reload (Airflow DAGs drift_monitoring + model_retrain)
+sequenceDiagram
+    autonumber
+    participant SCH as Airflow<br/>drift_monitoring<br/>(*/30 phút)
+    participant DM as Drift Monitor<br/>(Evidently)
+    participant PG as PostgreSQL<br/>inference_logs
+    participant RT as Airflow<br/>model_retrain
+    participant TR as credit_risk.training<br/>(retrain + gate)
+    participant MR as MLflow Registry<br/>+ MinIO
+    participant API as Scoring API
+    participant AL as statsd → Prometheus<br/>→ Alertmanager
+    participant OC as Telegram /<br/>alert-webhook
+
+    SCH->>DM: POST /analyze {window_size: 500}
+    DM->>PG: SELECT 500 log mới nhất
+    alt < 50 mẫu hoặc DB down
+        DM-->>SCH: status=skipped (không fail DAG)
+    else đủ mẫu
+        DM->>DM: PSI key features + Evidently drift share + prediction PSI
+        DM-->>AL: credit_drift_* gauges (scrape /metrics)
+        DM-->>SCH: is_drifted, drift_share, top PSI, report
+    end
+
+    alt không drift
+        SCH->>SCH: no_drift (kết thúc)
+    else chỉ prediction shift (PSI ≥ 0.25, input không drift)
+        SCH->>OC: [DRIFT] Prediction distribution shift → điều tra model, KHÔNG retrain
+    else dataset drift
+        SCH->>OC: [DRIFT] Data drift detected + top PSI + link report
+        SCH->>SCH: check_retrain_cooldown (60 phút, không có run đang chạy)
+        SCH->>RT: TriggerDagRun(reason="drift_monitoring <run_id>")
+    end
+
+    RT->>TR: train_challenger (external python)
+    TR->>MR: đọc @champion hiện tại (vN)
+    TR->>TR: fit challenger: replay 15k baseline + 5k feedback, cùng thuật toán + params champion
+    TR->>TR: chấm challenger và champion trên CÙNG held-out drifted rows
+    TR->>MR: log run + register vN+1 alias @challenger (lineage tags, gate_reasons)
+    TR-->>RT: metrics challenger / champion + gate decision
+
+    RT->>RT: quality_gate: ROC-AUC ≥ min_roc_auc (0.70)?
+    alt dưới floor (demo: make retrain-fail, floor 0.99)
+        RT-->>AL: credit_retrain_last_run_failed = 1
+        AL->>OC: RetrainFailed (critical) - champion vN giữ nguyên
+    else qua floor
+        RT->>RT: decide_promotion (non-inferior ROC-AUC, expected loss không tệ hơn, có cải thiện)
+        alt gate = keep
+            RT->>OC: [RETRAIN] challenger vN+1 rejected - champion vN kept (+ lý do)
+        else gate = promote
+            RT->>MR: promote_champion: @champion → vN+1 (ghi previous_champion)
+            RT->>API: POST /api/v1/model/reload (X-API-Key)
+            API->>MR: load models:/credit-risk-model@champion
+            API->>API: swap snapshot atomic (request đang chạy không bị gián đoạn)
+            API-->>RT: status=reloaded, model_version=vN+1, degraded=false
+            alt API không phục vụ vN+1 (reload lỗi / sai version / degraded)
+                RT->>MR: rollback_champion: @champion → vN
+                RT->>API: POST /api/v1/model/reload
+                RT-->>AL: credit_retrain_last_run_failed = 1
+                AL->>OC: RetrainFailed - đã rollback về vN
+            else đúng vN+1
+                RT->>DM: POST /reference/refresh (re-score reference bằng champion mới)
+                RT-->>AL: last_run_failed = 0, last_promoted_version = N+1
+                RT->>OC: [RETRAIN] vN+1 promoted: ROC-AUC, F1, financial loss trước/sau
+            end
+        end
+    end

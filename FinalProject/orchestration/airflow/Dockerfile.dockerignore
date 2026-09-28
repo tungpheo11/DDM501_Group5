@@ -1,0 +1,14 @@
+*
+!requirements.txt
+!src/
+!configs/
+!models/
+!data/manifest.json
+!data/reference/
+!data/processed/
+!orchestration/airflow/init_airflow.sh
+!orchestration/airflow/utils/
+!orchestration/airflow/dags/
+**/__pycache__
+**/*.pyc
+orchestration/airflow/dags/_chaos_*.py

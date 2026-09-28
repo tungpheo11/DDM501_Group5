@@ -1,0 +1,21 @@
+[Unit]
+Description=Credit Risk MLOps stack (Docker Compose, live release)
+Documentation=file:///opt/credit-risk/current/docs/guides/ubuntu-deployment.md
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=deploy
+Group=docker
+Environment=DEPLOY_ROOT=/opt/credit-risk
+ExecStart=/bin/bash /opt/credit-risk/current/deploy/ubuntu/deploy.sh start
+ExecStop=/bin/bash /opt/credit-risk/current/deploy/ubuntu/deploy.sh stop
+# First boot may build the drift-monitor and Airflow images from the release bundle.
+TimeoutStartSec=1200
+TimeoutStopSec=180
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+# APP_ENV=docker — processes inside the Compose network, addressing services
+# by their service names.
+mlflow:
+  tracking_uri: http://mlflow:5000
+  s3_endpoint_url: http://minio:9000
+  local_fallback: false
+
+database:
+  host: postgres
+  port: 5432
+
+serving:
+  api_url: http://api:8000
