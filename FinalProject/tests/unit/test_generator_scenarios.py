@@ -3,19 +3,20 @@ Unit Tests for Credit Traffic & Drift Simulation Suite.
 Validates data generator distributions, schema adherence, and scenario executions with mock APIs.
 """
 
-from unittest.mock import patch, MagicMock
 from pathlib import Path
-import yaml
-import pytest
+from unittest.mock import MagicMock, patch
 
+import pytest
+import yaml
 from simulations.data_generator import CreditDataGenerator
 from simulations.scenarios import (
-    NormalTrafficScenario,
+    FraudAttackScenario,
     GenZDriftScenario,
     HolidaySpikeScenario,
-    FraudAttackScenario,
+    NormalTrafficScenario,
 )
-from src.config import ALL_FEATURES
+
+from credit_risk.data.schema import ALL_FEATURES
 
 
 @pytest.fixture
@@ -80,10 +81,10 @@ def test_generator_batch(generator):
 
 def test_config_yaml_validity():
     """Verifies simulations/config.yaml is syntactically valid and has necessary sections."""
-    config_path = Path(__file__).resolve().parents[1] / "simulations" / "config.yaml"
+    config_path = Path(__file__).resolve().parents[2] / "simulations" / "config.yaml"
     assert config_path.exists()
 
-    with open(config_path, "r") as f:
+    with open(config_path) as f:
         cfg = yaml.safe_load(f)
 
     assert "api" in cfg
@@ -104,9 +105,7 @@ def test_normal_scenario_run_with_mock(mock_post, generator):
     }
     mock_post.return_value = mock_resp
 
-    scenario = NormalTrafficScenario(
-        api_url="http://mock-api:18020/predict", generator=generator
-    )
+    scenario = NormalTrafficScenario(api_url="http://mock-api:18020/predict", generator=generator)
     res = scenario.run(count=5, delay_sec=0.0)
 
     assert res["total_sent"] == 5
@@ -128,9 +127,7 @@ def test_genz_scenario_run_with_mock(mock_post, generator):
     }
     mock_post.return_value = mock_resp
 
-    scenario = GenZDriftScenario(
-        api_url="http://mock-api:18020/predict", generator=generator
-    )
+    scenario = GenZDriftScenario(api_url="http://mock-api:18020/predict", generator=generator)
     res = scenario.run(count=4, delay_sec=0.0)
 
     assert res["total_sent"] == 4
@@ -143,9 +140,7 @@ def test_scenario_error_handling(mock_post, generator):
     """Verifies scenarios track connection errors gracefully."""
     mock_post.side_effect = Exception("Connection refused")
 
-    scenario = HolidaySpikeScenario(
-        api_url="http://mock-api:18020/predict", generator=generator
-    )
+    scenario = HolidaySpikeScenario(api_url="http://mock-api:18020/predict", generator=generator)
     res = scenario.run(count=3, delay_sec=0.0)
 
     assert res["total_sent"] == 3
@@ -164,9 +159,7 @@ def test_fraud_attack_scenario(mock_post, generator):
     }
     mock_post.return_value = mock_resp
 
-    scenario = FraudAttackScenario(
-        api_url="http://mock-api:18020/predict", generator=generator
-    )
+    scenario = FraudAttackScenario(api_url="http://mock-api:18020/predict", generator=generator)
     res = scenario.run(count=3, delay_sec=0.0)
 
     assert res["total_sent"] == 3
@@ -193,9 +186,7 @@ def test_holiday_spike_scenario_success(mock_post, generator):
     }
     mock_post.return_value = mock_resp
 
-    scenario = HolidaySpikeScenario(
-        api_url="http://mock-api:18020/predict", generator=generator
-    )
+    scenario = HolidaySpikeScenario(api_url="http://mock-api:18020/predict", generator=generator)
     res = scenario.run(count=2, delay_sec=0.0)
     assert res["APPROVE"] == 2
     assert res["approved_volume_ntd"] == 300000.0

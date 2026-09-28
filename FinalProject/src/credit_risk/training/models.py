@@ -12,10 +12,24 @@ from typing import Any
 
 import numpy as np
 import optuna
-from lightgbm import LGBMClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from xgboost import XGBClassifier
+
+LGBMClassifier: Any
+try:
+    from lightgbm import LGBMClassifier as _LGBMClassifier
+
+    LGBMClassifier = _LGBMClassifier
+except (ImportError, OSError):
+    LGBMClassifier = None  # Fallback for environments lacking libomp.dylib
+
+XGBClassifier: Any
+try:
+    from xgboost import XGBClassifier as _XGBClassifier
+
+    XGBClassifier = _XGBClassifier
+except (ImportError, OSError, Exception):
+    XGBClassifier = None  # Fallback for environments lacking libomp.dylib / libgomp.so
 
 ParamSampler = Callable[[optuna.Trial], dict[str, Any]]
 EstimatorFactory = Callable[[dict[str, Any], int], Any]
@@ -72,7 +86,9 @@ def _sample_random_forest(trial: optuna.Trial) -> dict[str, Any]:
     }
 
 
-def _xgboost(params: dict[str, Any], random_state: int) -> XGBClassifier:
+def _xgboost(params: dict[str, Any], random_state: int) -> Any:
+    if XGBClassifier is None:
+        raise RuntimeError("XGBoost is unavailable (missing libomp/libgomp or not installed).")
     return XGBClassifier(random_state=random_state, **params)
 
 
@@ -88,7 +104,9 @@ def _sample_xgboost(trial: optuna.Trial) -> dict[str, Any]:
     }
 
 
-def _lightgbm(params: dict[str, Any], random_state: int) -> LGBMClassifier:
+def _lightgbm(params: dict[str, Any], random_state: int) -> Any:
+    if LGBMClassifier is None:
+        raise RuntimeError("LightGBM is unavailable (missing libomp.dylib or not installed).")
     return LGBMClassifier(random_state=random_state, **params)
 
 

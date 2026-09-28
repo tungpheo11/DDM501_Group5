@@ -28,6 +28,12 @@ def test_class_balance_params_only_for_xgboost():
 
 @pytest.mark.parametrize("name", sorted(CANDIDATES))
 def test_every_candidate_builds_a_working_pipeline(sample, name):
+    from credit_risk.training.models import LGBMClassifier, XGBClassifier
+
+    if name == "lightgbm" and LGBMClassifier is None:
+        pytest.skip("LightGBM is unavailable in this environment")
+    if name == "xgboost" and XGBClassifier is None:
+        pytest.skip("XGBoost is unavailable in this environment")
     features, target = sample
     pipeline = build_model_pipeline({}, random_state=0, model_name=name)
     pipeline.fit(features, target)
@@ -65,6 +71,10 @@ def test_tuning_is_reproducible_with_fixed_seed(sample):
 
 
 def test_tuning_invokes_trial_callback_and_injects_fixed_params(sample):
+    from credit_risk.training.models import XGBClassifier
+
+    if XGBClassifier is None:
+        pytest.skip("XGBoost is unavailable in this environment")
     features, target = sample
     seen = []
     result = tune_candidate(

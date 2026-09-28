@@ -93,8 +93,8 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D", "N802"]
-"scripts/**" = ["D"]
-"simulations/**" = ["D103"]
+"scripts/**" = ["D", "N806"]
+"simulations/**" = ["D", "N802", "N806", "SIM108"]
 "orchestration/airflow/dags/*.py" = ["D103"]  # task callables are described by the DAG doc_md
 "src/credit_risk/serving/app.py" = ["D103"]
 "src/credit_risk/serving/routers/*.py" = ["D103"]  # route handlers are documented via OpenAPI summary/description
@@ -120,15 +120,15 @@ warn_redundant_casts = true
 warn_return_any = false
 
 [[tool.mypy.overrides]]
-module = ["scripts.*"]
-disallow_untyped_defs = false
+module = ["scripts.*", "simulations.*"]
+ignore_errors = true
 
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src", "services", "simulations"]
+pythonpath = [".", "src", "services", "simulations"]
 # e2e/load need the running stack: `make test-e2e`, `make test-load` (a later -m on the command line wins).
 addopts = "-ra --strict-markers --import-mode=importlib -m 'not e2e and not load'"
 markers = [

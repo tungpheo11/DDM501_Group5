@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-pytest.importorskip("airflow")
+pytest.importorskip("airflow.configuration")
 
 from airflow.configuration import conf  # noqa: E402
 from airflow.models import DagBag  # noqa: E402

@@ -1,15 +1,14 @@
-"""
-Simulations package for Credit Default Risk Scoring Platform.
+"""Simulations package for Credit Default Risk Scoring Platform.
 Provides realistic applicant traffic, persona-based modeling, and demographic/credit drift injection.
 """
 
 from simulations.data_generator import CreditDataGenerator
 from simulations.scenarios import (
     BaseScenario,
-    NormalTrafficScenario,
+    FraudAttackScenario,
     GenZDriftScenario,
     HolidaySpikeScenario,
-    FraudAttackScenario,
+    NormalTrafficScenario,
 )
 
 __all__ = [

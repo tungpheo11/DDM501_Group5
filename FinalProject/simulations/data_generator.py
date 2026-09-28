@@ -1,12 +1,12 @@
-"""
-Module: data_generator.py
+"""Module: data_generator.py
 Generates realistic financial applicant records for real-time inference and drift simulation.
 Alings with UCI Credit Default 23-feature schema.
 """
 
 from __future__ import annotations
+
 import random
-from typing import Dict, Any, List
+from typing import Any
 
 
 class CreditDataGenerator:
@@ -16,7 +16,7 @@ class CreditDataGenerator:
         if seed is not None:
             random.seed(seed)
 
-    def generate_normal_sample(self) -> Dict[str, Any]:
+    def generate_normal_sample(self) -> dict[str, Any]:
         """Baseline prime applicant: mature age, stable limit, disciplined repayments (PAY_0=0)."""
         limit_bal = float(random.choice([150000, 200000, 250000, 300000, 400000]))
         age = random.randint(35, 52)
@@ -48,7 +48,7 @@ class CreditDataGenerator:
             "PAY_AMT6": round(bill_base * random.uniform(0.8, 1.2), 2),
         }
 
-    def generate_genz_drift_sample(self) -> Dict[str, Any]:
+    def generate_genz_drift_sample(self) -> dict[str, Any]:
         """Demographic & covariate drift: Young gig-economy applicants (19-25yo) with lower limit and PAY_0=1."""
         limit_bal = float(random.choice([20000, 30000, 40000, 50000]))
         age = random.randint(19, 25)
@@ -81,7 +81,7 @@ class CreditDataGenerator:
             "PAY_AMT6": round(bill_base * random.uniform(0.5, 0.9), 2),
         }
 
-    def generate_holiday_spike_sample(self) -> Dict[str, Any]:
+    def generate_holiday_spike_sample(self) -> dict[str, Any]:
         """Seasonal utilization shock: High spenders with 80-92% utilization and large bill amounts."""
         limit_bal = float(random.choice([100000, 150000, 200000, 250000]))
         age = random.randint(30, 48)
@@ -113,7 +113,7 @@ class CreditDataGenerator:
             "PAY_AMT6": round(bill_base * 0.25, 2),
         }
 
-    def generate_delinquent_sample(self) -> Dict[str, Any]:
+    def generate_delinquent_sample(self) -> dict[str, Any]:
         """Severe delinquency: High default risk with PAY_0 >= 2 and maxed out credit lines."""
         limit_bal = float(random.choice([50000, 80000, 100000]))
         age = random.randint(28, 48)
@@ -145,7 +145,7 @@ class CreditDataGenerator:
             "PAY_AMT6": round(bill_base * 0.04, 2),
         }
 
-    def generate_sample_by_scenario(self, scenario: str) -> Dict[str, Any]:
+    def generate_sample_by_scenario(self, scenario: str) -> dict[str, Any]:
         """Selects sample distribution based on target market regime."""
         r = random.random()
         if scenario == "normal":
@@ -182,6 +182,6 @@ class CreditDataGenerator:
 
         return self.generate_normal_sample()
 
-    def generate_batch(self, count: int, scenario: str = "normal") -> List[Dict[str, Any]]:
+    def generate_batch(self, count: int, scenario: str = "normal") -> list[dict[str, Any]]:
         """Generates a batch of applicant records."""
         return [self.generate_sample_by_scenario(scenario) for _ in range(count)]

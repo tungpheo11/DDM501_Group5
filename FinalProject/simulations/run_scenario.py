@@ -40,7 +40,8 @@ from typing import Any
 
 import pandas as pd
 import requests
-from persona_simulator import sample_persona_by_mode
+
+from simulations.persona_simulator import sample_persona_by_mode
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"

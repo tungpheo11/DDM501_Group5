@@ -6,6 +6,7 @@ import pytest
 
 from credit_risk.config import load_settings
 from credit_risk.data.schema import ALL_FEATURES
+from credit_risk.training.models import LGBMClassifier
 from credit_risk.training.registry import describe_registry, log_model_run
 from credit_risk.training.retrain import (
     load_champion_spec,
@@ -15,7 +16,7 @@ from credit_risk.training.retrain import (
 )
 from credit_risk.training.train import run_training_pipeline
 
-FAST_CANDIDATES = ["logistic_regression", "lightgbm"]
+FAST_CANDIDATES = ["logistic_regression"] if LGBMClassifier is None else ["logistic_regression", "lightgbm"]
 
 
 @pytest.fixture

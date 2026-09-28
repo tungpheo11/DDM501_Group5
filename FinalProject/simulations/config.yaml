@@ -4,9 +4,10 @@
 
 api:
   base_url: "http://localhost:18020"
-  predict_url: "http://localhost:18020/predict"
-  health_url: "http://localhost:18020/health"
+  predict_url: "http://localhost:18020/api/v1/predict"
+  health_url: "http://localhost:18020/health/live"
   metrics_url: "http://localhost:18020/metrics"
+  api_key: "local-dev-key-change-me"
   timeout_sec: 5.0
 
 simulation:

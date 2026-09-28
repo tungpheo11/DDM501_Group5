@@ -1,17 +1,23 @@
-"""
-Module: scenarios.py
+"""Module: scenarios.py
 Defines reusable traffic and drift simulation scenarios for observability and alert testing.
+Supports API v1 contracts and X-API-Key authentication.
 """
 
 from __future__ import annotations
-import time
+
 import logging
-from typing import Dict, Any, Optional
+import os
+import time
+from typing import Any
+
 import requests
 
 from simulations.data_generator import CreditDataGenerator
 
 logger = logging.getLogger("SimulationScenarios")
+
+DEFAULT_API_URL = os.getenv("API_URL", "http://localhost:18020/api/v1/predict")
+DEFAULT_API_KEY = os.getenv("API_KEY", "local-dev-key-change-me")
 
 
 class BaseScenario:
@@ -19,20 +25,28 @@ class BaseScenario:
 
     def __init__(
         self,
-        api_url: str = "http://localhost:18020/predict",
-        generator: Optional[CreditDataGenerator] = None,
+        api_url: str | None = None,
+        generator: CreditDataGenerator | None = None,
+        api_key: str | None = None,
     ):
-        self.api_url = api_url
+        self.api_url = api_url or DEFAULT_API_URL
         self.generator = generator or CreditDataGenerator()
+        self.api_key = api_key or DEFAULT_API_KEY
 
-    def run(self, count: int = 50, delay_sec: float = 0.02) -> Dict[str, Any]:
+    @property
+    def headers(self) -> dict[str, str]:
+        if self.api_key:
+            return {"X-API-Key": self.api_key}
+        return {}
+
+    def run(self, count: int = 50, delay_sec: float = 0.02) -> dict[str, Any]:
         raise NotImplementedError
 
 
 class NormalTrafficScenario(BaseScenario):
     """Simulates healthy, stable baseline applicant traffic (PSI < 0.05)."""
 
-    def run(self, count: int = 50, delay_sec: float = 0.02) -> Dict[str, Any]:
+    def run(self, count: int = 50, delay_sec: float = 0.02) -> dict[str, Any]:
         logger.info("Executing NormalTrafficScenario (%d applications)...", count)
         stats = {
             "scenario": "NormalTraffic",
@@ -50,7 +64,7 @@ class NormalTrafficScenario(BaseScenario):
             payload = self.generator.generate_normal_sample()
             try:
                 t0 = time.time()
-                resp = requests.post(self.api_url, json=payload, timeout=5.0)
+                resp = requests.post(self.api_url, json=payload, headers=self.headers, timeout=5.0)
                 latencies.append((time.time() - t0) * 1000)
                 if resp.status_code == 200:
                     data = resp.json()
@@ -75,7 +89,7 @@ class NormalTrafficScenario(BaseScenario):
 class GenZDriftScenario(BaseScenario):
     """Simulates viral Gen-Z acquisition campaign with severe demographic and covariate drift (PSI >= 0.25)."""
 
-    def run(self, count: int = 60, delay_sec: float = 0.02) -> Dict[str, Any]:
+    def run(self, count: int = 60, delay_sec: float = 0.02) -> dict[str, Any]:
         logger.info("Executing GenZDriftScenario (%d applications)...", count)
         stats = {
             "scenario": "GenZDrift",
@@ -93,7 +107,7 @@ class GenZDriftScenario(BaseScenario):
             payload = self.generator.generate_genz_drift_sample()
             try:
                 t0 = time.time()
-                resp = requests.post(self.api_url, json=payload, timeout=5.0)
+                resp = requests.post(self.api_url, json=payload, headers=self.headers, timeout=5.0)
                 latencies.append((time.time() - t0) * 1000)
                 if resp.status_code == 200:
                     data = resp.json()
@@ -118,7 +132,7 @@ class GenZDriftScenario(BaseScenario):
 class HolidaySpikeScenario(BaseScenario):
     """Simulates festival shopping surge with high credit line utilization."""
 
-    def run(self, count: int = 50, delay_sec: float = 0.02) -> Dict[str, Any]:
+    def run(self, count: int = 50, delay_sec: float = 0.02) -> dict[str, Any]:
         logger.info("Executing HolidaySpikeScenario (%d applications)...", count)
         stats = {
             "scenario": "HolidaySpike",
@@ -136,7 +150,7 @@ class HolidaySpikeScenario(BaseScenario):
             payload = self.generator.generate_holiday_spike_sample()
             try:
                 t0 = time.time()
-                resp = requests.post(self.api_url, json=payload, timeout=5.0)
+                resp = requests.post(self.api_url, json=payload, headers=self.headers, timeout=5.0)
                 latencies.append((time.time() - t0) * 1000)
                 if resp.status_code == 200:
                     data = resp.json()
@@ -161,7 +175,7 @@ class HolidaySpikeScenario(BaseScenario):
 class FraudAttackScenario(BaseScenario):
     """Simulates delinquent / syndicate attack with elevated default probabilities."""
 
-    def run(self, count: int = 50, delay_sec: float = 0.02) -> Dict[str, Any]:
+    def run(self, count: int = 50, delay_sec: float = 0.02) -> dict[str, Any]:
         logger.info("Executing FraudAttackScenario (%d applications)...", count)
         stats = {
             "scenario": "FraudAttack",
@@ -179,7 +193,7 @@ class FraudAttackScenario(BaseScenario):
             payload = self.generator.generate_delinquent_sample()
             try:
                 t0 = time.time()
-                resp = requests.post(self.api_url, json=payload, timeout=5.0)
+                resp = requests.post(self.api_url, json=payload, headers=self.headers, timeout=5.0)
                 latencies.append((time.time() - t0) * 1000)
                 if resp.status_code == 200:
                     data = resp.json()
