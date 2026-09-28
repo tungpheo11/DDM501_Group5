@@ -1,0 +1,44 @@
+# ==============================================================================
+# Credit Default Risk Simulation Configuration
+# ==============================================================================
+
+api:
+  base_url: "http://localhost:18020"
+  predict_url: "http://localhost:18020/predict"
+  health_url: "http://localhost:18020/health"
+  metrics_url: "http://localhost:18020/metrics"
+  timeout_sec: 5.0
+
+simulation:
+  default_count: 50
+  default_delay_sec: 0.02
+  scenarios:
+    - "normal"
+    - "holiday_spike"
+    - "genz_drift"
+    - "fraud_attack"
+
+drift_thresholds:
+  psi_warning: 0.10
+  psi_critical: 0.25
+
+features:
+  LIMIT_BAL:
+    min: 10000.0
+    max: 1000000.0
+    mean: 167484.0
+    std: 129747.0
+  AGE:
+    min: 21
+    max: 79
+    mean: 35.5
+    std: 9.2
+  SEX:
+    values: [1, 2]
+    weights: [0.40, 0.60]
+  EDUCATION:
+    values: [1, 2, 3, 4]
+    weights: [0.35, 0.47, 0.16, 0.02]
+  MARRIAGE:
+    values: [1, 2, 3]
+    weights: [0.45, 0.53, 0.02]

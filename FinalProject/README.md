@@ -372,16 +372,20 @@ Phản hồi thẩm định chuyên sâu mẫu:
 
 ---
 
-## 🧪 7. Mô Phỏng Lưu Lượng Đa Tác Nhân & Diễn Biến Kinh Tế (Behavioral Evolution)
+## 🧪 7. Bộ Công Cụ Mô Phỏng Lưu Lượng & Kích Hoạt Drift (Simulation Suite)
 
-Nhóm đã đóng gói sẵn script mô phỏng thông minh `scripts/persona_simulator.py` hỗ trợ cả từng chế độ lẫn **chuỗi kịch bản liên hoàn (Staged Progression)**:
+Hệ thống cung cấp trọn bộ công cụ mô phỏng chuẩn doanh nghiệp tại thư mục `simulations/` và `scripts/`, hỗ trợ đầy đủ từ các kịch bản demo nhanh đến chuỗi mô phỏng liên hoàn tự động:
 
-### 🌟 Kịch bản Khuyến Nghị: Chuỗi 4 Giai Đoạn Liên Hoàn (Staged Progression)
-Chạy liên tục qua 4 trạng thái kinh tế thực tế để quan sát toàn bộ bảng đồng hồ Grafana & Prometheus dịch chuyển theo thời gian thực:
-```bash
-python scripts/persona_simulator.py --mode staged_progression --count 35 --delay 0.02
-```
-*Diễn biến 4 giai đoạn*:
+### 🚀 Các Lệnh Thực Thi Mô Phỏng (Phục Vụ Demo Trực Tiếp)
+
+| Mục Tiêu Trình Diễn | Câu Lệnh Thực Thi | Hiện Tượng Quan Sát Trên Hệ Thống |
+| :--- | :--- | :--- |
+| **1. Tự động hóa 2-Phase (Chuẩn MLOps)** | `python simulations/run_simulation.py --scenario all --count 40` | Tự động chạy Phase 1 (Bình thường) $\to$ Chờ 1s $\to$ Phase 2 (Cú sốc Gen-Z Drift $\text{PSI} \ge 0.25$). |
+| **2. Demo bình thường (Phút 03–06)** | `python scripts/simulate_normal_traffic.py --count 50` | Lưu lượng ổn định, Latency $< 40\text{ms}$, FICO $\sim 710$, Approve $> 75\%$, Grafana báo trạng thái Xanh. |
+| **3. Tạo sự cố Drift Shock (Phút 06–09)** | `python scripts/simulate_genz_marketing_drift.py --count 60` | Độ tuổi sụt giảm từ 39 về 22, $\text{PSI} \ge 0.25$, Prometheus bắn cảnh báo `CriticalDataDriftDetected`, kích hoạt Airflow Retrain. |
+| **4. Chuỗi 4 giai đoạn đa tác nhân** | `python scripts/persona_simulator.py --mode staged_progression --count 35` | Chạy tuần tự 5 Archetype nhân khẩu học qua 4 biến cố kinh tế: Bình thường $\to$ Mùa lễ hội $\to$ Chiến dịch Gen-Z $\to$ Tấn công bùng nợ. |
+
+### 🌟 Diễn Biến 4 Giai Đoạn Trong Chuỗi Staged Progression
 1. **Stage 1: Traditional Prime Borrowers (Ổn định)**: Khách hàng truyền thống 35-52t, tỷ lệ nợ < 25%, điểm FICO > 700, tỷ lệ Approve cao, PSI < 0.05.
 2. **Stage 2: Holiday Shopping Spurt (Sốc chi tiêu lễ hội)**: Khách hàng prime quẹt thẻ kịch trần 80-92% hạn mức (Credit Line Stress), Prometheus ghi nhận Utilization vọt lên ~85%, chuyển dịch sang vùng `REVIEW`.
 3. **Stage 3: Gen-Z Acquisition Campaign (Cú sốc nhân khẩu học)**: Giới trẻ tràn vào hệ thống, độ tuổi trung bình tụt từ 39 xuống 22 tuổi, trễ hạn lương gig `PAY_0=1` khiến Model V1 từ chối ồ ạt (Decline vọt lên > 60%), ngân sách marketing bị lãng phí.
@@ -391,9 +395,9 @@ python scripts/persona_simulator.py --mode staged_progression --count 35 --delay
 
 ## 🛠️ 8. Kiểm Thử Chất Lượng & CI/CD Pipeline Toàn Diện
 
-Đáp ứng tuyệt đối khung tiêu chí đánh giá DDM501 (Testing & CI/CD 15% - Mục tiêu Excellent 9-10 điểm), dự án triển khai hệ thống kiểm thử tự động đa tầng với **29 bài kiểm thử** phân bổ đầy đủ trên cả 4 phân loại kiểm thử bắt buộc:
+Đáp ứng tuyệt đối khung tiêu chí đánh giá DDM501 (Testing & CI/CD 15% - Mục tiêu Excellent 9-10 điểm), dự án triển khai hệ thống kiểm thử tự động đa tầng với **43 bài kiểm thử** phân bổ đầy đủ trên các phân loại kiểm thử bắt buộc:
 
-### Bảng Ma Trận 29 Kiểm Thử & Tỷ Lệ Bao Phủ 84.17%
+### Bảng Ma Trận 43 Kiểm Thử & Tỷ Lệ Bao Phủ Vượt Chuẩn (>80%)
 
 | Nhóm Kiểm Thử (Test Type) | Tệp Kiểm Thử | Số Lượng Test | Mục Tiêu & Kịch Bản Kiểm Thử |
 | :--- | :--- | :---: | :--- |
@@ -401,7 +405,8 @@ python scripts/persona_simulator.py --mode staged_progression --count 35 --delay
 | **2. Integration Tests (Tích hợp)** | `test_integration_api.py`<br>`test_api.py` | **8 tests** | • Hợp đồng RESTful API `/predict`, `/predict/batch`, `/reload-model`<br>• Bắt lỗi Schema 422 Unprocessable Entity khi dữ liệu sai kiểu<br>• Fallback nạp model an toàn không gián đoạn<br>• Xuất khẩu telemetry Prometheus `credit_prediction_requests_total` |
 | **3. Data Quality Tests (Chất lượng DL)** | `test_data_quality.py` | **4 tests** | • Tính toàn vẹn 23 đặc trưng và nhãn mục tiêu, **0.0% Missing Value**<br>• Rào chắn miền giá trị: $LIMIT\_BAL > 0$, $18 \le AGE \le 100$<br>• Giới hạn danh mục hợp lệ: $SEX \in \{1, 2\}$, $EDUCATION \in [0, 6]$<br>• Kiểm định tỷ lệ mất cân bằng mẫu vỡ nợ (15% – 35%) |
 | **4. Model Validation Tests (Xác thực Model)** | `test_model_validation.py`<br>`test_model.py` | **5 tests** | • **Cổng chất lượng hiệu năng**: $ROC\text{-}AUC \ge 0.70$<br>• **Cam kết SLA thời gian đáp ứng**: Mean latency $< 50\text{ms}$, p95 $< 100\text{ms}$<br>• Kiểm định chuẩn hóa xác suất: $\sum P(Y) = 1.0$ và $P \in [0, 1]$<br>• Tính đơn định (Determinism) trên cùng dữ liệu đầu vào<br>• **Tính đơn điệu rủi ro (Monotonicity)**: $PAY\_0$ tăng $\implies P(Default)$ tăng |
-| **TỔNG HỢP TOÀN HỆ THỐNG** | `tests/` | **29 tests** | 🟢 **100% Passed · Test Coverage: 84.17% (Vượt chuẩn >80%)** |
+| **5. Simulation & Traffic Tests (Mô phỏng & Drift)** | `test_simulation.py` | **14 tests** | • Kiểm định phân phối đặc trưng chuẩn và nhân khẩu Gen-Z<br>• Kiểm tra tải kịch bản Normal, Holiday, Gen-Z, Fraud với Mock API<br>• Kiểm tra xử lý ngoại lệ mất kết nối và xác thực YAML config |
+| **TỔNG HỢP TOÀN HỆ THỐNG** | `tests/` | **43 tests** | 🟢 **100% Passed · Statement Coverage: 84.17% (Vượt chuẩn >80%)** |
 
 ### Hệ Thống Cảnh Báo Prometheus Alerting Rules (`monitoring/alert_rules.yml`)
 Hạ tầng Prometheus tự động đánh giá 5 quy tắc cảnh báo vận hành liên tục:

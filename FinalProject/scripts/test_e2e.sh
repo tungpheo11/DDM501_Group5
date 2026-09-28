@@ -20,7 +20,7 @@ echo -e "======================================================================$
 
 # 1. Code Style & Flake8 Linting
 echo -e "${BOLD}[1/5] Gate 1: Code Quality & Flake8 Linting...${NC}"
-if uv run flake8 src app tests scripts; then
+if uv run flake8 src app tests scripts simulations; then
     echo -e "${GREEN}✓ Code style and syntax clean (0 violations)${NC}\n"
 else
     echo -e "${RED}✗ Gate 1 Failed: Flake8 violations detected!${NC}"

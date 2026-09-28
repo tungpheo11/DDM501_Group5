@@ -28,7 +28,7 @@ jobs:
         run: uv sync --dev
 
       - name: Code Style & Lint Check (flake8)
-        run: uv run flake8 src app tests scripts
+        run: uv run flake8 src app tests scripts simulations
 
       - name: Run Test Suite & Coverage Gate (pytest >= 80% coverage)
         run: uv run pytest -v tests/ --cov=src --cov=app --cov-report=term-missing --cov-report=xml --cov-fail-under=80
