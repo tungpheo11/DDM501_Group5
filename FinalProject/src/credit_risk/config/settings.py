@@ -85,9 +85,11 @@ class MlflowSettings:
 
 @dataclass(frozen=True)
 class DatabaseSettings:
-    """Inference-log database settings."""
+    """Inference-log database settings (the pool is per API worker process)."""
 
     url: str
+    pool_size: int = 5
+    max_overflow: int = 5
 
 
 @dataclass(frozen=True)
@@ -111,6 +113,8 @@ class ServingSettings:
     explain_shap_max_evals: int = 240
     explain_seed: int = 42
     loss_given_default: float = 0.45
+    model_sync_dir: Path | None = None
+    model_sync_interval_seconds: float = 1.0
 
 
 def _split_keys(raw: str) -> tuple[str, ...]:
@@ -219,15 +223,19 @@ def _build_paths(root: Path) -> PathSettings:
 
 
 def _build_database(overlay: dict[str, Any]) -> DatabaseSettings:
+    pool = {
+        "pool_size": int(_env("DB_POOL_SIZE", str(overlay.get("pool_size", 5)))),
+        "max_overflow": int(_env("DB_MAX_OVERFLOW", str(overlay.get("max_overflow", 5)))),
+    }
     explicit_url = os.getenv("DATABASE_URL") or overlay.get("url")
     if explicit_url:
-        return DatabaseSettings(url=str(explicit_url))
+        return DatabaseSettings(url=str(explicit_url), **pool)
     user = _env("POSTGRES_USER", "mlops")
     password = _env("POSTGRES_PASSWORD", "mlopspass")
     database = _env("POSTGRES_DB", "credit_mlops_db")
     host = _env("POSTGRES_HOST", str(overlay.get("host", "localhost")))
     port = _env("POSTGRES_PORT", str(overlay.get("port", 15434)))
-    return DatabaseSettings(url=f"postgresql://{user}:{password}@{host}:{port}/{database}")
+    return DatabaseSettings(url=f"postgresql://{user}:{password}@{host}:{port}/{database}", **pool)
 
 
 def _build_model_spec(raw: dict[str, Any], fallback: ModelSpec) -> ModelSpec:
@@ -292,6 +300,8 @@ def load_settings(env: str | None = None, project_root: Path | None = None) -> S
         explain_shap_max_evals=int(explain_raw.get("shap_max_evals", 240)),
         explain_seed=int(explain_raw.get("seed", 42)),
         loss_given_default=float((serving_raw.get("business", {}) or {}).get("loss_given_default", 0.45)),
+        model_sync_dir=Path(os.environ["MODEL_SYNC_DIR"]) if os.environ.get("MODEL_SYNC_DIR") else None,
+        model_sync_interval_seconds=float(_env("MODEL_SYNC_INTERVAL_SECONDS", "1.0")),
     )
     if serving.explain_method not in ("shap", "reference_substitution"):
         raise ValueError("serving.explain.method must be 'shap' or 'reference_substitution'.")

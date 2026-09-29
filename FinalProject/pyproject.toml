@@ -11,6 +11,9 @@ requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn>=0.32.0",
+    # Multi-worker serving in the API image (ADR-0007); `make serve` keeps plain uvicorn.
+    "gunicorn>=23.0.0",
+    "uvicorn-worker>=0.4.0",
     "pydantic>=2.10.0",
     "scikit-learn>=1.5.0",
     "pandas>=2.2.0",

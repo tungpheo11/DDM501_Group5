@@ -255,6 +255,8 @@ services:
       API_KEYS: ${API_KEYS:?set API_KEYS in .env (see .env.example)}
       LOG_FORMAT: ${LOG_FORMAT:-json}
       PSEUDONYMIZATION_KEY: ${PSEUDONYMIZATION_KEY:-}
+      # gunicorn workers (ADR-0007): keep equal to the CPU limit below; 1 = single-process rollback.
+      API_WORKERS: ${API_WORKERS:-2}
     ports:
       - "${API_PORT:-18020}:8000"
     volumes:
@@ -269,7 +271,8 @@ services:
       start_period: 20s
     deploy:
       resources:
-        limits: {cpus: "2.0", memory: 1G}
+        # ~350 MB per worker plus headroom for a hot reload / SHAP explanations.
+        limits: {cpus: "2.0", memory: 1536M}
     logging: *default-logging
 
   # ===========================================================================

@@ -41,7 +41,7 @@ lấy từ file sinh tự động trong [`reports/`](../reports/) (không nhập
 
 | Mục | Nội dung |
 |---|---|
-| [`adr/`](adr/) | 6 Architecture Decision Record (bảng bên dưới) |
+| [`adr/`](adr/) | 7 Architecture Decision Record (bảng bên dưới) |
 | [`runbooks/alerts.md`](runbooks/alerts.md) | Runbook từng alert (đích của `runbook_url`) |
 | [`assets/`](assets/) | [Diagram](assets/diagrams/README.md) (nguồn Mermaid + SVG), ảnh chụp Grafana/slide |
 | [`presentation/`](presentation/README.md) | Slide (`index.html`, PDF, PPTX), [demo script](presentation/demo-script.md) |
@@ -58,6 +58,7 @@ lấy từ file sinh tự động trong [`reports/`](../reports/) (không nhập
 | [0004](adr/0004-evidently-for-drift.md) | Evidently + PSI cho drift |
 | [0005](adr/0005-docker-compose-instead-of-kubernetes.md) | Docker Compose thay Kubernetes |
 | [0006](adr/0006-src-layout-package-and-layered-config.md) | Package src layout + cấu hình phân lớp |
+| [0007](adr/0007-api-capacity-multi-worker.md) | Capacity API: tối ưu hot path + nhiều worker process |
 
 ## 3. Rubric → file / bằng chứng
 
@@ -78,7 +79,7 @@ Cột "Bằng chứng" là file sinh tự động hoặc lệnh tái lập đư�
 |---|---|---|
 | Diagram chuyên nghiệp, tương tác rõ | [02 §2](02-architecture.md#2-sơ-đồ-kiến-trúc), [ARCHITECTURE.md](../ARCHITECTURE.md) | 7 SVG render từ Mermaid ([`assets/diagrams/`](assets/diagrams/README.md), `scripts/render_diagrams.sh`) |
 | Data flow đầy đủ + edge case | [02 §4](02-architecture.md#4-data-flow) | Bảng edge case → hành vi → alert → kịch bản kiểm chứng; [scenario-simulation](guides/scenario-simulation.md) |
-| Quyết định công nghệ có trade-off | [02 §6–7](02-architecture.md#6-tech-stack--lý-do-chọn), [ADR 0001–0006](adr/) | Bảng lựa chọn vs phương án thay thế; trade-off scalability/cost/complexity/reliability/security |
+| Quyết định công nghệ có trade-off | [02 §6–7](02-architecture.md#6-tech-stack--lý-do-chọn), [ADR 0001–0007](adr/) | Bảng lựa chọn vs phương án thay thế; trade-off scalability/cost/complexity/reliability/security |
 
 ### 3.1.3 Implementation — ML Pipeline (15%)
 
@@ -92,7 +93,7 @@ Cột "Bằng chứng" là file sinh tự động hoặc lệnh tái lập đư�
 
 | Tiêu chí (Excellent) | Tài liệu | Bằng chứng |
 |---|---|---|
-| API RESTful, tài liệu, error handling, versioning | [04](04-api-reference.md), [`openapi.yaml`](openapi.yaml) | `/api/v1`, `X-API-Key`, error contract thống nhất; `tests/integration/`; p95 18.79 ms ([`latency_benchmark.json`](../reports/latency_benchmark.json)) |
+| API RESTful, tài liệu, error handling, versioning | [04](04-api-reference.md), [`openapi.yaml`](openapi.yaml) | `/api/v1`, `X-API-Key`, error contract thống nhất; `tests/integration/`; p95 20.59 ms ([`latency_benchmark.json`](../reports/latency_benchmark.json)) |
 | Dockerfile tối ưu, multi-stage, bảo mật | [`deploy/docker/Dockerfile.api`](../deploy/docker/Dockerfile.api), [SECURITY](../SECURITY.md) | Multi-stage, user non-root, file read-only, healthcheck; Trivy gate CRITICAL trong CI |
 | docker-compose đầy đủ service + healthcheck | [05 §1](05-monitoring-alerting.md#1-service-profile-cổng-tài-nguyên), [`deploy/compose/`](../deploy/compose/) | 15 service, 3 profile, healthcheck + giới hạn tài nguyên; overlay prod/image/chaos; `make up` → `make health` |
 
@@ -108,7 +109,7 @@ Cột "Bằng chứng" là file sinh tự động hoặc lệnh tái lập đư�
 
 | Tiêu chí (Excellent) | Tài liệu | Bằng chứng |
 |---|---|---|
-| Coverage > 80 %, test có ý nghĩa | [07 §2](07-testing-cicd.md#2-quality-gates) | Coverage tổng 92.1 % (gate ≥ 80 %, `make test-ci`; artifact CI `final-project-coverage`) |
+| Coverage > 80 %, test có ý nghĩa | [07 §2](07-testing-cicd.md#2-quality-gates) | Coverage tổng 91.3 % (gate ≥ 80 %, `make test-ci`; artifact CI `final-project-coverage`) |
 | Unit, integration, data quality, model tests | [07](07-testing-cicd.md), [03 §8](03-ml-pipeline.md#8-kiểm-thử-liên-quan) | `tests/unit`, `tests/integration`, `tests/data_quality`, `tests/model_validation` (JUnit từng suite) |
 | CI/CD: lint, test, build, deploy | [07 §1, §6](07-testing-cicd.md#1-sơ-đồ-job) | [`final-project-ci.yml`](../../.github/workflows/final-project-ci.yml), [`final-project-cd.yml`](../../.github/workflows/final-project-cd.yml); `make ci` chạy lại pipeline local |
 

@@ -482,7 +482,8 @@ paths:
       description: Reloads `models:/<name>@<alias>` from MLflow (local artifact if
         MLflow is unreachable) without downtime. Idempotent. If loading fails the
         previous model keeps serving (`status=unchanged_on_failure`); 503 only when
-        no model is available at all.
+        no model is available at all. The worker answering the call reloads synchronously;
+        after a successful reload the other API workers follow within a few seconds.
       operationId: reload_model_api_v1_model_reload_post
       responses:
         '200':

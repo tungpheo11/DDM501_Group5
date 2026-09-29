@@ -61,8 +61,12 @@ thời gian phục hồi). Alert firing sau ~1–1.5 phút.
 **Kích hoạt:** `make chaos-latency` (giới hạn API còn 0.5 CPU) rồi `make simulate SCENARIO=load` (32 luồng, 180 s). Không hạ xuống 0.1 CPU: API ngừng trả lời scrape → `APIDown` bắn và inhibit `HighLatencyP95`.
 Firing sau ~2–3 phút; `make chaos-restore` trả CPU về 2 → resolve sau ~2 phút.
 
-**Xử lý:** dashboard *Infra & SLA* (CPU/memory API), *ML Model* (latency inference); tăng `cpus` của service `api`,
-thêm worker uvicorn, hoặc bật cache; kiểm tra batch lớn gọi `/api/v1/predict/batch` đồng thời.
+**Xử lý:** dashboard *Infra & SLA* (CPU/memory API = tổng master + worker gunicorn), *ML Model* (latency inference);
+kiểm tra batch lớn gọi `/api/v1/predict/batch` đồng thời và tải có vượt capacity ~85 rps / 2 CPU không
+([ADR-0007](../adr/0007-api-capacity-multi-worker.md)). Scale dọc: tăng **cùng lúc** `API_WORKERS` (`.env`) và `cpus`
+của service `api` (giữ số worker = số CPU; thêm worker mà không thêm CPU chỉ tăng tranh chấp), mỗi worker cần thêm
+~350 MB so với giới hạn RAM, rồi `docker compose up -d --no-deps api`. Xác nhận bằng `make test-load-stress`.
+Rollback về 1 process: `API_WORKERS=1` (không cần build lại image).
 
 ## ModelNotLoaded
 

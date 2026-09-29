@@ -28,7 +28,8 @@ Tạo bot, lấy chat id và checklist kiểm tra: [`docs/05-monitoring-alerting
 ## Xem notification ở webhook
 
 ```bash
-curl -s localhost:19095/alerts/state | jq            # trạng thái cuối mỗi alert (firing/resolved)
+curl -s localhost:19095/alerts/state | jq            # trạng thái cuối mỗi alert (firing/resolved); không gồm event Airflow
+curl -s 'localhost:19095/alerts?limit=10' | jq '.[] | select(.receiver=="airflow")'   # event one-shot từ DAG (label kind=event)
 curl -s 'localhost:19095/alerts?limit=5&alertname=APIDown' | jq
 make alerts                                          # alert đang firing + state webhook
 ```

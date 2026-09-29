@@ -2,8 +2,9 @@
 
 Locust is started in a subprocess because it monkey-patches the standard library with gevent on import.
 Tunables (environment): ``LOAD_USERS`` (10), ``LOAD_SPAWN_RATE`` (10), ``LOAD_DURATION`` (60s),
-``LOAD_P95_MS`` (100, the p95 SLO of ``/api/v1/predict``), ``E2E_API_URL``.
-Reports: ``reports/load/locust_report.html``, ``locust_stats.csv`` and ``locust_summary.json``.
+``LOAD_P95_MS`` (100, the p95 SLO of ``/api/v1/predict``), ``E2E_API_URL``, ``LOAD_REPORT_NAME`` (locust).
+Reports: ``reports/load/<name>_report.html``, ``<name>_stats.csv`` and ``<name>_summary.json``
+(``make test-load-stress`` writes ``locust_stress_*`` so the 10-user baseline is kept).
 """
 
 from __future__ import annotations
@@ -50,7 +51,8 @@ def locust_stats() -> dict[str, dict[str, str]]:
         pytest.skip(f"API not ready at {api_url} ({exc.__class__.__name__}); run `make up`")
 
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
-    prefix = REPORT_DIR / "locust"
+    name = os.environ.get("LOAD_REPORT_NAME", "locust")
+    prefix = REPORT_DIR / name
     cmd = [
         sys.executable,
         "-m",
@@ -70,15 +72,15 @@ def locust_stats() -> dict[str, dict[str, str]]:
         "--csv",
         str(prefix),
         "--html",
-        str(REPORT_DIR / "locust_report.html"),
+        str(REPORT_DIR / f"{name}_report.html"),
         "--exit-code-on-error",
         "0",
     ]
     completed = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=900, check=False)
-    (REPORT_DIR / "locust_output.txt").write_text(completed.stdout + completed.stderr, encoding="utf-8")
+    (REPORT_DIR / f"{name}_output.txt").write_text(completed.stdout + completed.stderr, encoding="utf-8")
     assert completed.returncode == 0, completed.stderr[-2000:]
 
-    with (REPORT_DIR / "locust_stats.csv").open(encoding="utf-8") as handle:
+    with (REPORT_DIR / f"{name}_stats.csv").open(encoding="utf-8") as handle:
         rows = {row["Name"]: row for row in csv.DictReader(handle)}
 
     summary = {
@@ -99,7 +101,7 @@ def locust_stats() -> dict[str, dict[str, str]]:
         "duration": os.environ.get("LOAD_DURATION", "60s"),
         "api_url": api_url,
     }
-    (REPORT_DIR / "locust_summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    (REPORT_DIR / f"{name}_summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     return rows
 
 

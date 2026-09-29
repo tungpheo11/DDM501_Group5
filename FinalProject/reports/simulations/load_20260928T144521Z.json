@@ -1,0 +1,33 @@
+{
+  "scenario": "load",
+  "started_at": "2026-09-28T14:45:21.831744+00:00",
+  "finished_at": "2026-09-28T14:48:22.269621+00:00",
+  "api_url": "http://localhost:18020",
+  "traffic": {
+    "requests": 4035,
+    "success": 4035,
+    "errors": 0,
+    "status_codes": {
+      "200": 4035
+    },
+    "decisions": {
+      "REVIEW": 2194,
+      "DECLINE": 800,
+      "APPROVE": 1041
+    },
+    "decision_share": {
+      "REVIEW": 0.544,
+      "DECLINE": 0.198,
+      "APPROVE": 0.258
+    },
+    "mean_default_probability": 0.4404,
+    "latency_ms": {
+      "p50": 1397.4,
+      "p95": 2084.1,
+      "p99": 2807.3,
+      "max": 3996.9
+    },
+    "throughput_rps": 22.4
+  },
+  "duration_seconds": 180.4
+}

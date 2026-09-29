@@ -14,6 +14,9 @@ for _var in (
     "API_KEY",
     "API_AUTH_ENABLED",
     "LOG_FORMAT",
+    "PROMETHEUS_MULTIPROC_DIR",
+    "MODEL_SYNC_DIR",
+    "API_MASTER_PID",
 ):
     os.environ.pop(_var, None)
 

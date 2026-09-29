@@ -46,17 +46,21 @@ _engine: Engine | None = None
 _session_factory: sessionmaker[Any] | None = None
 
 
-def _engine_kwargs(url: str) -> dict[str, Any]:
+def _engine_kwargs(url: str, pool_size: int, max_overflow: int) -> dict[str, Any]:
     if url.startswith("sqlite"):
         return {"connect_args": {"check_same_thread": False}, "poolclass": StaticPool}
-    return {"pool_pre_ping": True, "pool_size": 10, "max_overflow": 20}
+    return {"pool_pre_ping": True, "pool_size": pool_size, "max_overflow": max_overflow}
 
 
-def init_db(database_url: str) -> bool:
-    """Create the engine and tables; return False (and disable logging) when unreachable."""
+def init_db(database_url: str, *, pool_size: int = 5, max_overflow: int = 5) -> bool:
+    """Create the engine and tables; return False (and disable logging) when unreachable.
+
+    The pool belongs to one process: with N API workers the database sees up to
+    ``N * (pool_size + max_overflow)`` connections.
+    """
     global _engine, _session_factory
     try:
-        engine = create_engine(database_url, **_engine_kwargs(database_url))
+        engine = create_engine(database_url, **_engine_kwargs(database_url, pool_size, max_overflow))
         Base.metadata.create_all(bind=engine)
     except Exception as exc:  # Driver-specific connection errors; the API must still start.
         logger.warning("Could not connect to inference-log database (%s). Inference logging disabled.", exc)

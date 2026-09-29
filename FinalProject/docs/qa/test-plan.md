@@ -49,7 +49,7 @@ firing → resolved), fault injection (dừng container, bóp CPU, mất model, 
 | Stack | `make up`, `COMPOSE_PROFILES=core,monitoring,orchestration`, 12 service (postgres, minio, mlflow, api, drift-monitor, prometheus, alertmanager, alert-webhook, grafana, statsd-exporter, airflow-webserver, airflow-scheduler) |
 | Python | 3.11 (`.venv` từ `uv sync --dev`) |
 | Kênh thông báo | Webhook nội bộ `alert-webhook` + nhóm Telegram "Test MLOps" (bot đọc từ `.env`) |
-| Triển khai Ubuntu | Container `ubuntu:24.04` privileged chạy Docker Engine bên trong (không có Multipass/UTM trên máy test) |
+| Triển khai Ubuntu | Container `ubuntu:24.04` (không có Multipass/UTM trên máy test): chạy `install.sh`, systemd unit, Nginx thật proxy tới stack đang chạy; thử Docker-in-Docker cho `deploy.sh` (giới hạn ghi ở test report) |
 | Dữ liệu | UCI Credit Default 30k (`data/`), stream mô phỏng `simulations/data/` |
 
 URL: API <http://localhost:18020/docs>, MLflow <http://localhost:15040>, Grafana <http://localhost:13000>, Prometheus

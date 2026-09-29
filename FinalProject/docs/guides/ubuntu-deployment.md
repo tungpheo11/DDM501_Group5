@@ -35,7 +35,7 @@ Các biến dùng trong guide (thay bằng giá trị thật):
 export SERVER=203.0.113.10            # IP hoặc hostname VPS
 export API_DOMAIN=api.example.com
 export GRAFANA_DOMAIN=grafana.example.com
-export TAG=v1.2.0                     # git tag cần deploy
+export TAG=v1.0.0                     # git tag cần deploy
 ```
 
 ## 2. Lấy mã nguồn release lên server

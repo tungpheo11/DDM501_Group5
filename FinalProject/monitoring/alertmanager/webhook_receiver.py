@@ -6,6 +6,8 @@ exposes them for demos and automated checks:
 * ``POST /alerts``         Alertmanager webhook payload (version 4).
 * ``GET  /alerts``         received notifications, newest first (``?limit=``, ``?alertname=``).
 * ``GET  /alerts/state``   last known status per alert (fingerprint), to prove fire -> resolve.
+  One-shot events (label ``kind=event``, e.g. Airflow DAG notifications) never
+  resolve, so they are only listed under ``/alerts``.
 * ``GET  /health``         liveness probe.
 
 Standard library only so it runs on a bare ``python:3.11-slim`` image. The
@@ -57,6 +59,8 @@ class AlertStore:
             )
             for alert in alerts:
                 labels = alert.get("labels", {})
+                if labels.get("kind") == "event":
+                    continue
                 key = alert.get("fingerprint") or json.dumps(labels, sort_keys=True)
                 previous = self._state.get(key, {})
                 self._state[key] = {

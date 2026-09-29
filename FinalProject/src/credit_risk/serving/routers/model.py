@@ -55,7 +55,9 @@ def get_model_info(
     summary="Hot-reload the champion model",
     description="Reloads `models:/<name>@<alias>` from MLflow (local artifact if MLflow is unreachable) without "
     "downtime. Idempotent. If loading fails the previous model keeps serving "
-    "(`status=unchanged_on_failure`); 503 only when no model is available at all.",
+    "(`status=unchanged_on_failure`); 503 only when no model is available at all. "
+    "The worker answering the call reloads synchronously; after a successful reload the other API workers "
+    "follow within a few seconds.",
     responses=ex.error_responses(401, 403, 503),
 )
 def reload_model(
@@ -63,7 +65,7 @@ def reload_model(
     probe: Annotated[ReadinessProbe, Depends(get_readiness_probe)],
     settings: Annotated[Settings, Depends(get_settings_dep)],
 ) -> ReloadResponse:
-    outcome = manager.load_champion()
+    outcome = manager.load_champion(broadcast=True)
     probe.invalidate()
     if outcome.current is None:
         raise ApiError(503, "MODEL_UNAVAILABLE", outcome.message, {"last_error": manager.last_error})

@@ -1,0 +1,63 @@
+
+===== §1 OS =====
+Ubuntu 24.04.5 LTS (aarch64)
+
+===== §2 source release (git-tracked tree, no .env / .venv) =====
+debconf: delaying package configuration, since apt-utils is not installed
+bundle has no .env (as with git clone)
+
+===== §3 install.sh (SKIP_UFW=1) =====
+[install] Docker version 29.8.1, build 4a63305; Docker Compose version v5.5.1
+[install] creating user deploy
+[install] SKIP_UFW=1: firewall left unchanged
+[install] warning: nginx not reloaded
+[install] nginx vhost: api.credit-risk.local -> 127.0.0.1:18020, grafana.credit-risk.local -> 127.0.0.1:13000
+[install] warning: systemd not available; units copied to /etc/systemd/system only
+[install] done. Next: put secrets in /opt/credit-risk/shared/.env (chmod 600), deploy a release with deploy.sh,
+[install] then 'sudo certbot --nginx -d api.credit-risk.local -d grafana.credit-risk.local --redirect' once DNS points here.
+install.sh exit=0
+Docker version 29.8.1, build 4a63305
+Docker Compose version v5.5.1
+uid=1001(deploy) gid=1001(deploy) groups=1001(deploy),100(users),995(docker)
+drwxr-xr-x 4 deploy deploy 4096 Sep 28 15:16 /opt/credit-risk
+drwxr-xr-x 2 deploy deploy 4096 Sep 28 15:16 /opt/credit-risk/releases
+drwx------ 2 deploy deploy 4096 Sep 28 15:16 /opt/credit-risk/shared
+drwx------ 2 deploy deploy 4096 Sep 28 15:16 /var/backups/credit-risk
+
+===== §8 systemd units =====
+/etc/systemd/system/credit-risk-backup.service
+/etc/systemd/system/credit-risk-backup.timer
+/etc/systemd/system/credit-risk.service
+systemd-analyze verify exit=0
+
+===== §4 shared .env (from .env.example, generated secrets) =====
+600 deploy /opt/credit-risk/shared/.env
+remaining change-me values: 1
+
+===== shell scripts: bash -n + shellcheck =====
+bash -n install.sh ok
+bash -n deploy.sh ok
+bash -n backup.sh ok
+shellcheck (severity error): clean
+# Release-based deployment of the Compose stack on an Ubuntu host.
+# Driven over SSH by .github/workflows/final-project-cd.yml; also usable by hand.
+#
+
+===== §7 Nginx reverse proxy -> running API (Host header, no DNS) =====
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+GET  /health/ready          -> 200
+{"status":"degraded","reasons":["model_served_from_local_fallback","mlflow_unreachable"]}
+GET  /metrics (blocked)     -> 404 (expected 404)
+GET  /docs                  -> 200
+POST /api/v1/predict no key -> 401 (expected 401)
+{"risk_decision":"REVIEW","default_probability":0.456083,"model_version":"credit_model_v1","served_by":"local_artifact"}
+GET  grafana vhost /api/health -> 200
+security headers:
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Referrer-Policy: no-referrer
+rate limit (20 r/s, burst 40): 120 rapid POST /api/v1/predict without key
+     50 401
+     70 429
+
+===== DONE =====

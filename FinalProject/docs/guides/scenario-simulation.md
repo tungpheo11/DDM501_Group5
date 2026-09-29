@@ -233,7 +233,7 @@ make chaos-restore                                    # trả CPU về 2
 
 | Chỉ số | Kỳ vọng | Đã đo |
 |---|---|---|
-| Baseline (`latency_benchmark.json`) | p95 < 100 ms | p95 18.79 ms, p99 24.17 ms, 1000 request, 0 lỗi |
+| Baseline (`latency_benchmark.json`) | p95 < 100 ms | p95 20.59 ms, p99 29.49 ms, 500 request, 0 lỗi |
 | Dưới tải + 0.5 CPU (`load_20260928T115410Z.json`) | p95 ≫ 100 ms, không 5xx | 5002 request, 0 lỗi, p95 1712.6 ms, 24.9 rps |
 | Alert | `HighLatencyP95` (warning) | firing 11:56:31, resolved 12:00:31 (sau `chaos-restore`) |
 

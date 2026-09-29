@@ -9,13 +9,13 @@ bash scripts/render_diagrams.sh 05-data-flow    # một diagram
 
 | # | Diagram | Rubric | Nguồn | Ảnh |
 |---|---|---|---|---|
-| 1 | Sơ đồ ngữ cảnh hệ thống | B. Architecture | [`01-system-context.mmd`](src/01-system-context.mmd) | [SVG](01-system-context.svg) · [PNG](01-system-context.png) |
-| 2 | Sơ đồ container | B. Architecture | [`02-container.mmd`](src/02-container.mmd) | [SVG](02-container.svg) · [PNG](02-container.png) |
-| 3 | Sơ đồ component — Scoring API | B. Component design | [`03-component-api.mmd`](src/03-component-api.mmd) | [SVG](03-component-api.svg) · [PNG](03-component-api.png) |
-| 4 | Sơ đồ component — ML pipeline | B. Component design, C1 | [`04-component-ml-pipeline.mmd`](src/04-component-ml-pipeline.mmd) | [SVG](04-component-ml-pipeline.svg) · [PNG](04-component-ml-pipeline.png) |
-| 5 | Data flow end-to-end + edge cases | B. Data flow | [`05-data-flow.mmd`](src/05-data-flow.mmd) | [SVG](05-data-flow.svg) · [PNG](05-data-flow.png) |
-| 6 | Sequence: drift → retrain → gate → promote / rollback | C1, C3, Orchestration | [`06-retrain-sequence.mmd`](src/06-retrain-sequence.mmd) | [SVG](06-retrain-sequence.svg) · [PNG](06-retrain-sequence.png) |
-| 7 | Deployment trên Ubuntu 24.04 | C2. Deployment | [`07-deployment-ubuntu.mmd`](src/07-deployment-ubuntu.mmd) | [SVG](07-deployment-ubuntu.svg) · [PNG](07-deployment-ubuntu.png) |
+| 1 | Sơ đồ ngữ cảnh hệ thống | 3.1.2 System design | [`01-system-context.mmd`](src/01-system-context.mmd) | [SVG](01-system-context.svg) · [PNG](01-system-context.png) |
+| 2 | Sơ đồ container | 3.1.2 System design | [`02-container.mmd`](src/02-container.mmd) | [SVG](02-container.svg) · [PNG](02-container.png) |
+| 3 | Sơ đồ component — Scoring API | 3.1.2 System design (component) | [`03-component-api.mmd`](src/03-component-api.mmd) | [SVG](03-component-api.svg) · [PNG](03-component-api.png) |
+| 4 | Sơ đồ component — ML pipeline | 3.1.2 System design (component), 3.1.3 ML Pipeline | [`04-component-ml-pipeline.mmd`](src/04-component-ml-pipeline.mmd) | [SVG](04-component-ml-pipeline.svg) · [PNG](04-component-ml-pipeline.png) |
+| 5 | Data flow end-to-end + edge cases | 3.1.2 System design (data flow) | [`05-data-flow.mmd`](src/05-data-flow.mmd) | [SVG](05-data-flow.svg) · [PNG](05-data-flow.png) |
+| 6 | Sequence: drift → retrain → gate → promote / rollback | 3.1.3 ML Pipeline, 3.1.3 Monitoring, orchestration | [`06-retrain-sequence.mmd`](src/06-retrain-sequence.mmd) | [SVG](06-retrain-sequence.svg) · [PNG](06-retrain-sequence.png) |
+| 7 | Deployment trên Ubuntu 24.04 | 3.1.3 Deployment | [`07-deployment-ubuntu.mmd`](src/07-deployment-ubuntu.mmd) | [SVG](07-deployment-ubuntu.svg) · [PNG](07-deployment-ubuntu.png) |
 
 ## Quy ước ký hiệu
 

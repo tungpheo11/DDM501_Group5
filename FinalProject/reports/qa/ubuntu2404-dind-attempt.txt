@@ -1,0 +1,29 @@
+# Docker-in-Docker attempt (ubuntu:24.04 privileged) - failed at compose up; kept for traceability
+2:===== §1 OS =====
+5:===== §2 source release (git-tracked tree of the working copy, no .env / .venv) =====
+382:===== §3 install.sh (SKIP_UFW=1: container has no netfilter control) =====
+397:install.sh exit=0
+399:===== start dockerd (no systemd in container) =====
+409:===== §4 shared .env from .env.example + generated secrets =====
+413:===== §5 release bundles + image (option A equivalent: prebuilt image loaded from tarball) =====
+419:===== §6 deploy v0.9.0-qa =====
+456:Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: unable to apply cgroup configuration: cannot enter cgroupv2 "/sys/fs/cgroup/docke
+457:deploy exit=1
+459:===== §6 smoke =====
+461:smoke exit=127
+463:===== §6 status =====
+466:===== §0/§7 Nginx reverse proxy (Host header, no DNS) =====
+475:===== ports bound (prod overlay must bind 127.0.0.1 only) =====
+479:===== §9 backup =====
+481:backup exit=127
+484:===== §10 upgrade: deploy v1.0.0-qa =====
+500:Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: unable to apply cgroup configuration: cannot enter cgroupv2 "/sys/fs/cgroup/docke
+501:deploy exit=1
+503:smoke exit=127
+506:===== §11 rollback -> v0.9.0-qa =====
+508:rollback exit=127
+511:===== §9 restore from latest backup =====
+514:restore exit=127
+517:===== §8 systemd stop/start equivalent (deploy.sh stop|start, as called by credit-risk.service) =====
+521:smoke after start exit=127
+523:===== DONE =====

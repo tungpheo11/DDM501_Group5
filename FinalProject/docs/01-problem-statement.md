@@ -99,7 +99,7 @@ Không có giám sát drift và retrain có kiểm soát, model âm thầm xuố
 | NFR-08 | Quan sát | Log JSON có `request_id`, không log PII thô | 0 feature thô trong log | M | `LOG_FORMAT=json` |
 | NFR-09 | Chất lượng | Test coverage, 4 loại test + e2e/load | ≥ 80 % | M | `make test-ci` |
 | NFR-10 | Triển khai | Dựng toàn bộ stack bằng 1 lệnh; release có rollback | `make up`; `deploy.sh rollback` | M | [local-quickstart](guides/local-quickstart.md) |
-| NFR-11 | Tài nguyên | Chạy trên laptop / VPS nhỏ | Docker ≥ 6 GB RAM, idle ≈ 2.2 GB | S | [05 §1](05-monitoring-alerting.md#1-service-profile-cổng-tài-nguyên) |
+| NFR-11 | Tài nguyên | Chạy trên laptop / VPS nhỏ | Docker ≥ 6 GB RAM, idle ≈ 3.0 GB | S | [05 §1](05-monitoring-alerting.md#1-service-profile-cổng-tài-nguyên) |
 | NFR-12 | Công bằng | Disparate impact (approval) theo nhóm tuổi sau mitigation | ≥ 0.80 (four-fifths rule) | S | [fairness report](../reports/fairness_report.md) |
 | NFR-13 | Mở rộng | Scale ngang API | stateless, scale bằng replica sau reverse proxy | C | [02 §7](02-architecture.md#7-trade-off) |
 
@@ -116,11 +116,11 @@ Không có giám sát drift và retrain có kiểm soát, model âm thầm xuố
 | Model | Độ ổn định CV (std ROC-AUC 5 fold) | ≤ 0.02 | **0.0152** | idem |
 | Model | Quality gate challenger | ROC-AUC không giảm > 0.005 **và** expected loss không tăng, cải thiện ít nhất một | áp dụng ở `make train`, `make retrain`, DAG `model_retrain` | [`evaluation/model_validation.py`](../src/credit_risk/evaluation/model_validation.py) |
 | Model | Drift: PSI feature chính | < 0.10 bình thường; ≥ 0.25 ⇒ drift | normal **0.0226**; Gen-Z **3.34** | [`reports/simulations/`](../reports/simulations/) |
-| **System** | Latency p95 `/api/v1/predict` | ≤ 100 ms | **18.79 ms** (1.000 request, 0 lỗi) | [`latency_benchmark.json`](../reports/latency_benchmark.json) |
+| **System** | Latency p95 `/api/v1/predict` | ≤ 100 ms | **20.59 ms** (500 request, 0 lỗi); 72 ms ở 20 user đồng thời | [`latency_benchmark.json`](../reports/latency_benchmark.json) |
 | System | Tỷ lệ lỗi 5xx | < 5 % | 0 % ở traffic normal/drift/attack | [`reports/simulations/`](../reports/simulations/) |
 | System | Thời gian phục hồi API sau khi bật lại | ≤ 60 s | **7.1 s** | `reports/simulations/outage_*.json` |
 | System | Phát hiện drift (từ lúc traffic lệch tới alert firing) | ≤ 5 phút | ~2–3 phút (phân tích 60 s + `for: 2m`) | [runbook](runbooks/alerts.md#datadriftdetected) |
-| System | Test coverage | ≥ 80 % | **92.1 %** (289 pass, 1 skip — JUnit trong `reports/coverage/`) | `reports/coverage/coverage.xml` |
+| System | Test coverage | ≥ 80 % | **91.3 %** (372 pass, 2 skip — JUnit trong `reports/coverage/`) | `reports/coverage/coverage.xml` |
 | System | CVE CRITICAL trong image API | 0 | **0** | `make scan` → `reports/security/trivy-report.json` |
 
 ## 6. Phạm vi & ràng buộc

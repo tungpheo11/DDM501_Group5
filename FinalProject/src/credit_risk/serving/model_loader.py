@@ -17,6 +17,7 @@ import joblib
 
 from credit_risk.config import Settings, configure_mlflow_environment, get_logger, get_settings
 from credit_risk.monitoring.metrics import MODEL_RELOADS, set_model_unavailable, set_served_model
+from credit_risk.serving.model_sync import ModelGenerationSync
 from credit_risk.utils.network import is_service_reachable
 
 logger = get_logger(__name__)
@@ -69,8 +70,9 @@ def _feature_names(model: Any) -> tuple[str, ...]:
 class ModelManager:
     """Owns the currently served model snapshot."""
 
-    def __init__(self, settings: Settings | None = None) -> None:
+    def __init__(self, settings: Settings | None = None, sync: ModelGenerationSync | None = None) -> None:
         self._settings = settings or get_settings()
+        self._sync = sync
         self._current: LoadedModel | None = None
         self._lock = threading.Lock()
         self.last_error: str | None = None
@@ -103,10 +105,14 @@ class ModelManager:
         current = self._current
         return current.version if current else "none"
 
-    def load_champion(self) -> ReloadOutcome:
+    def load_champion(self, *, broadcast: bool = False) -> ReloadOutcome:
         """Load ``models:/<name>@<alias>`` from MLflow, else the local fallback artifact.
 
         On failure the previously served model (if any) stays in place.
+
+        Args:
+            broadcast: After a successful load, publish a new generation marker so the
+                other workers reload too (only for operator-requested reloads).
         """
         with self._lock:
             previous = self._current
@@ -143,6 +149,13 @@ class ModelManager:
                     "degraded": loaded.degraded,
                 },
             )
+            if broadcast and self._sync is not None:
+                try:
+                    self._sync.publish(loaded.version)
+                except OSError as exc:  # This worker already serves the new model; keep the reload successful.
+                    logger.error(
+                        "Could not publish model generation: %s", exc, extra={"event": "model_generation_failed"}
+                    )
             return ReloadOutcome(True, previous, loaded, "Model loaded.")
 
     def _load_from_mlflow(self) -> LoadedModel | None:

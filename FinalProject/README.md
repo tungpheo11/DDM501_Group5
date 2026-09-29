@@ -14,8 +14,8 @@ Hệ thống MLOps vòng lặp khép kín chấm điểm **rủi ro vỡ nợ th
 | Chỉ số | Giá trị | Nguồn |
 |---|---|---|
 | Model production | Logistic Regression — holdout ROC-AUC **0.7700**, recall 0.62 | [`model_comparison.md`](reports/model_comparison.md) |
-| Latency `POST /api/v1/predict` | p95 **18.79 ms**, p99 24.17 ms (1000 request, 0 lỗi) | [`latency_benchmark.json`](reports/latency_benchmark.json) |
-| Test | 4 loại test, coverage **92.1 %** (gate ≥ 80 %) | [07 — Testing & CI/CD](docs/07-testing-cicd.md) |
+| Latency `POST /api/v1/predict` | p95 **20.59 ms**, p99 29.49 ms (500 request tuần tự, 0 lỗi); 20 user đồng thời: p95 72 ms, 0 lỗi | [`latency_benchmark.json`](reports/latency_benchmark.json), [`locust_stress_summary.json`](reports/load/locust_stress_summary.json) |
+| Test | 4 loại test, coverage **91.3 %** (gate ≥ 80 %) | [07 — Testing & CI/CD](docs/07-testing-cicd.md) |
 | Monitoring | 4 dashboard, 11 alert, mỗi alert đã fire → resolve trên stack thật | [05 — Monitoring](docs/05-monitoring-alerting.md) |
 | Fairness (nhóm tuổi) | DI 0.772 → 0.926 sau mitigation, ROC-AUC gần như không đổi | [`fairness_report.md`](reports/fairness_report.md) |
 
