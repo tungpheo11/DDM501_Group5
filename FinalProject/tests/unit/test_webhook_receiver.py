@@ -81,6 +81,31 @@ def test_alert_fire_then_resolve_is_tracked(base_url: str) -> None:
     assert state["resolved"] is True
 
 
+def test_one_shot_events_are_logged_but_not_tracked_as_alert_state(base_url: str) -> None:
+    event = {
+        "version": "4",
+        "receiver": "airflow",
+        "status": "firing",
+        "groupLabels": {"alertname": "RetrainFailed"},
+        "alerts": [
+            {
+                "status": "firing",
+                "labels": {"alertname": "RetrainFailed", "severity": "critical", "source": "airflow", "kind": "event"},
+                "annotations": {"summary": "model_retrain failed"},
+                "startsAt": "2026-01-01T00:00:00Z",
+                "endsAt": "2026-01-01T00:00:00Z",
+            }
+        ],
+    }
+    assert _post(f"{base_url}/alerts", _payload("firing")) == 200
+    assert _post(f"{base_url}/alerts", event) == 200
+
+    [logged] = _get(f"{base_url}/alerts?alertname=RetrainFailed")
+    assert logged["receiver"] == "airflow"
+
+    assert [s["alertname"] for s in _get(f"{base_url}/alerts/state")] == ["APIDown"]
+
+
 def test_rejects_invalid_payload(base_url: str) -> None:
     with pytest.raises(HTTPError) as excinfo:
         _post(f"{base_url}/alerts", {"alerts": "not-a-list"})

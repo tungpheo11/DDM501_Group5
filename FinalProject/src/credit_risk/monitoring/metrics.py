@@ -2,14 +2,22 @@
 
 Metric names are part of the monitoring contract (Grafana dashboards and alert
 rules query them); rename only together with ``monitoring/``.
+
+Under gunicorn every worker writes its values to ``PROMETHEUS_MULTIPROC_DIR``
+(see :mod:`credit_risk.monitoring.multiprocess`). Counters and histograms are
+summed across workers; each gauge declares how worker values are combined
+(``multiprocess_mode``, ignored in single-process mode).
 """
 
 from __future__ import annotations
 
+import threading
 from collections import deque
 from dataclasses import dataclass, field
 
 from prometheus_client import Counter, Gauge, Histogram
+
+from credit_risk.monitoring.multiprocess import multiprocess_dir
 
 PREDICTION_REQUESTS = Counter(
     "credit_prediction_requests_total",
@@ -21,9 +29,11 @@ PREDICTION_LATENCY = Histogram(
     "Prediction execution latency in seconds",
     buckets=[0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0],
 )
+# Rolling gauges are per-worker windows; the most recently updated worker wins.
 DEFAULT_RISK_RATIO = Gauge(
     "credit_default_prediction_ratio",
     "Rolling ratio of requests predicted as default risk (1)",
+    multiprocess_mode="livemostrecent",
 )
 CREDIT_APPROVED_VOLUME = Counter(
     "credit_approved_volume_ntd_total",
@@ -41,18 +51,22 @@ EXPECTED_LOSS = Counter(
 AVG_AGE_GAUGE = Gauge(
     "credit_customer_age_rolling_mean",
     "Rolling mean age of incoming applicants",
+    multiprocess_mode="livemostrecent",
 )
 AVG_LIMIT_GAUGE = Gauge(
     "credit_customer_limit_bal_rolling_mean",
     "Rolling mean credit limit of applicants in NTD",
+    multiprocess_mode="livemostrecent",
 )
 AVG_UTILIZATION_GAUGE = Gauge(
     "credit_customer_utilization_ratio_mean",
     "Rolling credit card utilization ratio (BILL_AMT1 / LIMIT_BAL)",
+    multiprocess_mode="livemostrecent",
 )
 PAY_0_DELAY_RATIO = Gauge(
     "credit_customer_pay_0_delayed_ratio",
     "Ratio of applicants with recent payment delay (PAY_0 > 0)",
+    multiprocess_mode="livemostrecent",
 )
 CREDIT_SCORE_HISTOGRAM = Histogram(
     "credit_applicant_score_distribution",
@@ -89,32 +103,57 @@ AUTH_FAILURES = Counter(
 )
 
 # --- Served model state ------------------------------------------------------
+# Worker modes: an identity is exposed while any worker serves it (retired identities
+# are zeroed, then dropped at exposition); "loaded" needs every worker to have a
+# model; "degraded" fires when any worker is on the fallback.
 MODEL_INFO = Gauge(
     "credit_model_info",
     "Model currently served (value is always 1; identity lives in the labels)",
     ["model_name", "model_version", "source"],
+    multiprocess_mode="livemax",
 )
-MODEL_LOADED = Gauge("credit_model_loaded", "1 when a model is loaded and able to score, else 0")
+MODEL_LOADED = Gauge(
+    "credit_model_loaded",
+    "1 when a model is loaded and able to score, else 0",
+    multiprocess_mode="livemin",
+)
 MODEL_DEGRADED = Gauge(
     "credit_model_degraded",
     "1 when serving the local fallback artifact instead of the MLflow registry model",
+    multiprocess_mode="livemax",
 )
 MODEL_RELOADS = Counter("credit_model_reloads_total", "Model (re)load attempts", ["result"])
 
+_model_state_lock = threading.Lock()
+
+
+def _retire_model_info(keep: dict[str, str] | None = None) -> None:
+    # Multiprocess files cannot drop a series, so retired identities are set to 0
+    # (and filtered out at exposition); single-process mode removes them.
+    for family in MODEL_INFO.collect():
+        for sample in family.samples:
+            if sample.labels != keep and sample.value:
+                MODEL_INFO.labels(**sample.labels).set(0)
+    if multiprocess_dir() is None:
+        MODEL_INFO.clear()
+
 
 def set_served_model(model_name: str, model_version: str, source: str, *, degraded: bool) -> None:
-    """Publish the identity of the served model; clears the previous identity series."""
-    MODEL_INFO.clear()
-    MODEL_INFO.labels(model_name=model_name, model_version=model_version, source=source).set(1)
-    MODEL_LOADED.set(1)
-    MODEL_DEGRADED.set(1 if degraded else 0)
+    """Publish the identity of the served model; retires the previous identity series."""
+    labels = {"model_name": model_name, "model_version": model_version, "source": source}
+    with _model_state_lock:
+        _retire_model_info(keep=labels)
+        MODEL_INFO.labels(**labels).set(1)
+        MODEL_LOADED.set(1)
+        MODEL_DEGRADED.set(1 if degraded else 0)
 
 
 def set_model_unavailable() -> None:
     """Publish that no model can serve traffic."""
-    MODEL_INFO.clear()
-    MODEL_LOADED.set(0)
-    MODEL_DEGRADED.set(1)
+    with _model_state_lock:
+        _retire_model_info()
+        MODEL_LOADED.set(0)
+        MODEL_DEGRADED.set(1)
 
 
 def _mean(values: deque[float]) -> float:

@@ -25,7 +25,7 @@ Profile điều khiển bằng `COMPOSE_PROFILES` (mặc định `core,monitorin
 | minio-init | core | — (one-shot) | 128M | exit 0 |
 | mlflow | core | 15040 → 5000 | 1G | `/health` |
 | model-bootstrap | core | — (one-shot) | 1G | exit 0 |
-| api | core | 18020 → 8000 | 1G | `/health/ready` |
+| api | core | 18020 → 8000 | 1.5G (2 worker gunicorn) | `/health/ready` |
 | drift-monitor | monitoring | 18085 → 8085 | 1G | `/health` |
 | prometheus | monitoring | 19090 → 9090 | 512M | `/-/ready` |
 | alertmanager | monitoring | 19093 → 9093 | 128M | `/-/ready` |
@@ -41,9 +41,10 @@ Postgres/MinIO/`PSEUDONYMIZATION_KEY`, không mount source vào container, xoay 
 
 **RAM**
 
-- Đo thực tế (`docker stats`, Docker Desktop 8 GB / 10 CPU): toàn stack idle ≈ **2.2 GB**; trong lúc chạy load 32 luồng
-  + retrain ≈ 3 GB.
-- Tổng giới hạn các service long-running ≈ 9.1 GB (giới hạn, không phải mức dùng).
+- Đo thực tế (`docker stats`, Docker Desktop 8 GB / 10 CPU): toàn stack idle ≈ **3.0 GB** (3 profile core + monitoring +
+  orchestration; `api` 2 worker ≈ 705 MiB lúc vừa khởi động, ≈ 890 MiB sau load 20 user, 1 worker ≈ 370 MiB). Số đo cũ lúc
+  chạy load 32 luồng + retrain ≈ 3 GB là với `api` 1 worker; 2 worker cộng thêm ~0.5 GB.
+- Tổng giới hạn các service long-running ≈ 10 GB (giới hạn, không phải mức dùng).
 - **Tối thiểu:** máy 8 GB RAM, cấp cho Docker ≥ 6 GB. **Khuyến nghị:** 12–16 GB RAM (Docker 8 GB). Đĩa trống ≥ 15 GB cho
   image (layer venv ~3.2 GB dùng chung giữa API / drift monitor / Airflow).
 - MLflow 3.x mặc định fork ~7 tiến trình job (`huey`) ~150 MB mỗi cái → bị OOM với giới hạn 1G; compose tắt bằng
@@ -80,14 +81,14 @@ minio, grafana, alertmanager ─────┘        │                      
 | `credit_model_loaded` | gauge | — | 1 nếu có model, 0 nếu không (→ `ModelNotLoaded`) |
 | `credit_model_degraded` | gauge | — | 1 khi phục vụ bằng artifact local (→ `ModelServedFromFallback`) |
 | `credit_model_reloads_total` | counter | `result` | Hot reload thành công/thất bại |
-| `process_*`, `up` | chuẩn | — | CPU, RSS, uptime; `up` cho `APIDown` |
+| `process_cpu_seconds_total`, `process_resident_memory_bytes`, `up` | chuẩn | — | CPU, RSS của cả container API (tổng master + worker gunicorn, đọc `/proc`; RSS cộng dồn tính trang nhớ dùng chung nhiều lần nên cao hơn `docker stats`); `up` cho `APIDown` |
 
 ### 3.2 ML / business (service `api`)
 
 | Metric | Loại | Ý nghĩa |
 |---|---|---|
 | `credit_prediction_requests_total{decision,status}` | counter | Số quyết định APPROVE/REVIEW/DECLINE |
-| `credit_prediction_duration_seconds` | histogram | Thời gian chạy model (không tính HTTP) |
+| `credit_prediction_duration_seconds` | histogram | Thời gian chạy model (không tính HTTP) — 1 quan sát cho mỗi lời gọi `predict_proba` của `/predict` và `/predict/batch` |
 | `credit_prediction_default_probability` | histogram | Phân phối PD — phát hiện dịch chuyển điểm số |
 | `credit_applicant_score_distribution` | histogram | Phân phối credit score 300–850 |
 | `credit_prediction_batch_size` | histogram | Kích thước batch |
@@ -95,6 +96,15 @@ minio, grafana, alertmanager ─────┘        │                      
 | `credit_approved_volume_ntd_total`, `credit_declined_volume_ntd_total` | counter | Hạn mức được duyệt / từ chối (NT$) |
 | `credit_expected_loss_ntd_total{decision}` | counter | Expected loss = PD × exposure × LGD 0.45 |
 | `credit_customer_age_rolling_mean`, `credit_customer_limit_bal_rolling_mean`, `credit_customer_utilization_ratio_mean`, `credit_customer_pay_0_delayed_ratio` | gauge | Hồ sơ khách hàng trượt 200 request — tín hiệu drift sớm, rẻ |
+
+**API nhiều worker** ([ADR-0007](adr/0007-api-capacity-multi-worker.md)): container `api` chạy `API_WORKERS` worker
+gunicorn, `/metrics` gộp file của mọi worker (Prometheus multiprocess mode), nên tên metric, recording rule, alert và
+dashboard giữ nguyên. Counter/histogram là tổng các worker (kể cả worker đã bị thay). Gauge gộp theo ý nghĩa:
+`credit_model_loaded` lấy **min** (1 worker mất model là 0), `credit_model_degraded` lấy **max**, `credit_model_info`
+chỉ hiện identity đang được ít nhất 1 worker phục vụ (sau reload có thể thấy 2 version trong vài giây, tới khi mọi
+worker nạp xong), các gauge rolling lấy giá trị của worker ghi gần nhất (cửa sổ 200 request của 1 worker, không phải
+toàn cục). Worker vừa khởi động báo `credit_model_loaded 0` vài giây trước khi nạp xong model, ngắn hơn `for: 1m` của
+`ModelNotLoaded`.
 
 ### 3.3 Drift (service `drift-monitor`, [`services/drift_monitor/README.md`](../services/drift_monitor/README.md))
 
@@ -169,9 +179,6 @@ với 384 MiB, container chạm trần, mỗi lần mở dashboard mất 30–60
 
 Hạn chế đã biết:
 
-- Panel "Model inference latency" hiện "no observations": histogram `credit_prediction_duration_seconds` đã khai báo
-  trong `credit_risk.monitoring.metrics` nhưng chưa được ghi nhận quanh lời gọi model trong `ScoringService.score()`.
-  Latency end-to-end vẫn có ở `credit_api_request_duration_seconds`.
 - Chưa có SLO/alert cho approve rate, nên stat tỷ lệ duyệt không tô nền theo ngưỡng.
 - Ở 1440×900 khi sidebar Grafana mở, tiêu đề stat dài hơn ~10 ký tự ở lưới 4 cột bị cắt (đầy đủ ở tooltip). Khi trình
   chiếu nên dùng chế độ kiosk (`?kiosk`).

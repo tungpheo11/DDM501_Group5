@@ -1,0 +1,41 @@
+# make test-ci COV_MIN=80 on the full working tree (feature/phase2 + staged fixes), clean env, 2026-09-28 16:49 UTC
+==> pytest tests/unit
+============ 296 passed, 2 skipped, 4 warnings in 70.55s (0:01:10) =============
+==> pytest tests/integration
+======================= 62 passed, 4 warnings in 10.76s ========================
+==> pytest tests/data_quality
+======================== 10 passed, 1 warning in 0.55s =========================
+==> pytest tests/model_validation
+========================= 4 passed, 1 warning in 1.73s =========================
+.venv/bin/coverage report --skip-covered --fail-under=80
+Name                                               Stmts   Miss Branch BrPart  Cover   Missing
+----------------------------------------------------------------------------------------------
+src/credit_risk/config/logging.py                     52      1     18      1    97%   101
+src/credit_risk/config/settings.py                   200      5     14      4    96%   28, 35, 39, 307, 390
+src/credit_risk/data/validation.py                    92      0     10      1    99%   210->208
+src/credit_risk/evaluation/plots.py                   54      1      8      1    97%   37
+src/credit_risk/monitoring/drift.py                  165     17     44      9    87%   90, 154, 158, 182, 186, 214, 219-224, 233-234, 252, 255, 294
+src/credit_risk/monitoring/metrics.py                 84      1     14      2    97%   207->211, 212
+src/credit_risk/monitoring/multiprocess.py            71      2     18      1    97%   49->exit, 89-90
+src/credit_risk/responsible_ai/analysis.py           241    149     24      1    36%   117-122, 135-140, 145-154, 159-175, 195-203, 215-266, 282-284, 289-308, 313-325, 330-348, 352-356, 368->366, 383-450, 475, 479-482, 502-581
+src/credit_risk/responsible_ai/explainability.py     133      0      8      1    99%   125->127
+src/credit_risk/responsible_ai/fairness.py           164      3     26      5    96%   102, 233, 236, 261->260, 436->451
+src/credit_risk/responsible_ai/privacy.py             73      4     30      3    93%   98->100, 100->102, 143, 153-155
+src/credit_risk/responsible_ai/reporting.py          136      9     34      3    93%   45, 47, 67-69, 74-76, 210
+src/credit_risk/serving/database.py                   89     11     10      0    89%   110-113, 147-150, 163-165
+src/credit_risk/serving/middleware.py                 63      1     12      1    97%   77
+src/credit_risk/serving/model_loader.py              129      6     14      0    96%   88-89, 201-204
+src/credit_risk/serving/model_sync.py                105      5     14      1    95%   88-90, 151->exit, 175-176
+src/credit_risk/serving/scoring.py                   123      2     16      1    98%   88->90, 167-168
+src/credit_risk/training/models.py                    53      1      6      0    98%   66
+src/credit_risk/training/registry.py                 142     27     34      4    78%   118->121, 138-170, 178, 197-198, 236, 243->248, 251-253
+src/credit_risk/training/reporting.py                 56      2     10      2    94%   21, 24
+src/credit_risk/training/retrain.py                  118     15     14      5    83%   106-110, 116-122, 126, 174->184, 237-238, 241
+src/credit_risk/training/tracking.py                  65      0     16      2    98%   60->68, 78->76
+src/credit_risk/training/train.py                    234      7     34      6    95%   124->122, 147->149, 167->170, 241-243, 249-251, 288->exit, 504
+src/credit_risk/training/tuning.py                    88      1     10      2    97%   96->89, 146
+src/credit_risk/utils/network.py                      12      1      0      0    92%   16
+----------------------------------------------------------------------------------------------
+TOTAL                                               3586    271    534     56    91%
+
+35 files skipped due to complete coverage.

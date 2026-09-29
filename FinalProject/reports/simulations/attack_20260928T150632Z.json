@@ -1,0 +1,46 @@
+{
+  "scenario": "attack",
+  "started_at": "2026-09-28T15:06:32.838325+00:00",
+  "finished_at": "2026-09-28T15:06:40.674342+00:00",
+  "api_url": "http://localhost:18020",
+  "traffic": {
+    "requests": 600,
+    "success": 600,
+    "errors": 0,
+    "status_codes": {
+      "200": 600
+    },
+    "decisions": {
+      "APPROVE": 73,
+      "DECLINE": 498,
+      "REVIEW": 29
+    },
+    "decision_share": {
+      "APPROVE": 0.122,
+      "DECLINE": 0.83,
+      "REVIEW": 0.048
+    },
+    "mean_default_probability": 0.8168,
+    "latency_ms": {
+      "p50": 22.0,
+      "p95": 31.9,
+      "p99": 40.6,
+      "max": 102.5
+    }
+  },
+  "drift": {
+    "status": "success",
+    "is_drifted": true,
+    "drift_share": 0.913,
+    "max_psi": 5.3174,
+    "prediction_psi": 3.8326,
+    "prediction_shift": true,
+    "reasons": [
+      "psi_critical:AGE,LIMIT_BAL,PAY_0,BILL_AMT1",
+      "drift_share:0.91",
+      "prediction_psi:3.83"
+    ],
+    "report": "drift_report_20260928T150640Z.html",
+    "current_samples": 500
+  }
+}

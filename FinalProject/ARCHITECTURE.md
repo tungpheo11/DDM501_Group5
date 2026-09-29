@@ -69,5 +69,6 @@ Chi tiết từng bước và nhánh lỗi: [sequence retrain](docs/assets/diagr
 | Evidently + PSI | PSI chuẩn ngành tín dụng + stattest từng cột | [0004](docs/adr/0004-evidently-for-drift.md) |
 | Docker Compose thay Kubernetes | 1 VPS, nhóm nhỏ, chi phí thấp; đổi lại không auto-scale | [0005](docs/adr/0005-docker-compose-instead-of-kubernetes.md) |
 | src layout + config phân lớp | Package cài đặt được, không hard-code, test hermetic | [0006](docs/adr/0006-src-layout-package-and-layered-config.md) |
+| Nhiều worker process trong container API | GIL giới hạn 1 process ~50 rps; 2 worker giữ p95 ≤ 100 ms tới ~85 rps | [0007](docs/adr/0007-api-capacity-multi-worker.md) |
 
 Trade-off scalability / cost / complexity / reliability / security: [02 §7](docs/02-architecture.md#7-trade-off).

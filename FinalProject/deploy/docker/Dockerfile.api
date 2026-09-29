@@ -79,5 +79,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
     CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=4)"]
 
-CMD ["uvicorn", "credit_risk.serving.app:app", "--host", "0.0.0.0", "--port", "8000", \
-     "--no-access-log", "--timeout-graceful-shutdown", "20"]
+# API_WORKERS worker processes (default 2); settings in src/credit_risk/serving/gunicorn_conf.py.
+CMD ["gunicorn", "--config", "python:credit_risk.serving.gunicorn_conf", "credit_risk.serving.app:app"]

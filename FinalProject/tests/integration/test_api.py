@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from prometheus_client import REGISTRY
 
 from credit_risk.serving import database
 
@@ -406,6 +407,20 @@ def test_metrics_expose_custom_series(client, valid_payload):
     assert "credit_model_degraded 1.0" in body
     assert "credit_customer_age_rolling_mean" in body
     assert "credit_applicant_score_distribution_bucket" in body
+
+
+def test_model_inference_latency_is_observed_once_per_model_call(client, valid_payload, high_risk_payload):
+    def inference_count() -> float:
+        return REGISTRY.get_sample_value("credit_prediction_duration_seconds_count") or 0.0
+
+    before = inference_count()
+    assert client.post("/api/v1/predict", json=valid_payload).status_code == 200
+    assert inference_count() == before + 1
+
+    batch = {"applicants": [valid_payload, high_risk_payload]}
+    assert client.post("/api/v1/predict/batch", json=batch).status_code == 200
+    assert inference_count() == before + 2
+    assert "credit_prediction_duration_seconds_bucket" in client.get("/metrics").text
 
 
 def test_metrics_need_no_auth(anon_client):

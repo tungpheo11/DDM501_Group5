@@ -60,7 +60,13 @@ def send_webhook(
     severity: str = "info",
     labels: dict[str, str] | None = None,
 ) -> bool:
-    """Post an Alertmanager-shaped payload to the internal alert webhook."""
+    """Post an Alertmanager-shaped payload to the internal alert webhook.
+
+    DAG notifications are one-shot events: no follow-up ``resolved`` is ever
+    sent, so they carry ``kind=event`` and ``endsAt == startsAt``. The receiver
+    logs them under ``/alerts`` but keeps them out of the per-alert
+    ``/alerts/state``; ``status`` only says whether the event is bad news.
+    """
     now = datetime.now(UTC).isoformat()
     payload = {
         "version": "4",
@@ -70,10 +76,16 @@ def send_webhook(
         "alerts": [
             {
                 "status": status,
-                "labels": {"alertname": event, "severity": severity, "source": "airflow", **(labels or {})},
+                "labels": {
+                    "alertname": event,
+                    "severity": severity,
+                    "source": "airflow",
+                    **(labels or {}),
+                    "kind": "event",
+                },
                 "annotations": {"summary": summary, "description": text},
                 "startsAt": now,
-                "endsAt": now if status == "resolved" else "0001-01-01T00:00:00Z",
+                "endsAt": now,
             }
         ],
     }

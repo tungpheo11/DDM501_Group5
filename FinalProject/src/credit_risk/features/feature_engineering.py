@@ -80,14 +80,19 @@ def engineer_features(frame: pd.DataFrame) -> pd.DataFrame:
     settled_bills = bills[:, :-1]
     settling_payments = payments[:, 1:]
 
-    features = {
-        "utilization_latest": utilization[:, -1],
-        "utilization_mean": utilization.mean(axis=1),
-        "utilization_max": utilization.max(axis=1),
+    # Clip in numpy and build the frame once: per-column pandas ops dominate the
+    # single-row cost on the serving hot path.
+    columns = {
+        "utilization_latest": np.clip(utilization[:, -1], *UTILIZATION_BOUNDS),
+        "utilization_mean": np.clip(utilization.mean(axis=1), *UTILIZATION_BOUNDS),
+        "utilization_max": np.clip(utilization.max(axis=1), *UTILIZATION_BOUNDS),
         "utilization_trend": _slope(utilization),
-        "payment_ratio_latest": _safe_ratio(settling_payments[:, -1], settled_bills[:, -1], when_no_debt=1.0),
-        "payment_ratio_mean": _safe_ratio(
-            settling_payments.sum(axis=1), settled_bills.clip(min=0).sum(axis=1), when_no_debt=1.0
+        "payment_ratio_latest": np.clip(
+            _safe_ratio(settling_payments[:, -1], settled_bills[:, -1], when_no_debt=1.0), *PAYMENT_RATIO_BOUNDS
+        ),
+        "payment_ratio_mean": np.clip(
+            _safe_ratio(settling_payments.sum(axis=1), settled_bills.clip(min=0).sum(axis=1), when_no_debt=1.0),
+            *PAYMENT_RATIO_BOUNDS,
         ),
         "pay_to_limit_ratio": np.nan_to_num(payments.mean(axis=1) / safe_limit, nan=0.0),
         "zero_payment_months": (payments <= 0).sum(axis=1).astype(float),
@@ -96,12 +101,8 @@ def engineer_features(frame: pd.DataFrame) -> pd.DataFrame:
         "delay_months": (statuses >= 1).sum(axis=1).astype(float),
         "delay_trend": _slope(statuses),
     }
-    engineered = pd.DataFrame(features, index=frame.index)
-    for column in ("utilization_latest", "utilization_mean", "utilization_max"):
-        engineered[column] = engineered[column].clip(*UTILIZATION_BOUNDS)
-    for column in ("payment_ratio_latest", "payment_ratio_mean"):
-        engineered[column] = engineered[column].clip(*PAYMENT_RATIO_BOUNDS)
-    return engineered[ENGINEERED_FEATURES]
+    values = np.column_stack([columns[name] for name in ENGINEERED_FEATURES])
+    return pd.DataFrame(values, index=frame.index, columns=ENGINEERED_FEATURES)
 
 
 def add_engineered_features(frame: pd.DataFrame) -> pd.DataFrame:

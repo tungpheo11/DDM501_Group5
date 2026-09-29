@@ -14,7 +14,12 @@ import numpy as np
 import pandas as pd
 
 from credit_risk.config import Settings, get_logger
-from credit_risk.monitoring.metrics import BATCH_SIZE_HISTOGRAM, RollingFeatureStats, record_business_outcome
+from credit_risk.monitoring.metrics import (
+    BATCH_SIZE_HISTOGRAM,
+    PREDICTION_LATENCY,
+    RollingFeatureStats,
+    record_business_outcome,
+)
 from credit_risk.responsible_ai.explainability import explain_against_reference, risk_factor_messages
 from credit_risk.responsible_ai.explanations import policy_guardrails, top_risk_factors
 from credit_risk.serving import database
@@ -122,7 +127,9 @@ class ScoringService:
 
     def score(self, loaded: LoadedModel, applicants: list[dict[str, Any]]) -> list[ScoreResult]:
         """Score applicants (request order preserved)."""
-        probabilities = default_probabilities(loaded.model, _frame(applicants, loaded.feature_names))
+        frame = _frame(applicants, loaded.feature_names)
+        with PREDICTION_LATENCY.time():
+            probabilities = default_probabilities(loaded.model, frame)
         return [self._build_result(features, float(p)) for features, p in zip(applicants, probabilities, strict=True)]
 
     def explain(

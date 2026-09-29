@@ -137,8 +137,11 @@ graphql-relay==3.2.0
     # via graphene
 greenlet==3.5.6 ; platform_machine == 'AMD64' or platform_machine == 'WIN32' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'ppc64le' or platform_machine == 'win32' or platform_machine == 'x86_64'
     # via sqlalchemy
-gunicorn==26.2.0 ; sys_platform != 'win32'
-    # via mlflow
+gunicorn==26.2.0
+    # via
+    #   credit-risk-mlops
+    #   mlflow
+    #   uvicorn-worker
 h11==0.16.0
     # via
     #   httpcore
@@ -539,6 +542,9 @@ uvicorn==0.53.0
     #   credit-risk-mlops
     #   evidently
     #   mlflow-skinny
+    #   uvicorn-worker
+uvicorn-worker==0.4.0
+    # via credit-risk-mlops
 uvloop==0.22.1 ; platform_python_implementation != 'PyPy' and sys_platform != 'cygwin' and sys_platform != 'win32'
     # via uvicorn
 waitress==3.0.2 ; sys_platform == 'win32'
