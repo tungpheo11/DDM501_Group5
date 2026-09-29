@@ -36,7 +36,7 @@
 | `processed/stream_drifted.csv` | 5,000 | 21–29 | — | `92cfdefd1e92` |
 | `processed/stream_normal.csv` | 5,000 | 30–79 | 22.9% | `a66b20ad1415` |
 
-_Sinh tự động bởi `make responsible-ai` (2026-09-28T09:53:21+00:00) — không sửa tay._
+_Sinh tự động bởi `make responsible-ai` (2026-09-29T11:54:02+00:00) — không sửa tay._
 <!-- rai:data-overview:end -->
 
 ## 2. Động cơ và bối cảnh thu thập
@@ -45,6 +45,12 @@ _Sinh tự động bởi `make responsible-ai` (2026-09-28T09:53:21+00:00) — k
   dụng Đài Loan (2005–2006), khi tỷ lệ vỡ nợ thẻ tăng cao. Mục đích gốc: so sánh các kỹ thuật data mining dự báo xác suất
   vỡ nợ.
 - Mỗi dòng là một chủ thẻ; nhãn `default_payment_next_month` = 1 nếu vỡ nợ ở kỳ thanh toán kế tiếp.
+- **Đây là dữ liệu hành vi của chủ thẻ hiện hữu** — người đã có thẻ, đang có hạn mức (`LIMIT_BAL`), 6 tháng sao kê,
+  số tiền đã trả và lịch sử trả nợ. Vì vậy dataset phù hợp cho *behavioral scoring* (quản lý hạn mức: duyệt yêu cầu tăng
+  hạn mức, rà soát hạn mức sau kỳ sao kê, cảnh báo sớm) và **không dùng được để chấm điểm khách xin thẻ mới
+  (application scoring)**: khách chưa có thẻ
+  không có 18/23 feature này tại thời điểm xin thẻ, còn nhãn "vỡ nợ kỳ tới" chỉ có nghĩa với người đang có dư nợ. Ngoài
+  ra dữ liệu chỉ gồm người đã được chấp thuận trong quá khứ (survivorship, xem mục 6).
 - Khách hàng không được hỏi ý kiến về việc dùng dữ liệu cho nghiên cứu (không có thông tin consent trong nguồn); dữ liệu
   được công bố công khai dưới license CC BY 4.0 và **không có định danh trực tiếp**.
 
@@ -69,9 +75,9 @@ Dữ liệu được chia **có chủ đích theo tuổi** để mô phỏng dri
 
 | Partition | Nội dung | Dùng cho |
 |---|---|---|
-| `reference/train_baseline.csv` | 15,000 hồ sơ **≥ 30 tuổi** | train + holdout, reference cho drift |
-| `processed/stream_normal.csv` | 5,000 hồ sơ ≥ 30 tuổi | champion/challenger gate, traffic "bình thường" |
-| `processed/stream_drifted.csv` | 5,000 hồ sơ **< 30 tuổi**, không nhãn | traffic drift cho simulator/monitoring |
+| `reference/train_baseline.csv` | 15,000 chủ thẻ **≥ 30 tuổi** | train + holdout, reference cho drift |
+| `processed/stream_normal.csv` | 5,000 chủ thẻ ≥ 30 tuổi | champion/challenger gate, traffic "bình thường" |
+| `processed/stream_drifted.csv` | 5,000 chủ thẻ **< 30 tuổi**, không nhãn | traffic drift cho simulator/monitoring |
 | `processed/ground_truth_feedback.csv` | nhãn trễ của `stream_drifted` | retrain + đánh giá fairness nhóm < 30 |
 
 Hệ quả Responsible AI: model **chưa từng thấy** người < 30 tuổi khi train → nhóm này vừa là drift vừa là rủi ro fairness
@@ -113,7 +119,7 @@ Tập đánh giá fairness: 10,000 dòng (`stream_normal` 5,000, `stream_drifted
 | others | 137 | 27.7% |
 | single | 5,268 | 23.9% |
 
-_Sinh tự động bởi `make responsible-ai` (2026-09-28T09:53:21+00:00) — không sửa tay._
+_Sinh tự động bởi `make responsible-ai` (2026-09-29T11:54:02+00:00) — không sửa tay._
 <!-- rai:data-composition:end -->
 
 ## 5. Tiền xử lý
@@ -129,7 +135,7 @@ _Sinh tự động bởi `make responsible-ai` (2026-09-28T09:53:21+00:00) — k
 |---|---|---|
 | Thời gian & địa lý | Đài Loan 2005, giai đoạn khủng hoảng thẻ | không đại diện cho thị trường/giai đoạn khác |
 | Partition theo tuổi | train chỉ có ≥ 30 tuổi | disparity theo tuổi, cần feedback để retrain |
-| Nhãn lịch sử | chỉ gồm khách đã được cấp thẻ (survivorship) | không biết hành vi người bị từ chối |
+| Nhãn lịch sử | chỉ gồm chủ thẻ đã được ngân hàng chấp thuận trước đây (survivorship) | không biết hành vi của người bị từ chối; không dùng để suy ra rủi ro của người chưa có thẻ |
 | Proxy | `EDUCATION`, `LIMIT_BAL` tương quan thu nhập/tầng lớp | disparate impact gián tiếp |
 | Mất cân bằng lớp | ~1/4 là default | cần class weighting + metric PR-AUC/cost |
 

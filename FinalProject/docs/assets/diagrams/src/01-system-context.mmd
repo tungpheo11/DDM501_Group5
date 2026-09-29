@@ -1,19 +1,21 @@
-%% System context diagram: Credit Default Risk Scoring Platform
+%% System context diagram: Credit Default Risk Scoring Platform (Credit Line Management)
 flowchart TB
-    officer["<b>Loan Officer / Credit Analyst</b><br/><i>[Person]</i><br/>Nhận quyết định APPROVE / REVIEW / DECLINE<br/>kèm risk factors để xử lý hồ sơ"]:::person
+    analyst["<b>Credit Risk Analyst</b><br/><i>[Person]</i><br/>Chuyên viên rủi ro tín dụng / quản lý hạn mức;<br/>xử lý tài khoản vùng REVIEW và danh sách<br/>cảnh báo sớm, đọc reason codes"]:::person
     mlops["<b>ML / MLOps Engineer</b><br/><i>[Person]</i><br/>Train, promote, rollback model;<br/>vận hành stack và xử lý alert"]:::person
     risk["<b>Risk &amp; Compliance Manager</b><br/><i>[Person]</i><br/>Theo dõi KPI, expected loss,<br/>fairness report và model card"]:::person
 
-    los["<b>Loan Origination System</b><br/><i>[External System]</i><br/>Hệ thống nhận hồ sơ vay;<br/>gọi REST API chấm điểm<br/>(demo: persona simulator)"]:::external
+    cms["<b>Card Management System (CMS) /<br/>Mobile app backend</b><br/><i>[External System]</i><br/>Chủ thẻ gửi yêu cầu tăng hạn mức,<br/>rút tiền mặt, chuyển trả góp trên app;<br/>chờ kết quả ngay trong phiên<br/>(demo: persona simulator)"]:::external
+    batch["<b>Batch limit-review job</b><br/><i>[External System]</i><br/>Chạy sau mỗi kỳ sao kê: rà soát hạn mức<br/>toàn danh mục, lập danh sách cảnh báo sớm"]:::external
 
-    platform["<b>Credit Default Risk Scoring Platform</b><br/><i>[Software System]</i><br/>Chấm xác suất vỡ nợ (PD) và ra quyết định<br/>tín dụng theo cost matrix FN=10 / FP=1;<br/>giám sát drift, tự retrain qua quality gate,<br/>promote / rollback model"]:::system
+    platform["<b>Credit Default Risk Scoring Platform</b><br/><i>[Software System]</i><br/>Dự báo P(default) kỳ thanh toán kế tiếp<br/>của chủ thẻ đang lưu hành; quyết định hạn mức<br/>theo cost matrix FN=10 / FP=1;<br/>giám sát drift, tự retrain qua quality gate,<br/>promote / rollback model"]:::system
 
-    dataset["<b>UCI Credit Card Default</b><br/><i>[External Data Source]</i><br/>30.000 hồ sơ Đài Loan 2005<br/>23 feature + nhãn default"]:::external
+    dataset["<b>UCI Credit Card Default</b><br/><i>[External Data Source]</i><br/>30.000 chủ thẻ Đài Loan 2005<br/>23 feature (hạn mức, 6 kỳ trả nợ, sao kê)<br/>+ nhãn default kỳ tới"]:::external
     github["<b>GitHub Actions + GHCR</b><br/><i>[External System]</i><br/>CI (lint, test, Trivy, smoke)<br/>CD: build image, deploy qua SSH"]:::external
     telegram["<b>Telegram Bot API</b><br/><i>[External System]</i><br/>Kênh nhận alert on-call<br/>(tùy chọn, token trong .env)"]:::external
 
-    los -- "POST /api/v1/predict, /predict/batch, /explain<br/>[HTTPS + X-API-Key, JSON]" --> platform
-    officer -- "Xem quyết định + giải thích<br/>[qua Loan Origination System]" --> los
+    cms -- "Realtime:<br/>POST /api/v1/predict, /explain<br/>[HTTPS + X-API-Key, JSON]" --> platform
+    batch -- "Batch sau kỳ sao kê:<br/>POST /api/v1/predict/batch<br/>(lô ≤ 500), /explain<br/>[HTTPS + X-API-Key, JSON]" --> platform
+    analyst -- "Xem quyết định + reason codes<br/>[qua CMS]" --> cms
     mlops -- "Grafana, MLflow, Airflow UI, make targets<br/>[HTTPS / SSH tunnel]" --> platform
     risk -- "Business dashboard, fairness &amp; model card<br/>[HTTPS]" --> platform
     dataset -- "CSV snapshot, versioned bằng manifest hash<br/>[batch, offline]" --> platform

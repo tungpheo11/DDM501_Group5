@@ -45,17 +45,17 @@ CREDIT_DECLINED_VOLUME = Counter(
 )
 EXPECTED_LOSS = Counter(
     "credit_expected_loss_ntd_total",
-    "Expected credit loss PD x exposure x LGD in NTD (DECLINE = loss avoided on the requested limit)",
+    "Expected credit loss PD x exposure x LGD in NTD (DECLINE = loss avoided on the frozen current limit)",
     ["decision"],
 )
 AVG_AGE_GAUGE = Gauge(
     "credit_customer_age_rolling_mean",
-    "Rolling mean age of incoming applicants",
+    "Rolling mean age of scored cardholders",
     multiprocess_mode="livemostrecent",
 )
 AVG_LIMIT_GAUGE = Gauge(
     "credit_customer_limit_bal_rolling_mean",
-    "Rolling mean credit limit of applicants in NTD",
+    "Rolling mean credit limit of scored cardholders in NTD",
     multiprocess_mode="livemostrecent",
 )
 AVG_UTILIZATION_GAUGE = Gauge(
@@ -65,12 +65,12 @@ AVG_UTILIZATION_GAUGE = Gauge(
 )
 PAY_0_DELAY_RATIO = Gauge(
     "credit_customer_pay_0_delayed_ratio",
-    "Ratio of applicants with recent payment delay (PAY_0 > 0)",
+    "Ratio of scored cardholders with recent payment delay (PAY_0 > 0)",
     multiprocess_mode="livemostrecent",
 )
 CREDIT_SCORE_HISTOGRAM = Histogram(
-    "credit_applicant_score_distribution",
-    "Credit score distribution on 300-850 scale",
+    "credit_cardholder_score_distribution",
+    "Credit score distribution of scored cardholders on 300-850 scale",
     buckets=[350, 450, 550, 650, 700, 750, 800, 850],
 )
 DEFAULT_PROBABILITY_HISTOGRAM = Histogram(
@@ -80,7 +80,7 @@ DEFAULT_PROBABILITY_HISTOGRAM = Histogram(
 )
 BATCH_SIZE_HISTOGRAM = Histogram(
     "credit_prediction_batch_size",
-    "Number of applicants per batch prediction request",
+    "Number of cardholders per batch prediction request",
     buckets=[1, 5, 10, 25, 50, 100, 250, 500, 1000],
 )
 

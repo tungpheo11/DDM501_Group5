@@ -471,7 +471,7 @@
     },
     {
       "type": "bargauge",
-      "title": "Applicant score distribution (15m)",
+      "title": "Cardholder score distribution (15m)",
       "description": "",
       "datasource": {
         "type": "prometheus",
@@ -483,7 +483,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (le) (increase(credit_applicant_score_distribution_bucket{job=\"credit-risk-api\"}[15m]))",
+          "expr": "sum by (le) (increase(credit_cardholder_score_distribution_bucket{job=\"credit-risk-api\"}[15m]))",
           "legendFormat": "{{le}}",
           "instant": true,
           "range": false,

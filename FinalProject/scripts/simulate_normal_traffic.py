@@ -1,6 +1,6 @@
 """
 Script: simulate_normal_traffic.py
-Convenience runner for baseline steady-state applicant traffic.
+Convenience runner for baseline steady-state cardholder traffic.
 Referenced in proposal and presentation guides:
   python scripts/simulate_normal_traffic.py --count 50
 """
@@ -18,7 +18,7 @@ from simulations.scenarios import NormalTrafficScenario  # noqa: E402
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Simulate Baseline Normal Applicant Traffic")
+    parser = argparse.ArgumentParser(description="Simulate Baseline Normal Cardholder Traffic")
     parser.add_argument(
         "--api-url",
         default=os.getenv("API_URL", "http://localhost:18020/api/v1/predict"),
@@ -29,8 +29,8 @@ def main() -> None:
         default=os.getenv("API_KEY", "local-dev-key-change-me"),
         help="API Key for X-API-Key header",
     )
-    parser.add_argument("--count", type=int, default=50, help="Number of applications to simulate")
-    parser.add_argument("--delay", type=float, default=0.02, help="Delay between applications (seconds)")
+    parser.add_argument("--count", type=int, default=50, help="Number of cardholder requests to simulate")
+    parser.add_argument("--delay", type=float, default=0.02, help="Delay between requests (seconds)")
     args = parser.parse_args()
 
     print(f"🚀 Simulating normal traffic to {args.api_url} ({args.count} requests)...")

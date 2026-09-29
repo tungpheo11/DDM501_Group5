@@ -1,7 +1,7 @@
 {
   "uid": "credit-infra-sla",
   "title": "Credit Risk - Infrastructure & SLA",
-  "description": "Availability, latency and error-rate SLOs, active alerts and platform health.",
+  "description": "Availability, latency and error-rate SLO targets, active alerts and platform health.",
   "tags": [
     "credit-risk"
   ],

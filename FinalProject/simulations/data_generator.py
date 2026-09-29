@@ -1,5 +1,5 @@
 """Module: data_generator.py
-Generates realistic financial applicant records for real-time inference and drift simulation.
+Generates realistic cardholder account records for real-time inference and drift simulation.
 Alings with UCI Credit Default 23-feature schema.
 """
 
@@ -10,14 +10,14 @@ from typing import Any
 
 
 class CreditDataGenerator:
-    """Generates synthetic credit applicant feature vectors with calibrated drift injection."""
+    """Generates synthetic cardholder feature vectors with calibrated drift injection."""
 
     def __init__(self, seed: int | None = None):
         if seed is not None:
             random.seed(seed)
 
     def generate_normal_sample(self) -> dict[str, Any]:
-        """Baseline prime applicant: mature age, stable limit, disciplined repayments (PAY_0=0)."""
+        """Baseline prime cardholder: mature age, stable limit, disciplined repayments (PAY_0=0)."""
         limit_bal = float(random.choice([150000, 200000, 250000, 300000, 400000]))
         age = random.randint(35, 52)
         bill_base = limit_bal * random.uniform(0.08, 0.25)
@@ -49,7 +49,7 @@ class CreditDataGenerator:
         }
 
     def generate_genz_drift_sample(self) -> dict[str, Any]:
-        """Demographic & covariate drift: Young gig-economy applicants (19-25yo) with lower limit and PAY_0=1."""
+        """Demographic & covariate drift: Young gig-economy cardholders (19-25yo) with lower limit and PAY_0=1."""
         limit_bal = float(random.choice([20000, 30000, 40000, 50000]))
         age = random.randint(19, 25)
         bill_base = limit_bal * random.uniform(0.35, 0.65)
@@ -183,5 +183,5 @@ class CreditDataGenerator:
         return self.generate_normal_sample()
 
     def generate_batch(self, count: int, scenario: str = "normal") -> list[dict[str, Any]]:
-        """Generates a batch of applicant records."""
+        """Generates a batch of cardholder records."""
         return [self.generate_sample_by_scenario(scenario) for _ in range(count)]

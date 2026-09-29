@@ -1,12 +1,12 @@
 # Báo cáo Explainability (SHAP + LIME)
 
-> Sinh tự động bởi `make responsible-ai` (2026-09-28T09:53:21+00:00). Không sửa tay.
+> Sinh tự động bởi `make responsible-ai` (2026-09-29T11:54:02+00:00). Không sửa tay.
 
 ## Phương pháp
 
-- SHAP: PermutationExplainer on P(default) of the full pipeline, 100 background training applicants, max_evals=500 — 500 hồ sơ đánh giá.
+- SHAP: PermutationExplainer on P(default) of the full pipeline, 100 background training cardholders, max_evals=500 — 500 chủ thẻ trong tập đánh giá.
 - LIME: LimeTabularExplainer, 5000 samples, discretized continuous features.
-- Serving (`POST /api/v1/explain`): PermutationExplainer against the reference applicant, max_evals=240.
+- Serving (`POST /api/v1/explain`): PermutationExplainer against the reference cardholder, max_evals=240.
 
 ## Global — SHAP
 
@@ -27,9 +27,9 @@
 
 ![SHAP bar](figures/rai_shap_bar.png)
 
-## Local — 3 hồ sơ đại diện (SHAP vs LIME)
+## Local — 3 chủ thẻ đại diện (SHAP vs LIME)
 
-| Hồ sơ | P(default) | SHAP top-3 | LIME top-3 | Overlap@5 / cùng dấu |
+| Chủ thẻ | P(default) | SHAP top-3 | LIME top-3 | Overlap@5 / cùng dấu |
 |---|---|---|---|---|
 | APPROVE | 0.245 | `PAY_0` -0.097, `LIMIT_BAL` +0.089, `BILL_AMT5` -0.061 | `LIMIT_BAL` +0.197, `PAY_0` -0.176, `PAY_AMT1` +0.106 | 60% / 100% |
 | REVIEW | 0.418 | `AGE` +0.042, `PAY_0` +0.030, `LIMIT_BAL` +0.019 | `BILL_AMT6` -0.045, `BILL_AMT5` -0.040, `AGE` +0.034 | 40% / 100% |

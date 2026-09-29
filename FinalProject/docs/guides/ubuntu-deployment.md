@@ -160,7 +160,7 @@ curl -s https://$API_DOMAIN/health/ready | jq .status                      # "re
 curl -s -o /dev/null -w '%{http_code}\n' https://$API_DOMAIN/metrics      # 404 (không public)
 curl -s -o /dev/null -w '%{http_code}\n' http://$API_DOMAIN/health/live   # 301 → https
 curl -s -H "X-API-Key: <key>" -H 'Content-Type: application/json' \
-  -d @applicant.json https://$API_DOMAIN/api/v1/predict | jq .risk_decision
+  -d @cardholder.json https://$API_DOMAIN/api/v1/predict | jq .risk_decision
 ```
 
 Grafana: `https://$GRAFANA_DOMAIN` (đăng nhập bằng `GRAFANA_ADMIN_*`). UI nội bộ qua SSH tunnel:

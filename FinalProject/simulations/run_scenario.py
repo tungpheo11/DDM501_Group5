@@ -5,7 +5,7 @@ scenario  traffic                                                             ex
 ========  ==================================================================  =============================
 normal    replay of ``data/processed/stream_normal.csv`` (same population     no drift, alerts resolve
           as the reference)
-drift     replay of ``stream_drifted.csv`` - Gen-Z acquisition campaign        DataDriftDetected (AGE PSI),
+drift     replay of ``stream_drifted.csv`` - Gen-Z limit-increase campaign    DataDriftDetected (AGE PSI),
           (mean age 26 vs 38) + ``campaign_drift`` personas                   drift_monitoring -> retrain
 attack    coordinated delinquency: ``fraud_attack`` personas (70% maxed-out    decline spike,
           speculators with PAY_0 >= 2)                                        PredictionDistributionShift
@@ -154,7 +154,7 @@ class ScoringClient:
         return self._local.session
 
     def predict(self, payload: Payload, stats: RunStats) -> None:
-        """Score one application and record the outcome in ``stats``."""
+        """Score one cardholder request and record the outcome in ``stats``."""
         started = time.perf_counter()
         try:
             response = self._session().post(self.predict_url, json=payload, timeout=self.timeout)

@@ -14,8 +14,10 @@ paths:
     post:
       tags:
       - prediction
-      summary: Score one applicant
-      description: Returns default probability, APPROVE/REVIEW/DECLINE decision, credit
+      summary: Score one cardholder
+      description: Realtime decision for a cardholder request made in the mobile app
+        / internet banking (credit limit increase, cash advance, instalment conversion).
+        Returns next-cycle default probability, APPROVE/REVIEW/DECLINE decision, credit
         score, tier, recommended limit, rule-based risk factors and policy guardrails.
         The request is logged for drift analysis.
       operationId: predict_api_v1_predict_post
@@ -26,7 +28,7 @@ paths:
               $ref: '#/components/schemas/CreditPredictRequest'
             examples:
               low_risk:
-                summary: Low-risk applicant
+                summary: Low-risk cardholder
                 description: Pays in full every month, low utilization.
                 value:
                   LIMIT_BAL: 200000.0
@@ -53,7 +55,7 @@ paths:
                   PAY_AMT5: 10000.0
                   PAY_AMT6: 9500.0
               high_risk:
-                summary: High-risk applicant
+                summary: High-risk cardholder
                 description: Two months late on every statement, card maxed out.
                 value:
                   LIMIT_BAL: 20000.0
@@ -149,10 +151,12 @@ paths:
     post:
       tags:
       - prediction
-      summary: Score several applicants
-      description: Vectorized scoring of up to `batch_max_size` applicants (configs/serving.yaml,
-        default 500). Results keep request order; each item gets its own `<request_id>-<index>`
-        id in the inference log.
+      summary: Score several cardholders
+      description: Vectorized scoring of up to `batch_max_size` cardholders (configs/serving.yaml,
+        default 500), used by the post-statement limit review and early-warning jobs.
+        Results keep request order; each item gets its own `<request_id>-<index>`
+        id in the inference log. The request field is `cardholders`; the legacy `applicants`
+        field is a deprecated alias (send one of them, never both).
       operationId: predict_batch_api_v1_predict_batch_post
       requestBody:
         content:
@@ -160,8 +164,61 @@ paths:
             schema:
               $ref: '#/components/schemas/BatchPredictRequest'
             examples:
-              two_applicants:
-                summary: Two applicants
+              two_cardholders:
+                summary: Two cardholders
+                description: Post-statement limit review of two accounts.
+                value:
+                  cardholders:
+                  - LIMIT_BAL: 200000.0
+                    SEX: 2
+                    EDUCATION: 1
+                    MARRIAGE: 1
+                    AGE: 38
+                    PAY_0: -1
+                    PAY_2: -1
+                    PAY_3: -1
+                    PAY_4: -1
+                    PAY_5: -1
+                    PAY_6: -1
+                    BILL_AMT1: 12000.0
+                    BILL_AMT2: 11500.0
+                    BILL_AMT3: 11000.0
+                    BILL_AMT4: 10500.0
+                    BILL_AMT5: 10000.0
+                    BILL_AMT6: 9500.0
+                    PAY_AMT1: 12000.0
+                    PAY_AMT2: 11500.0
+                    PAY_AMT3: 11000.0
+                    PAY_AMT4: 10500.0
+                    PAY_AMT5: 10000.0
+                    PAY_AMT6: 9500.0
+                  - LIMIT_BAL: 20000.0
+                    SEX: 1
+                    EDUCATION: 2
+                    MARRIAGE: 2
+                    AGE: 23
+                    PAY_0: 2
+                    PAY_2: 2
+                    PAY_3: 2
+                    PAY_4: 2
+                    PAY_5: 2
+                    PAY_6: 2
+                    BILL_AMT1: 19500.0
+                    BILL_AMT2: 19800.0
+                    BILL_AMT3: 19900.0
+                    BILL_AMT4: 20000.0
+                    BILL_AMT5: 20100.0
+                    BILL_AMT6: 20200.0
+                    PAY_AMT1: 0.0
+                    PAY_AMT2: 0.0
+                    PAY_AMT3: 0.0
+                    PAY_AMT4: 0.0
+                    PAY_AMT5: 0.0
+                    PAY_AMT6: 0.0
+              deprecated_alias:
+                summary: Deprecated `applicants` field
+                description: Same request with the deprecated field name; returns
+                  the same result. Prefer `cardholders`.
                 value:
                   applicants:
                   - LIMIT_BAL: 200000.0
@@ -246,7 +303,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 code: BATCH_TOO_LARGE
-                message: Batch contains 800 applicants; the maximum is 500.
+                message: Batch contains 800 cardholders; the maximum is 500.
                 details:
                   max_size: 500
                   received: 800
@@ -293,11 +350,12 @@ paths:
     post:
       tags:
       - prediction
-      summary: Score one applicant and explain the score
-      description: 'Adds local, model-based attributions (top-k by magnitude). Default
-        method `shap_permutation`: SHAP values against the median training applicant,
-        so contributions sum to `default_probability - reference_probability`, and
-        `top_risk_factors` is derived from them. If SHAP fails the endpoint degrades
+      summary: Score one cardholder and explain the score
+      description: 'Used by credit risk analysts for accounts in REVIEW/DECLINE and
+        for adverse action notices. Adds local, model-based attributions (top-k by
+        magnitude). Default method `shap_permutation`: SHAP values against the median
+        training cardholder, so contributions sum to `default_probability - reference_probability`,
+        and `top_risk_factors` is derived from them. If SHAP fails the endpoint degrades
         to `reference_substitution` (each feature replaced by the reference value).
         Explanations are not written to the inference log.'
       operationId: explain_api_v1_explain_post
@@ -308,7 +366,7 @@ paths:
               $ref: '#/components/schemas/CreditPredictRequest'
             examples:
               low_risk:
-                summary: Low-risk applicant
+                summary: Low-risk cardholder
                 description: Pays in full every month, low utilization.
                 value:
                   LIMIT_BAL: 200000.0
@@ -335,7 +393,7 @@ paths:
                   PAY_AMT5: 10000.0
                   PAY_AMT6: 9500.0
               high_risk:
-                summary: High-risk applicant
+                summary: High-risk cardholder
                 description: Two months late on every statement, card maxed out.
                 value:
                   LIMIT_BAL: 20000.0
@@ -629,19 +687,32 @@ components:
   schemas:
     BatchPredictRequest:
       properties:
+        cardholders:
+          items:
+            $ref: '#/components/schemas/CreditPredictRequest'
+          type: array
+          minItems: 1
+          title: Cardholders
+          description: Cardholder accounts to score; the server caps the size (see
+            `batch_max_size`). Validation errors report the field name the client
+            sent (`cardholders.N.FIELD` or `applicants.N.FIELD`).
         applicants:
           items:
             $ref: '#/components/schemas/CreditPredictRequest'
           type: array
           minItems: 1
           title: Applicants
-          description: Applicants to score; the server caps the size (see `batch_max_size`).
+          description: 'Deprecated alias of `cardholders`, still accepted for backward
+            compatibility. Send exactly one of the two fields: a request carrying
+            both is rejected with 422.'
+          deprecated: true
       additionalProperties: false
       type: object
       required:
-      - applicants
+      - cardholders
       title: BatchPredictRequest
-      description: Several applicants scored in one vectorized call.
+      description: Several cardholder accounts scored in one vectorized call (post-statement
+        limit review).
     BatchPredictionItem:
       properties:
         default_prediction:
@@ -681,7 +752,9 @@ components:
           type: number
           minimum: 0.0
           title: Recommended Limit Ntd
-          description: Suggested safe credit limit in NT dollars
+          description: 'Suggested credit limit in NT dollars: raise on APPROVE, cut
+            on REVIEW, 0 on DECLINE (available limit frozen, outstanding balance still
+            due)'
         top_risk_factors:
           items:
             type: string
@@ -698,7 +771,7 @@ components:
           type: integer
           minimum: 0.0
           title: Index
-          description: Position of the applicant in the request
+          description: Position of the cardholder in the request
         request_id:
           type: string
           title: Request Id
@@ -715,7 +788,7 @@ components:
       - index
       - request_id
       title: BatchPredictionItem
-      description: Result for one applicant of a batch, in request order.
+      description: Result for one cardholder of a batch, in request order.
     BatchPredictionResponse:
       properties:
         model_version:
@@ -737,7 +810,7 @@ components:
             type: integer
           type: object
           title: Decision Summary
-          description: Number of applicants per decision
+          description: Number of cardholders per decision
         predictions:
           items:
             $ref: '#/components/schemas/BatchPredictionItem'
@@ -803,7 +876,7 @@ components:
           maximum: 10000000.0
           exclusiveMinimum: 0.0
           title: Limit Bal
-          description: Amount of given credit (NT dollar)
+          description: Current credit limit of the card (NT dollar)
         SEX:
           type: integer
           maximum: 2.0
@@ -965,7 +1038,8 @@ components:
       - PAY_AMT5
       - PAY_AMT6
       title: CreditPredictRequest
-      description: One credit applicant; field names follow the UCI dataset columns.
+      description: One cardholder account after its latest statement; field names
+        follow the UCI dataset columns.
       examples:
       - AGE: 38
         BILL_AMT1: 12000.0
@@ -1088,7 +1162,9 @@ components:
           type: number
           minimum: 0.0
           title: Recommended Limit Ntd
-          description: Suggested safe credit limit in NT dollars
+          description: 'Suggested credit limit in NT dollars: raise on APPROVE, cut
+            on REVIEW, 0 on DECLINE (available limit frozen, outstanding balance still
+            due)'
         top_risk_factors:
           items:
             type: string
@@ -1114,7 +1190,7 @@ components:
         reference_probability:
           type: number
           title: Reference Probability
-          description: Default probability of the reference (median) applicant
+          description: Default probability of the reference (median) cardholder
         contributions:
           items:
             $ref: '#/components/schemas/FeatureContribution'
@@ -1195,9 +1271,9 @@ components:
           type: number
           title: Contribution
           description: 'Change in default probability attributed to this feature.
-            shap_permutation: SHAP value against the reference applicant; reference_substitution:
-            probability(applicant) - probability(applicant with this feature set to
-            reference)'
+            shap_permutation: SHAP value against the reference cardholder; reference_substitution:
+            probability(cardholder) - probability(cardholder with this feature set
+            to reference)'
         direction:
           type: string
           enum:
@@ -1355,7 +1431,9 @@ components:
           type: number
           minimum: 0.0
           title: Recommended Limit Ntd
-          description: Suggested safe credit limit in NT dollars
+          description: 'Suggested credit limit in NT dollars: raise on APPROVE, cut
+            on REVIEW, 0 on DECLINE (available limit frozen, outstanding balance still
+            due)'
         top_risk_factors:
           items:
             type: string
@@ -1406,7 +1484,7 @@ components:
         top_risk_factors:
         - 'Severe Delinquency: PAY_0=2 indicates 2+ months payment default'
         - 'Excessive Credit Line Utilization: 97.5% of limit consumed'
-        - 'Demographic Cohort: Young applicant profile (23yo) with nascent credit
+        - 'Demographic Cohort: Young cardholder profile (23yo) with short account
           history'
     ReadinessResponse:
       properties:
@@ -1505,7 +1583,8 @@ components:
       name: X-API-Key
 tags:
 - name: prediction
-  description: Score applicants and explain scores.
+  description: Score cardholders (realtime limit requests, batch limit review) and
+    explain scores.
 - name: model
   description: Served-model metadata and hot reload.
 - name: health

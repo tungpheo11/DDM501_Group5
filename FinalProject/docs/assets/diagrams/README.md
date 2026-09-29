@@ -34,7 +34,7 @@ bash scripts/render_diagrams.sh 05-data-flow    # một diagram
 
 ## 1. Sơ đồ ngữ cảnh hệ thống
 
-Ai dùng hệ thống và hệ thống phụ thuộc bên ngoài nào. Loan officer không gọi API trực tiếp: Loan Origination System (trong demo là persona simulator) gọi REST API với `X-API-Key`.
+Ai dùng hệ thống và hệ thống phụ thuộc bên ngoài nào. Hệ thống quản lý hạn mức cho chủ thẻ đang lưu hành, có hai đường gọi API với `X-API-Key`: Card Management System / mobile app backend (trong demo là persona simulator) gọi `/predict` realtime khi chủ thẻ gửi yêu cầu tăng hạn mức trên app; batch limit-review job gọi `/predict/batch` sau mỗi kỳ sao kê để rà soát hạn mức toàn danh mục. Credit Risk Analyst không gọi API trực tiếp mà xem quyết định và reason codes qua Card Management System.
 
 ![System context diagram](01-system-context.svg)
 

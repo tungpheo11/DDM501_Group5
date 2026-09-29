@@ -13,7 +13,7 @@ from credit_risk.features.preprocessing import create_feature_pipeline, create_p
 from credit_risk.training.pipeline import build_model_pipeline
 
 
-def _applicant(**overrides):
+def _cardholder(**overrides):
     row = dict.fromkeys(ALL_FEATURES, 0.0)
     row.update({"LIMIT_BAL": 100_000.0, "SEX": 2, "EDUCATION": 2, "MARRIAGE": 1, "AGE": 35})
     row.update(overrides)
@@ -21,7 +21,7 @@ def _applicant(**overrides):
 
 
 def test_utilization_features():
-    frame = _applicant(
+    frame = _cardholder(
         BILL_AMT1=50_000, BILL_AMT2=40_000, BILL_AMT3=30_000, BILL_AMT4=20_000, BILL_AMT5=10_000, BILL_AMT6=0
     )
     features = engineer_features(frame).iloc[0]
@@ -32,23 +32,23 @@ def test_utilization_features():
 
 
 def test_payment_ratio_pairs_payment_with_previous_statement():
-    frame = _applicant(BILL_AMT2=10_000, PAY_AMT1=2_500, BILL_AMT3=10_000, PAY_AMT2=10_000)
+    frame = _cardholder(BILL_AMT2=10_000, PAY_AMT1=2_500, BILL_AMT3=10_000, PAY_AMT2=10_000)
     features = engineer_features(frame).iloc[0]
     assert features["payment_ratio_latest"] == pytest.approx(0.25)
     assert features["payment_ratio_mean"] == pytest.approx(12_500 / 20_000)
 
 
 def test_payment_ratio_without_debt_is_fully_paid_and_bounded():
-    no_debt = engineer_features(_applicant()).iloc[0]
+    no_debt = engineer_features(_cardholder()).iloc[0]
     assert no_debt["payment_ratio_latest"] == 1.0
     assert no_debt["payment_ratio_mean"] == 1.0
-    overpaid = engineer_features(_applicant(BILL_AMT2=100, PAY_AMT1=1_000_000)).iloc[0]
+    overpaid = engineer_features(_cardholder(BILL_AMT2=100, PAY_AMT1=1_000_000)).iloc[0]
     assert overpaid["payment_ratio_latest"] == 5.0
 
 
 def test_delay_features_capture_worsening_behaviour():
-    worsening = _applicant(PAY_6=-1, PAY_5=0, PAY_4=0, PAY_3=1, PAY_2=2, PAY_0=3)
-    improving = _applicant(PAY_6=3, PAY_5=2, PAY_4=1, PAY_3=0, PAY_2=0, PAY_0=-1)
+    worsening = _cardholder(PAY_6=-1, PAY_5=0, PAY_4=0, PAY_3=1, PAY_2=2, PAY_0=3)
+    improving = _cardholder(PAY_6=3, PAY_5=2, PAY_4=1, PAY_3=0, PAY_2=0, PAY_0=-1)
     worse, better = engineer_features(worsening).iloc[0], engineer_features(improving).iloc[0]
     assert worse["delay_trend"] > 0 > better["delay_trend"]
     assert worse["delay_max"] == 3
@@ -57,7 +57,7 @@ def test_delay_features_capture_worsening_behaviour():
 
 
 def test_zero_payment_months_and_pay_to_limit():
-    features = engineer_features(_applicant(PAY_AMT1=6_000, PAY_AMT2=6_000)).iloc[0]
+    features = engineer_features(_cardholder(PAY_AMT1=6_000, PAY_AMT2=6_000)).iloc[0]
     assert features["zero_payment_months"] == 4
     assert features["pay_to_limit_ratio"] == pytest.approx(2_000 / 100_000)
 
@@ -70,7 +70,7 @@ def test_real_data_produces_finite_engineered_features(settings):
 
 
 def test_add_engineered_features_preserves_index_and_order():
-    frame = pd.concat([_applicant(), _applicant(AGE=50)], ignore_index=True)
+    frame = pd.concat([_cardholder(), _cardholder(AGE=50)], ignore_index=True)
     frame.index = [10, 20]
     combined = add_engineered_features(frame)
     assert list(combined.index) == [10, 20]
@@ -79,7 +79,7 @@ def test_add_engineered_features_preserves_index_and_order():
 
 def test_feature_engineer_is_stateless_transformer():
     engineer = FeatureEngineer()
-    frame = _applicant(BILL_AMT1=10_000)
+    frame = _cardholder(BILL_AMT1=10_000)
     assert engineer.fit(frame) is engineer
     transformed = engineer.transform(frame)
     assert list(engineer.get_feature_names_out()) == list(transformed.columns)

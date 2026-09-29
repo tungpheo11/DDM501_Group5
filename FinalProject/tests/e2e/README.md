@@ -13,7 +13,7 @@ service tuỳ chọn (profile chưa bật) không chạy thì test tương ứng
 
 | Nhóm | Kiểm tra |
 |---|---|
-| Serving API | readiness đủ 3 check, contract `/predict` và `/predict/batch`, hồ sơ rủi ro cao bị `DECLINE`, lỗi 401/403/422/413 theo error contract, 422 không echo giá trị input, `/metrics` |
+| Serving API | readiness đủ 3 check, contract `/predict` và `/predict/batch`, chủ thẻ rủi ro cao bị `DECLINE`, lỗi 401/403/422/413 theo error contract, 422 không echo giá trị input, `/metrics` |
 | Model registry | API phục vụ đúng version đang gắn alias `@champion` trong MLflow |
 | Drift monitor | reference đã nạp, `POST /analyze` trả kết quả hợp lệ, report HTML Evidently truy cập được |
 | Monitoring | Prometheus scrape `credit-risk-api` và `drift-monitor`, nạp đủ 11 alert rule; Alertmanager `ready` và có receiver webhook; Grafana có 4 dashboard |

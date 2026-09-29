@@ -23,8 +23,9 @@ trong API và ML pipeline.
 
 ### 2.1 Sơ đồ ngữ cảnh hệ thống
 
-Loan Origination System (trong demo là persona simulator) gọi REST API; chuyên viên/risk manager dùng Grafana và kết quả
-explain; MLOps engineer vận hành qua SSH, Airflow, MLflow; thông báo ra Telegram.
+Card Management System / mobile app backend gọi `/predict` realtime khi chủ thẻ gửi yêu cầu tăng hạn mức; batch job rà
+soát hạn mức gọi `/predict/batch` sau mỗi kỳ sao kê (trong demo cả hai là persona simulator). Chuyên viên rủi ro tín dụng
+và risk manager dùng Grafana và kết quả explain; MLOps engineer vận hành qua SSH, Airflow, MLflow; thông báo ra Telegram.
 
 ![Sơ đồ ngữ cảnh hệ thống](assets/diagrams/01-system-context.svg)
 
@@ -82,7 +83,7 @@ Project Compose `credit-risk-mlops`: 15 service (12 long-running + 3 job one-sho
 |---|---|---|
 | **Offline training** | `data/raw` → `make data` (split theo tuổi) → `make manifest` (SHA256) → `make validate` (pandera, fail fast) → `FeatureEngineer` → Optuna 20 trial × 4 thuật toán, 5-fold CV → holdout + gate trên `stream_normal` → MLflow run + register → alias `@champion` → `models/*.joblib` fallback | Registry version, `reports/model_comparison.*`, `reports/figures/` |
 | **Model loading** | API startup/reload → probe MLflow (0.5 s) → nạp `@champion` → swap snapshot atomic; lỗi → artifact local (`degraded`) hoặc giữ model cũ | `credit_model_info`, `credit_model_degraded` |
-| **Online scoring** | LOS → (Nginx) → middleware request-id → auth `X-API-Key` → Pydantic validate → pipeline model → decision engine (APPROVE/REVIEW/DECLINE, score 300–850) → metric → ghi `inference_logs` (pseudonymized) → response | JSON response, metric, inference log |
+| **Online scoring** | CMS / mobile app backend (realtime) hoặc batch job rà soát hạn mức → (Nginx) → middleware request-id → auth `X-API-Key` → Pydantic validate → pipeline model → decision engine (APPROVE/REVIEW/DECLINE, score 300–850) → metric → ghi `inference_logs` (pseudonymized) → response | JSON response, metric, inference log |
 | **Monitoring feedback loop** | Prometheus scrape 10 s (drift monitor 15 s), đánh giá rule 15 s → rules → Alertmanager → Telegram/webhook; drift monitor đọc `inference_logs` mỗi 60 s → gauge drift; Airflow `drift_monitoring` (30 phút) → drift ⇒ trigger `model_retrain` (cooldown 60 phút) | Alert, dashboard, retrain run |
 
 ### 4.2 Edge case
@@ -94,7 +95,7 @@ Project Compose `credit-risk-mlops`: 15 service (12 long-running + 3 job one-sho
 | Request thiếu field / sai kiểu / ngoài miền / field lạ | `422 VALIDATION_ERROR`, `details` theo field, không echo giá trị | `credit_api_requests_total{status="422"}` | kịch bản 8 |
 | JSON hỏng | `422` | idem | `tests/integration/test_api.py` |
 | Thiếu / sai API key | `401 MISSING_API_KEY` (+`WWW-Authenticate`) / `403 INVALID_API_KEY` | `credit_api_auth_failures_total` | kịch bản 8 |
-| Batch > 500 hồ sơ | `413 BATCH_TOO_LARGE` | response body | integration test |
+| Batch > 500 chủ thẻ | `413 BATCH_TOO_LARGE` | response body | integration test |
 | MLflow down lúc API khởi động | Phục vụ artifact local, readiness `degraded` (200) | `ModelServedFromFallback` | kịch bản 9 |
 | MLflow down lúc reload | Giữ model registry đang phục vụ (không hạ cấp) | `credit_model_reloads_total{result="failure"}` | integration test |
 | Không nạp được model nào | `503 MODEL_UNAVAILABLE`, readiness `not_ready` (503) | `ModelNotLoaded` (+`HighErrorRate` nếu có traffic) | `make chaos-model-unloaded` |
@@ -102,7 +103,7 @@ Project Compose `credit-risk-mlops`: 15 service (12 long-running + 3 job one-sho
 | Drift monitor thiếu mẫu (< 50) / DB lỗi | `status=skipped`, DAG không fail | `DriftAnalysisStale` nếu kéo dài > 15 phút | `make chaos-drift-stale` |
 | Challenger tệ hơn champion | Gate từ chối, giữ champion, DAG vẫn success | log `keep_champion` | kịch bản 4 |
 | Retrain lỗi thật (train lỗi, dưới sàn ROC-AUC, reload sai version) | DAG failed, `rollback_champion`, gauge = 1 | `RetrainFailed` | kịch bản 4 |
-| Tấn công hồ sơ nợ xấu dồn dập | Tỷ lệ DECLINE tăng, prediction PSI ≥ 0.25 | `PredictionDistributionShift` | kịch bản 10 |
+| Dồn dập yêu cầu tăng hạn mức từ tài khoản nợ quá hạn | Tỷ lệ DECLINE tăng, prediction PSI ≥ 0.25 | `PredictionDistributionShift` | kịch bản 10 |
 | Không có Telegram token | Alertmanager chỉ gửi `alert-webhook` | `make alerts` | kịch bản 6 |
 | Deploy/smoke fail trên server | `deploy.sh rollback` về release trước (image digest cũ) | job CD failed + Telegram | [07 §6](07-testing-cicd.md#6-release-và-rollback) |
 
@@ -151,7 +152,7 @@ Chi tiết: [guide Ubuntu](guides/ubuntu-deployment.md), [CI/CD](07-testing-cicd
 | Complexity | Logistic Regression thắng GBM | Dễ giải thích, ổn định, nhanh | Trần ROC-AUC ~0.77 | Monotonic GBM + calibration nếu cần hiệu năng cao hơn |
 | **Reliability** | Single host | Đơn giản | SPOF: host chết = ngừng dịch vụ | Backup hằng ngày + restore đã kiểm chứng; multi-host/HA ngoài phạm vi |
 | Reliability | Retrain tự động có gate + rollback | Không promote model kém | Nhãn trễ → retrain dựa trên feedback mô phỏng | Đánh giá lại khi đủ nhãn thật; human approval cho promote |
-| **Security** | API key tĩnh, rotate qua danh sách | Đơn giản, không cần IdP | Không có danh tính người dùng / scope | OAuth2 client credentials / mTLS giữa LOS và API |
+| **Security** | API key tĩnh, rotate qua danh sách | Đơn giản, không cần IdP | Không có danh tính người dùng / scope | OAuth2 client credentials / mTLS giữa CMS và API |
 
 ## 8. Cross-cutting concerns
 

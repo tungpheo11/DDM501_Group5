@@ -43,7 +43,10 @@ Online scoring service for **credit default risk** (UCI Credit Default, 23 featu
 """
 
 OPENAPI_TAGS = [
-    {"name": "prediction", "description": "Score applicants and explain scores."},
+    {
+        "name": "prediction",
+        "description": "Score cardholders (realtime limit requests, batch limit review) and explain scores.",
+    },
     {"name": "model", "description": "Served-model metadata and hot reload."},
     {"name": "health", "description": "Liveness and readiness probes."},
     {"name": "observability", "description": "Prometheus metrics."},

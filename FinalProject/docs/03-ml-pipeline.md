@@ -26,7 +26,7 @@ fallback sang SQLite `mlruns/` (`MLFLOW_LOCAL_FALLBACK`). `N_TRIALS=5 make train
 
 ### 2.1 Nguồn và partition
 
-UCI *Default of Credit Card Clients* — 30.000 hồ sơ × 24 cột, không có ô thiếu (chi tiết: [data card](data-card.md)).
+UCI *Default of Credit Card Clients* — 30.000 chủ thẻ đang lưu hành × 24 cột, không có ô thiếu (chi tiết: [data card](data-card.md)).
 `scripts/split_data.py` chia **có chủ đích theo tuổi** để tạo drift thật cho vòng lặp MLOps:
 
 | Partition (`data/…`) | Dòng | Dùng cho |
@@ -89,7 +89,7 @@ Sau đó `preprocessing`: StandardScaler cho số, one-hot cho `SEX`/`EDUCATION`
 | Cross-validation | StratifiedKFold 5 fold, `shuffle=True`, `random_state=42` |
 | Holdout | 20 % stratified từ `train_baseline` |
 | Decision threshold | 0.5 (model class-weighted); ngưỡng tối ưu chi phí (OOF) cũng được báo cáo |
-| Cost matrix | FN = 10, FP = 1 → expected loss = tổng loss / số hồ sơ |
+| Cost matrix | FN = 10, FP = 1 → expected loss = tổng loss / số chủ thẻ |
 
 Không gian tìm kiếm (`credit_risk.training.models`): LR `C ∈ [1e-3, 10]` log; RF `n_estimators 100–400`,
 `max_depth 4–14`, `min_samples_leaf 1–50`, `max_features`, `class_weight`; XGBoost/LightGBM `n_estimators 100–600`,

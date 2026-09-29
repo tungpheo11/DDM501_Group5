@@ -9,7 +9,7 @@ from credit_risk.data.schema import ALL_FEATURES
 from credit_risk.responsible_ai import fairness
 
 
-def _applicants(n: int = 400, seed: int = 0) -> tuple[pd.DataFrame, np.ndarray]:
+def _cardholders(n: int = 400, seed: int = 0) -> tuple[pd.DataFrame, np.ndarray]:
     rng = np.random.default_rng(seed)
     frame = pd.DataFrame({column: rng.integers(0, 3, n) for column in ALL_FEATURES}).astype(float)
     frame["SEX"] = rng.integers(1, 3, n)
@@ -80,7 +80,7 @@ def test_age_groups_are_ordered_chronologically():
 
 
 def test_audit_fairness_covers_every_attribute():
-    features, target = _applicants()
+    features, target = _cardholders()
     probs = np.clip(0.2 + 0.2 * features["PAY_0"].to_numpy(), 0, 1)
     report = fairness.audit_fairness(target, probs, fairness.sensitive_frame(features))
     assert set(report) == set(fairness.SENSITIVE_ATTRIBUTES)
@@ -98,7 +98,7 @@ def test_reweighing_makes_label_independent_of_group():
 
 
 def test_neutralize_and_unaware_model_ignore_protected_columns():
-    features, target = _applicants()
+    features, target = _cardholders()
     neutral = {"SEX": 2.0, "AGE": 37.0, "EDUCATION": 2.0, "MARRIAGE": 2.0}
     neutralized = fairness.neutralize_columns(features, neutral)
     assert (neutralized["SEX"] == 2.0).all() and (features["SEX"] != 2.0).any()
@@ -120,7 +120,7 @@ def test_evaluate_variant_metrics():
 
 
 def test_run_mitigation_improves_fairness_with_threshold_optimizer():
-    features, target = _applicants(n=1200, seed=1)
+    features, target = _cardholders(n=1200, seed=1)
     target_series = pd.Series(target, index=features.index)
     sensitive = fairness.sensitive_frame(features)["SEX"]
 

@@ -37,7 +37,7 @@ Privacy và PII chi tiết: [06 — Responsible AI](docs/06-responsible-ai.md); 
 - Mọi endpoint `/api/v1/*` yêu cầu header `X-API-Key`; so khớp bằng `hmac.compare_digest` trên **mọi** key cấu hình
   (constant-time, không lộ key nào khớp qua timing) — [`serving/security.py`](src/credit_risk/serving/security.py).
   Thiếu key → 401, sai key → 403.
-- Pydantic validation giới hạn miền giá trị UCI và **từ chối field lạ**; batch tối đa 500 hồ sơ (413 khi vượt).
+- Pydantic validation giới hạn miền giá trị UCI và **từ chối field lạ**; batch tối đa 500 chủ thẻ (413 khi vượt).
 - Error contract `{code, message, details, request_id}` không echo lại payload bị từ chối, không trả stack trace.
 - `/health/*` và `/metrics` không cần key nhưng không chứa dữ liệu khách hàng; ở production, Nginx chặn `/metrics`
   từ Internet (Prometheus scrape qua mạng Compose nội bộ).
@@ -68,7 +68,7 @@ Privacy và PII chi tiết: [06 — Responsible AI](docs/06-responsible-ai.md); 
   - bản xuất phân tích generalize quasi-identifier (nhóm tuổi, nhóm hạn mức) và bỏ thuộc tính được bảo vệ không cần thiết;
   - inference log giữ feature gốc (cần cho drift + retrain) và bị xoá sau 90 ngày: `make purge-logs`
     (`RETENTION_DAYS` để đổi).
-- Log ứng dụng không bao giờ chứa field hồ sơ gốc: logging JSON redact thành `[REDACTED]` —
+- Log ứng dụng không bao giờ chứa field dữ liệu chủ thẻ gốc: logging JSON redact thành `[REDACTED]` —
   [`config/logging.py`](src/credit_risk/config/logging.py), có test kiểm tra.
 
 ## 8. Backup

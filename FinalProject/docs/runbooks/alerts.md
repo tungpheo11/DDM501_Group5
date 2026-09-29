@@ -34,7 +34,7 @@ webhook: `fired=True resolved=True` là bằng chứng bắn → resolve). UI: P
 
 ## APIDown
 
-**Ý nghĩa:** Prometheus không scrape được `api:8000/metrics` quá 1 phút — không chấm điểm được hồ sơ.
+**Ý nghĩa:** Prometheus không scrape được `api:8000/metrics` quá 1 phút — không chấm điểm được chủ thẻ: yêu cầu tăng hạn mức trên app không có kết quả và batch rà soát hạn mức bị dừng.
 
 **Kích hoạt:** `make chaos-api-down` (hoặc `make simulate SCENARIO=outage` — dừng API 90 s rồi tự bật lại, đo
 thời gian phục hồi). Alert firing sau ~1–1.5 phút.
@@ -105,7 +105,7 @@ phối chuẩn (`make simulate SCENARIO=normal` đẩy 600 bản ghi chuẩn →
 **Ý nghĩa:** Phân phối xác suất vỡ nợ dự đoán lệch khỏi phân phối của champion trên tập reference (PSI ≥ 0.25) —
 có thể do tấn công/nhóm khách hàng mới hoặc model lỗi. Không tự trigger retrain (DAG chỉ retrain khi feature drift).
 
-**Kích hoạt:** `make simulate SCENARIO=attack` (70% hồ sơ "speculator" nợ quá hạn ≥ 2 kỳ). Firing sau ~2–3 phút.
+**Kích hoạt:** `make simulate SCENARIO=attack` (70% chủ thẻ "speculator" nợ quá hạn ≥ 2 kỳ gửi yêu cầu tăng hạn mức). Firing sau ~2–3 phút.
 
 **Xử lý:** dashboard *Business* (tỷ lệ decline tăng vọt?), *ML Model* (histogram xác suất). Nếu tấn công có tổ
 chức: chặn nguồn, xem lại ngưỡng `DECLINE_THRESHOLD`; nếu model lỗi: `make rollback`.

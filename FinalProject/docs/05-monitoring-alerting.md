@@ -90,12 +90,12 @@ minio, grafana, alertmanager ─────┘        │                      
 | `credit_prediction_requests_total{decision,status}` | counter | Số quyết định APPROVE/REVIEW/DECLINE |
 | `credit_prediction_duration_seconds` | histogram | Thời gian chạy model (không tính HTTP) — 1 quan sát cho mỗi lời gọi `predict_proba` của `/predict` và `/predict/batch` |
 | `credit_prediction_default_probability` | histogram | Phân phối PD — phát hiện dịch chuyển điểm số |
-| `credit_applicant_score_distribution` | histogram | Phân phối credit score 300–850 |
+| `credit_cardholder_score_distribution` | histogram | Phân phối credit score 300–850 của các chủ thẻ được chấm điểm |
 | `credit_prediction_batch_size` | histogram | Kích thước batch |
 | `credit_default_prediction_ratio` | gauge | Tỉ lệ dự đoán default trong cửa sổ trượt 200 request |
-| `credit_approved_volume_ntd_total`, `credit_declined_volume_ntd_total` | counter | Hạn mức được duyệt / từ chối (NT$) |
+| `credit_approved_volume_ntd_total`, `credit_declined_volume_ntd_total` | counter | Hạn mức đề xuất ở vùng APPROVE / hạn mức bị tạm khoá ở vùng DECLINE (NT$) |
 | `credit_expected_loss_ntd_total{decision}` | counter | Expected loss = PD × exposure × LGD 0.45 |
-| `credit_customer_age_rolling_mean`, `credit_customer_limit_bal_rolling_mean`, `credit_customer_utilization_ratio_mean`, `credit_customer_pay_0_delayed_ratio` | gauge | Hồ sơ khách hàng trượt 200 request — tín hiệu drift sớm, rẻ |
+| `credit_customer_age_rolling_mean`, `credit_customer_limit_bal_rolling_mean`, `credit_customer_utilization_ratio_mean`, `credit_customer_pay_0_delayed_ratio` | gauge | Chân dung chủ thẻ được chấm điểm trong cửa sổ trượt 200 request — tín hiệu drift sớm, rẻ |
 
 **API nhiều worker** ([ADR-0007](adr/0007-api-capacity-multi-worker.md)): container `api` chạy `API_WORKERS` worker
 gunicorn, `/metrics` gộp file của mọi worker (Prometheus multiprocess mode), nên tên metric, recording rule, alert và
@@ -147,7 +147,7 @@ Grafana <http://localhost:13000>. Provision tự động, không cần import ta
 
 | Dashboard (uid) | Refresh | Người xem | Panel chính |
 |---|---|---|---|
-| **Business KPIs** (`credit-business`) | 10 s | Risk/business | Applications 1h, Approve/Review/Decline rate 15m, Loss at risk 24h, Loss avoided 24h, decision share, expected loss & credit volume/giờ, hồ sơ khách hàng trượt |
+| **Business KPIs** (`credit-business`) | 10 s | Risk/business | Số lượt chấm điểm 1h, Approve/Review/Decline rate 15m, Loss at risk 24h, Loss avoided 24h, decision share, expected loss & credit volume/giờ, chân dung chủ thẻ trượt (rolling window) |
 | **ML Model** (`credit-ml-model`) | 10 s | Data scientist | Model in production / loaded / serving source, reload OK/failed, phân phối PD và score, PD trung bình vs tỉ lệ default, prediction PSI, inference latency, retrain cuối, version promote cuối |
 | **Data Drift (Evidently)** (`credit-drift`) | 30 s | Data scientist / MLOps | Dataset drift, drift share, max PSI, số feature drift, tuổi phân tích; PSI theo thời gian từng feature, sức khoẻ monitor |
 | **Infrastructure & SLA** (`credit-infra-sla`) | 10 s | SRE/MLOps | Up/uptime 24h, success ratio 1h, p95, RPS, firing alerts, latency p50/p95/p99, 5xx ratio, auth failures, scrape targets, RAM/CPU, Airflow DAG/task |

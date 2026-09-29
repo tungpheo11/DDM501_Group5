@@ -3,7 +3,7 @@
 Conventions:
 
 * The model predicts **default** (class 1). ``selection_rate`` is therefore the share of
-  applicants flagged as defaulters, and ``approval_rate`` is its complement under the
+  cardholders flagged as defaulters, and ``approval_rate`` is its complement under the
   3-way serving policy (``APPROVE`` below the review threshold).
 * Demographic parity difference (DPD) and equalized odds difference (EOD) are computed
   on the binary decision at ``decision_threshold``; DPD on "flagged as default" equals
@@ -69,7 +69,7 @@ def sensitive_frame(features: pd.DataFrame) -> pd.DataFrame:
 
 
 def approval_decisions(y_prob: np.ndarray, review_threshold: float, decline_threshold: float) -> np.ndarray:
-    """``APPROVE`` / ``REVIEW`` / ``DECLINE`` per applicant, mirroring the serving decision engine."""
+    """``APPROVE`` / ``REVIEW`` / ``DECLINE`` per cardholder, mirroring the serving decision engine."""
     probs = np.asarray(y_prob, dtype=float)
     return np.where(probs >= decline_threshold, "DECLINE", np.where(probs >= review_threshold, "REVIEW", "APPROVE"))
 

@@ -1,7 +1,7 @@
 {
   "uid": "credit-business",
   "title": "Credit Risk - Business KPIs",
-  "description": "Approve/decline rates, expected loss and applicant profile.",
+  "description": "Approve/decline rates, expected loss and cardholder profile.",
   "tags": [
     "credit-risk"
   ],
@@ -76,8 +76,8 @@
     },
     {
       "type": "stat",
-      "title": "Applications (1h)",
-      "description": "Applications scored by /api/v1/predict and /predict/batch in the last hour.",
+      "title": "Scored cardholders (1h)",
+      "description": "Cardholders scored by /api/v1/predict and /predict/batch in the last hour.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -138,7 +138,7 @@
     {
       "type": "stat",
       "title": "Approve rate (15m)",
-      "description": "Share of scored applications in the last 15 minutes. Colour identifies the decision (same hue as the series below); it is not an alert state.",
+      "description": "Share of scored cardholders in the last 15 minutes. Colour identifies the decision (same hue as the series below); it is not an alert state.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -199,7 +199,7 @@
     {
       "type": "stat",
       "title": "Review rate (15m)",
-      "description": "Share of scored applications in the last 15 minutes. Colour identifies the decision (same hue as the series below); it is not an alert state.",
+      "description": "Share of scored cardholders in the last 15 minutes. Colour identifies the decision (same hue as the series below); it is not an alert state.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -260,7 +260,7 @@
     {
       "type": "stat",
       "title": "Decline rate (15m)",
-      "description": "Share of scored applications in the last 15 minutes. Colour identifies the decision (same hue as the series below); it is not an alert state.",
+      "description": "Share of scored cardholders in the last 15 minutes. Colour identifies the decision (same hue as the series below); it is not an alert state.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -321,7 +321,7 @@
     {
       "type": "stat",
       "title": "Loss at risk (24h)",
-      "description": "Sum of PD x exposure x LGD (NTD) for approved applications.",
+      "description": "Sum of PD x exposure x LGD (NTD) for approved cardholders.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -382,7 +382,7 @@
     {
       "type": "stat",
       "title": "Loss avoided (24h)",
-      "description": "Expected loss (NTD) on the requested limit of declined applications.",
+      "description": "Expected loss (NTD) on the frozen current limit of declined cardholders.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -443,7 +443,7 @@
     {
       "type": "timeseries",
       "title": "Decisions per minute",
-      "description": "Stacked applications per minute by decision (APPROVE PD < 0.30, REVIEW < 0.60).",
+      "description": "Stacked scored cardholders per minute by decision (APPROVE PD < 0.30, REVIEW < 0.60).",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -820,7 +820,7 @@
             "uid": "prometheus"
           },
           "expr": "rate(credit_declined_volume_ntd_total{job=\"credit-risk-api\"}[5m]) * 3600",
-          "legendFormat": "declined requested limit",
+          "legendFormat": "frozen current limit",
           "instant": false,
           "range": true,
           "format": "time_series",
@@ -869,7 +869,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "declined requested limit"
+              "options": "frozen current limit"
             },
             "properties": [
               {
@@ -904,7 +904,7 @@
     },
     {
       "type": "row",
-      "title": "Applicant profile (rolling window)",
+      "title": "Cardholder profile (rolling window)",
       "collapsed": false,
       "panels": [],
       "gridPos": {
@@ -917,7 +917,7 @@
     },
     {
       "type": "timeseries",
-      "title": "Mean applicant age",
+      "title": "Mean cardholder age",
       "description": "",
       "datasource": {
         "type": "prometheus",
@@ -982,7 +982,7 @@
     },
     {
       "type": "timeseries",
-      "title": "Mean requested limit",
+      "title": "Mean current limit",
       "description": "",
       "datasource": {
         "type": "prometheus",

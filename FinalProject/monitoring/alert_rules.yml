@@ -44,4 +44,4 @@ groups:
           severity: warning
         annotations:
           summary: "High Credit Rejection Spike (> 60%)"
-          description: "The proportion of loan applications declined exceeded 60% over 5 minutes. Potential macroeconomic shock or coordinated attack."
+          description: "The proportion of scored cardholders declined (limit request rejected / available limit frozen) exceeded 60% over 5 minutes. Potential macroeconomic shock or coordinated attack."

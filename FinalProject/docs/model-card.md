@@ -15,7 +15,7 @@
 | Decision threshold (nhị phân) | 0.50 |
 | Policy serving | APPROVE < 0.30 ≤ REVIEW < 0.60 ≤ DECLINE |
 
-_Sinh tự động bởi `make responsible-ai` (2026-09-28T09:53:21+00:00) — không sửa tay._
+_Sinh tự động bởi `make responsible-ai` (2026-09-29T11:54:02+00:00) — không sửa tay._
 <!-- rai:model-details:end -->
 
 - **Kiến trúc:** một `sklearn.Pipeline` duy nhất `FeatureEngineer` (12 feature domain: utilization, payment ratio,
@@ -33,13 +33,17 @@ _Sinh tự động bởi `make responsible-ai` (2026-09-28T09:53:21+00:00) — k
 
 | | |
 |---|---|
-| **Mục đích chính** | Hỗ trợ đánh giá rủi ro vỡ nợ tháng tới của chủ thẻ tín dụng cá nhân để quyết định giữ/tăng/giảm hạn mức |
-| **Người dùng** | Chuyên viên tín dụng (duyệt vùng REVIEW), hệ thống phê duyệt tự động cho APPROVE, bộ phận quản trị rủi ro |
-| **Chế độ vận hành** | Decision support: REVIEW luôn do người quyết định; DECLINE tự động phải kèm lý do + kênh khiếu nại |
+| **Mục đích chính** | Quản lý hạn mức cho chủ thẻ tín dụng cá nhân đang lưu hành: dự báo rủi ro vỡ nợ kỳ thanh toán kế tiếp để duyệt yêu cầu tăng hạn mức realtime trên app và rà soát hạn mức định kỳ sau mỗi kỳ sao kê (giữ / tăng / hạ / tạm khoá hạn mức khả dụng), kèm danh sách cảnh báo sớm |
+| **Người dùng** | Card Management System (CMS) / mobile app backend (tự động xử lý vùng APPROVE và DECLINE), batch job rà soát hạn mức, chuyên viên rủi ro tín dụng / quản lý hạn mức (xem xét vùng REVIEW, dùng `/explain`), bộ phận quản trị rủi ro |
+| **Chế độ vận hành** | Decision support: REVIEW luôn do người quyết định; DECLINE (từ chối tăng hạn mức, tạm khoá hạn mức) tự động phải kèm lý do + kênh khiếu nại |
 
-**Ngoài phạm vi (không được dùng):** tuyển dụng, bảo hiểm, nhà ở, marketing nhắm mục tiêu, thu hồi nợ; khách hàng doanh
-nghiệp; thị trường/giai đoạn khác Đài Loan 2005 khi chưa validate lại; làm căn cứ *duy nhất* để từ chối tín dụng;
-người dưới 18 tuổi (guardrail `age_verification`).
+**Ngoài phạm vi (không được dùng):**
+
+- **Duyệt mở thẻ mới / application scoring** — khách chưa có thẻ không có hạn mức và 6 tháng lịch sử trả nợ mà model cần.
+- Thu hồi nợ tự động; khách hàng doanh nghiệp.
+- Tuyển dụng, bảo hiểm, nhà ở, marketing nhắm mục tiêu; thị trường/giai đoạn khác Đài Loan 2005 khi chưa validate lại;
+  làm căn cứ *duy nhất* để từ chối tăng hạn mức hoặc hạ / tạm khoá hạn mức; người dưới 18 tuổi (guardrail
+  `age_verification`).
 
 ## 3. Factors (yếu tố đánh giá)
 
@@ -51,12 +55,13 @@ người dưới 18 tuổi (guardrail `age_verification`).
 
 - **Model:** ROC-AUC (xếp hạng, không phụ thuộc ngưỡng), PR-AUC (lớp dương hiếm), F1/Recall/Precision tại ngưỡng 0.5,
   Brier (calibration).
-- **Business:** expected loss / hồ sơ với cost FN = 10, FP = 1 (bỏ sót một người vỡ nợ đắt gấp 10 lần từ chối oan).
+- **Business:** expected loss / chủ thẻ với cost FN = 10, FP = 1 (bỏ sót một chủ thẻ sắp vỡ nợ đắt gấp 10 lần hạ hạn mức
+  nhầm một khách tốt).
 - **Fairness:** DPD, EOD, ΔTPR/ΔFPR, approval-rate gap, disparate impact ratio (four-fifths rule).
 
 ## 5. Dữ liệu
 
-- **Train:** `data/reference/train_baseline.csv` — 15,000 hồ sơ ≥ 30 tuổi; 80% train / 20% holdout (stratified).
+- **Train:** `data/reference/train_baseline.csv` — 15,000 chủ thẻ ≥ 30 tuổi; 80% train / 20% holdout (stratified).
 - **Gate/đánh giá:** `data/processed/stream_normal.csv` (5,000, ≥ 30 tuổi, không dùng để train).
 - **Đánh giá fairness:** `stream_normal` + `stream_drifted` ghép nhãn trễ (5,000, < 30 tuổi).
 - Chi tiết nguồn, license, phân bố, bias đã biết: [Data card](data-card.md).
@@ -73,7 +78,7 @@ người dưới 18 tuổi (guardrail `age_verification`).
 
 CV 5-fold ROC-AUC: 0.7513 ± 0.0152 · session `20260928T092715Z` · nguồn: `reports/model_comparison.json`.
 
-_Sinh tự động bởi `make responsible-ai` (2026-09-28T09:53:21+00:00) — không sửa tay._
+_Sinh tự động bởi `make responsible-ai` (2026-09-29T11:54:02+00:00) — không sửa tay._
 <!-- rai:model-performance:end -->
 
 ### 6.2 Fairness
@@ -88,7 +93,7 @@ _Sinh tự động bởi `make responsible-ai` (2026-09-28T09:53:21+00:00) — k
 
 Ngưỡng cảnh báo: DPD > 0.1, EOD > 0.1, disparate impact ratio (approval) < 0.8 (four-fifths rule). DPD/EOD tính trên quyết định nhị phân tại threshold 0.5; approval theo policy serving (APPROVE khi P(default) < 0.3).
 
-_Sinh tự động bởi `make responsible-ai` (2026-09-28T09:53:21+00:00) — không sửa tay._
+_Sinh tự động bởi `make responsible-ai` (2026-09-29T11:54:02+00:00) — không sửa tay._
 <!-- rai:fairness-summary:end -->
 
 Mitigation (reweighing, unawareness, ThresholdOptimizer) và trade-off: [06 — mục 4](06-responsible-ai.md#4-mitigation-và-trade-off).
@@ -107,18 +112,20 @@ Mitigation (reweighing, unawareness, ThresholdOptimizer) và trade-off: [06 — 
 | 7 | `AGE` | 0.0275 | 5.0% |
 | 8 | `PAY_2` | 0.0257 | 4.6% |
 
-_Sinh tự động bởi `make responsible-ai` (2026-09-28T09:53:21+00:00) — không sửa tay._
+_Sinh tự động bởi `make responsible-ai` (2026-09-29T11:54:02+00:00) — không sửa tay._
 <!-- rai:explainability-global:end -->
 
-Giải thích từng hồ sơ: `POST /api/v1/explain` (SHAP, cộng dồn chính xác về `default_probability`); so sánh SHAP↔LIME
-trên 3 hồ sơ mẫu trong [báo cáo explainability](../reports/explainability_report.md).
+Giải thích cho từng chủ thẻ: `POST /api/v1/explain` (SHAP, cộng dồn chính xác về `default_probability`); so sánh
+SHAP↔LIME trên 3 chủ thẻ mẫu trong [báo cáo explainability](../reports/explainability_report.md).
 
 ## 7. Cân nhắc đạo đức
 
 - Model **dùng trực tiếp** `SEX`, `AGE`, `EDUCATION`, `MARRIAGE` làm feature; audit cho thấy disparity vượt ngưỡng, rõ nhất
   theo tuổi. Khuyến nghị challenger "unawareness + reweighing" (xem mục 4 của tài liệu 06).
-- Nhãn phản ánh chính sách tín dụng quá khứ; khách bị từ chối không có nhãn (feedback loop).
-- Human-in-the-loop bắt buộc cho REVIEW; DECLINE cần adverse action notice dựa trên SHAP; kênh khiếu nại.
+- Nhãn phản ánh chính sách tín dụng quá khứ; người bị từ chối trước đây không có nhãn, chủ thẻ bị tạm khoá hạn mức cũng
+  ít phát sinh hành vi mới (feedback loop).
+- Human-in-the-loop bắt buộc cho REVIEW; DECLINE và mọi lần hạ hạn mức cần adverse action notice dựa trên SHAP; kênh
+  khiếu nại.
 - Privacy: không định danh trực tiếp, log redact, HMAC pseudonymization, inference log giữ 90 ngày.
 
 ## 8. Lưu ý và khuyến nghị

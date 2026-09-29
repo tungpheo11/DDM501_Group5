@@ -20,7 +20,7 @@ class PromotionPolicy:
         min_roc_auc: absolute quality floor for any model allowed to serve.
         max_roc_auc_drop: non-inferiority margin: the challenger may rank at most this
             much worse than the champion (ROC-AUC points).
-        min_loss_improvement: relative reduction of expected financial loss per applicant
+        min_loss_improvement: relative reduction of expected financial loss per cardholder
             required when ROC-AUC does not improve (0.0 = any strict reduction).
     """
 

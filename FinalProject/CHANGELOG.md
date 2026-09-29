@@ -31,7 +31,7 @@
 
 **Responsible AI**
 - `credit_risk.responsible_ai.fairness`: audit Fairlearn (DPD, EOD, TPR/FPR, approval rate, disparate impact) theo `SEX`, nhóm tuổi, `EDUCATION`, `MARRIAGE`; mitigation reweighing, unawareness, `ThresholdOptimizer` + bảng trade-off fairness ↔ ROC-AUC ↔ expected loss.
-- `credit_risk.responsible_ai.explainability`: SHAP global (summary, bar) + local (waterfall), LIME cho cùng hồ sơ, đo đồng thuận SHAP↔LIME; thông điệp `risk_factors` sinh từ SHAP.
+- `credit_risk.responsible_ai.explainability`: SHAP global (summary, bar) + local (waterfall), LIME cho cùng chủ thẻ, đo đồng thuận SHAP↔LIME; thông điệp `risk_factors` sinh từ SHAP.
 - `credit_risk.responsible_ai.privacy`: PII inventory, pseudonymization HMAC (`PSEUDONYMIZATION_KEY`), generalization, retention 90 ngày (`make purge-logs`).
 - `make responsible-ai`: sinh `reports/{fairness,explainability}_report.{json,md}`, `reports/figures/rai_*.png` và đồng bộ khối số liệu trong `docs/06-responsible-ai.md`, `docs/model-card.md`, `docs/data-card.md` (có test chống lệch); notebook `notebooks/02_fairness_explainability.ipynb` (`make notebook-rai`).
 
@@ -43,7 +43,7 @@
 
 **Sơ đồ kiến trúc & thuyết trình**
 - 7 sơ đồ Mermaid (ngữ cảnh hệ thống, container, 2 sơ đồ component, data flow, retrain sequence, deployment Ubuntu) xuất SVG + PNG trong `docs/assets/diagrams/`, nguồn trong `src/`.
-- Slide thuyết trình (`docs/presentation/`: HTML, PDF, PPTX) và demo script.
+- Slide thuyết trình (`docs/presentation/index.html`) và demo script.
 
 **Tài liệu & triển khai production**
 - `docs/` đầy đủ: 01–07 (problem, architecture, ML pipeline, API reference + `openapi.yaml`, monitoring & alerting, Responsible AI, testing & CI/CD), model card, data card, ADR, bảng rubric → bằng chứng trong `docs/README.md`.
@@ -54,18 +54,26 @@
 - Test kiểm tra link và anchor nội bộ của mọi file Markdown.
 
 ### Changed
-- `/api/v1/explain` dùng SHAP permutation so với hồ sơ tham chiếu (`method="shap_permutation"`, cộng dồn chính xác về xác suất, deterministic), tự fallback về reference substitution khi lỗi; cấu hình `explain.method` trong `configs/serving.yaml`.
+- **Đổi framing nghiệp vụ:** từ application scoring sang **behavioral scoring cho chủ thẻ đang lưu hành** (Credit Line Management): `POST /api/v1/predict` duyệt realtime yêu cầu tăng hạn mức / rút tiền mặt / chuyển trả góp từ mobile app, `POST /api/v1/predict/batch` rà soát hạn mức sau mỗi kỳ sao kê (lô ≤ 500) và lập danh sách cảnh báo sớm, `POST /api/v1/explain` giải thích quyết định cho chuyên viên rủi ro / adverse action notice. Dataset, feature, pipeline train, model, ngưỡng 0.30/0.60, cost matrix, LGD và logic `decision_engine` giữ nguyên; `recommended_limit_ntd` được mô tả lại (APPROVE: tăng/giữ hạn mức, REVIEW: đề xuất hạ, DECLINE: tạm khoá hạn mức khả dụng). Docstring, summary/description OpenAPI, ví dụ Swagger (`LOW_RISK_CARDHOLDER` / `HIGH_RISK_CARDHOLDER`), thông điệp lỗi `BATCH_TOO_LARGE` ("Batch contains N cardholders…"), reason code ("Young cardholder profile … short account history"), nhãn đồ thị Responsible AI, dashboard Grafana, simulator, load test và test đổi sang "cardholder". `reports/` và các khối `rai:` được render lại: chỉ đổi chữ và timestamp, số liệu không đổi.
+- Slide thuyết trình chỉ còn bản HTML (`docs/presentation/index.html`), viết lại theo câu chuyện quản lý hạn mức; demo script mở bằng yêu cầu tăng hạn mức trên app rồi tới batch rà soát sau kỳ sao kê.
+- Batch request dùng field chính `cardholders`. Lỗi validation báo đúng tên field client đã gửi (`cardholders.N.FIELD` hoặc `applicants.N.FIELD`); gửi cả `cardholders` lẫn `applicants` trong cùng request → 422 `extra_forbidden` tại `applicants`; `extra="forbid"` giữ nguyên. Path, response schema, enum `risk_decision` và mã lỗi không đổi.
+- **Breaking (monitoring):** metric `credit_applicant_score_distribution` đổi tên dứt điểm thành `credit_cardholder_score_distribution` (help text "scored cardholders"), không phát song song tên cũ. Series cũ trong Prometheus đứt lịch sử tại thời điểm deploy; dashboard ML Model (sinh lại bằng `make dashboards`) đã query tên mới. Query/recording rule tự viết ngoài repo cần đổi tên theo.
+- `/api/v1/explain` dùng SHAP permutation so với chủ thẻ tham chiếu (`method="shap_permutation"`, cộng dồn chính xác về xác suất, deterministic), tự fallback về reference substitution khi lỗi; cấu hình `explain.method` trong `configs/serving.yaml`.
 - **Breaking:** gỡ `/predict`, `/reload-model`, `/health`; simulator, `scripts/sample_predict.py`, retrain hot reload và healthcheck Compose đã chuyển sang v1 + API key.
 - `deploy/docker/Dockerfile.api`: multi-stage, `python:3.11.16-slim-trixie` pin digest, non-root, không còn `build-essential`/`curl`/`data/` trong image; `.dockerignore` thu hẹp build context.
 - `docs/08-monitoring-alerting.md` → `docs/05-monitoring-alerting.md` (metric catalog, dashboard, ngưỡng alert, bằng chứng fire → resolve).
 - `reports/simulations/` được track trong git làm bằng chứng cho các kịch bản.
 - Quy ước hiển thị dashboard Grafana gộp vào `docs/05-monitoring-alerting.md` §4.1; ADR bỏ khối metadata, lý do dễ/khó đảo ngược chuyển vào mục Consequences.
 
+### Deprecated
+- Field `applicants` của `POST /api/v1/predict/batch`: vẫn được nhận như alias của `cardholders` (kết quả giống hệt), được đánh dấu `deprecated: true` trong `docs/openapi.yaml`. Client nên chuyển sang `cardholders`; alias sẽ bị gỡ ở phiên bản major kế tiếp.
+
 ### Fixed
 - Reload model thất bại không còn làm mất model đang phục vụ.
 
 ### Removed
 - `docs/legacy/` (README và ảnh chụp v1.0) — nội dung v1.0 vẫn tra được trong lịch sử git.
+- Bản slide xuất sang PDF và PowerPoint cùng các script sinh chúng: slide chỉ duy trì một bản HTML.
 
 ## [1.1.0] — 2026-09-28 — Tái cấu trúc repo
 

@@ -37,9 +37,11 @@ def _elapsed_ms(start: float) -> float:
 @router.post(
     "/predict",
     response_model=PredictionResponse,
-    summary="Score one applicant",
-    description="Returns default probability, APPROVE/REVIEW/DECLINE decision, credit score, tier, "
-    "recommended limit, rule-based risk factors and policy guardrails. The request is logged for drift analysis.",
+    summary="Score one cardholder",
+    description="Realtime decision for a cardholder request made in the mobile app / internet banking "
+    "(credit limit increase, cash advance, instalment conversion). Returns next-cycle default probability, "
+    "APPROVE/REVIEW/DECLINE decision, credit score, tier, recommended limit, rule-based risk factors and "
+    "policy guardrails. The request is logged for drift analysis.",
     responses=_SCORING_ERRORS,
 )
 def predict(
@@ -73,9 +75,11 @@ def predict(
 @router.post(
     "/predict/batch",
     response_model=BatchPredictionResponse,
-    summary="Score several applicants",
-    description="Vectorized scoring of up to `batch_max_size` applicants (configs/serving.yaml, default 500). "
-    "Results keep request order; each item gets its own `<request_id>-<index>` id in the inference log.",
+    summary="Score several cardholders",
+    description="Vectorized scoring of up to `batch_max_size` cardholders (configs/serving.yaml, default 500), "
+    "used by the post-statement limit review and early-warning jobs. Results keep request order; each item "
+    "gets its own `<request_id>-<index>` id in the inference log. The request field is `cardholders`; the "
+    "legacy `applicants` field is a deprecated alias (send one of them, never both).",
     responses=ex.error_responses(401, 403, 413, 422, 500, 503),
 )
 def predict_batch(
@@ -86,17 +90,17 @@ def predict_batch(
     request_id: Annotated[str, Depends(get_request_id)],
 ) -> BatchPredictionResponse:
     max_size = settings.serving.batch_max_size
-    received = len(payload.applicants)
+    received = len(payload.cardholders)
     if received > max_size:
         raise ApiError(
             413,
             "BATCH_TOO_LARGE",
-            f"Batch contains {received} applicants; the maximum is {max_size}.",
+            f"Batch contains {received} cardholders; the maximum is {max_size}.",
             {"max_size": max_size, "received": received},
         )
 
     start = time.perf_counter()
-    results = service.score(loaded, [applicant.model_dump() for applicant in payload.applicants])
+    results = service.score(loaded, [cardholder.model_dump() for cardholder in payload.cardholders])
     latency_ms = _elapsed_ms(start)
     item_ids = [f"{request_id}-{index}" for index in range(received)]
     service.record(results, item_ids, loaded, latency_ms)
@@ -124,9 +128,10 @@ def predict_batch(
 @router.post(
     "/explain",
     response_model=ExplainResponse,
-    summary="Score one applicant and explain the score",
-    description="Adds local, model-based attributions (top-k by magnitude). Default method `shap_permutation`: "
-    "SHAP values against the median training applicant, so contributions sum to "
+    summary="Score one cardholder and explain the score",
+    description="Used by credit risk analysts for accounts in REVIEW/DECLINE and for adverse action notices. "
+    "Adds local, model-based attributions (top-k by magnitude). Default method `shap_permutation`: "
+    "SHAP values against the median training cardholder, so contributions sum to "
     "`default_probability - reference_probability`, and `top_risk_factors` is derived from them. "
     "If SHAP fails the endpoint degrades to `reference_substitution` (each feature replaced by the "
     "reference value). Explanations are not written to the inference log.",

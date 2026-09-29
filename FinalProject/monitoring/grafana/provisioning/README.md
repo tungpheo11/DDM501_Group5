@@ -7,7 +7,7 @@ Dashboard được sinh bởi `scripts/build_grafana_dashboards.py` — sửa sc
 
 | Dashboard | uid | Nội dung chính |
 |---|---|---|
-| Business | `credit-business` | Tỷ lệ APPROVE/REVIEW/DECLINE, expected loss, số quyết định/phút, hồ sơ người vay |
+| Business | `credit-business` | Tỷ lệ APPROVE/REVIEW/DECLINE, expected loss, số quyết định/phút, chân dung chủ thẻ được chấm điểm |
 | ML model | `credit-ml-model` | Phiên bản đang phục vụ, nguồn model, phân phối xác suất/score, prediction PSI, latency suy luận, trạng thái retrain |
 | Drift | `credit-drift` | Drift detected, drift share, max PSI, PSI theo feature, thời điểm phân tích gần nhất |
 | Infra & SLA | `credit-infra-sla` (home) | Up/uptime, success ratio, p95, RPS, alert đang firing, CPU/RAM, Airflow |

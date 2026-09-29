@@ -11,10 +11,10 @@
 ## 1. Tóm tắt
 
 - **Bias có thật và đo được.** Champion (Logistic Regression) vi phạm ít nhất một ngưỡng fairness ở cả 4 thuộc tính
-  nhạy cảm; nặng nhất là **nhóm tuổi**: người dưới 30 tuổi bị gắn cờ default và bị từ chối nhiều hơn rõ rệt so với
+  nhạy cảm; nặng nhất là **nhóm tuổi**: chủ thẻ dưới 30 tuổi bị gắn cờ default và bị từ chối tăng / hạ hạn mức nhiều hơn rõ rệt so với
   nhóm 40+, trong khi chênh lệch default rate thực tế nhỏ hơn nhiều so với chênh lệch quyết định.
 - **Nguyên nhân chính:** (1) model dùng trực tiếp `SEX`, `AGE`, `EDUCATION`, `MARRIAGE` làm feature (SHAP xác nhận
-  `AGE` nằm trong nhóm feature quan trọng); (2) dữ liệu train chỉ có khách hàng **≥ 30 tuổi** (partition theo thiết kế
+  `AGE` nằm trong nhóm feature quan trọng); (2) dữ liệu train chỉ có chủ thẻ **≥ 30 tuổi** (partition theo thiết kế
   drift của dự án) nên nhóm < 30 là out-of-distribution; (3) base rate khác nhau giữa các nhóm.
 - **Mitigation khả thi với chi phí thấp.** Bỏ thuộc tính nhạy cảm (unawareness) hoặc reweighing giảm DPD/EOD nhiều lần
   mà ROC-AUC gần như không đổi; cái giá là expected loss tăng nhẹ (bắt ít defaulter hơn ở ngưỡng 0.5).
@@ -22,9 +22,10 @@
   (disparate treatment) → không khuyến nghị cho production.
 - **Explainability hai phương pháp.** SHAP (global + local) và LIME đồng thuận cao về hướng tác động; SHAP được nối vào
   `POST /api/v1/explain` (thay `top_risk_factors` dạng rule bằng lý do sinh từ SHAP, cộng dồn chính xác).
-- **Privacy:** không có định danh trực tiếp; log ứng dụng redact toàn bộ trường hồ sơ; pseudonymization bằng HMAC;
+- **Privacy:** không có định danh trực tiếp; log ứng dụng redact toàn bộ trường dữ liệu chủ thẻ; pseudonymization bằng HMAC;
   inference log giữ tối đa 90 ngày (`make purge-logs`).
-- **Ethics:** vùng REVIEW luôn qua người duyệt (human-in-the-loop), DECLINE phải kèm lý do và kênh khiếu nại; model
+- **Ethics:** vùng REVIEW luôn qua chuyên viên rủi ro (human-in-the-loop); DECLINE (từ chối tăng hạn mức, tạm khoá hạn
+  mức) phải kèm lý do và kênh khiếu nại; model
   chỉ là công cụ hỗ trợ quyết định, không dùng ngoài phạm vi ghi trong [model card](model-card.md#2-mục-đích-sử-dụng).
 
 ## 2. Tái lập
@@ -62,7 +63,7 @@ Toàn bộ pipeline deterministic (`random_state: 42`, SHAP/LIME seed cố đị
 - **Demographic parity difference (DPD):** chênh lệch lớn nhất về tỷ lệ bị gắn cờ default giữa các nhóm
   (= chênh lệch tỷ lệ *không* bị gắn cờ). 0 = mọi nhóm bị gắn cờ cùng tỷ lệ.
 - **Equalized odds difference (EOD):** max(ΔTPR, ΔFPR) giữa các nhóm — model có sai *như nhau* với mọi nhóm không.
-  Trong tín dụng, ΔFPR quan trọng nhất: FPR cao = khách hàng tốt bị từ chối oan.
+  Trong quản lý hạn mức, ΔFPR quan trọng nhất: FPR cao = chủ thẻ tốt bị từ chối tăng hoặc bị hạ hạn mức oan.
 - **Approval rate / Disparate impact (DI) ratio:** tỷ lệ APPROVE theo policy serving (APPROVE < 0.30 ≤ REVIEW < 0.60
   ≤ DECLINE); DI = approval nhóm thấp nhất / nhóm cao nhất, cảnh báo khi < 0.8 (*four-fifths rule*).
 - **TPR / FPR / ROC-AUC / expected loss theo nhóm** (cost FN = 10, FP = 1 như lúc train).
@@ -82,7 +83,7 @@ không dòng nào dùng để train, và là cách duy nhất để có nhãn ch
 
 Ngưỡng cảnh báo: DPD > 0.1, EOD > 0.1, disparate impact ratio (approval) < 0.8 (four-fifths rule). DPD/EOD tính trên quyết định nhị phân tại threshold 0.5; approval theo policy serving (APPROVE khi P(default) < 0.3).
 
-_Sinh tự động bởi `make responsible-ai` (2026-09-28T09:53:21+00:00) — không sửa tay._
+_Sinh tự động bởi `make responsible-ai` (2026-09-29T11:54:02+00:00) — không sửa tay._
 <!-- rai:fairness-summary:end -->
 
 Chi tiết theo nhóm tuổi (thuộc tính có disparity lớn nhất):
@@ -95,7 +96,7 @@ Chi tiết theo nhóm tuổi (thuộc tính có disparity lớn nhất):
 | 40-49 | 1,310 | 20.4% | 31.5% | 51.5% | 17.0% | 0.539 | 0.174 | 0.753 | 1.077 |
 | 50+ | 427 | 15.7% | 41.2% | 45.0% | 13.8% | 0.552 | 0.131 | 0.742 | 0.813 |
 
-_Sinh tự động bởi `make responsible-ai` (2026-09-28T09:53:21+00:00) — không sửa tay._
+_Sinh tự động bởi `make responsible-ai` (2026-09-29T11:54:02+00:00) — không sửa tay._
 <!-- rai:fairness-age:end -->
 
 ![Group metrics](../reports/figures/rai_fairness_group_metrics.png)
@@ -107,7 +108,7 @@ _Sinh tự động bởi `make responsible-ai` (2026-09-28T09:53:21+00:00) — k
    nhóm `50+` thì ngược lại. Model "phạt" tuổi trẻ nhiều hơn mức rủi ro thực tế giải thích được — một phần vì `AGE` là
    feature trực tiếp, một phần vì nhóm `<30` nằm ngoài phân phối train (xem [data card](data-card.md#4-partition-và-mục-đích)).
    ROC-AUC theo nhóm gần như bằng nhau → vấn đề nằm ở **calibration/ngưỡng theo nhóm**, không phải khả năng xếp hạng.
-2. **Giới tính.** Nam có FPR cao hơn nữ (bị từ chối oan nhiều hơn) và DI ratio dưới 0.8 theo policy 3 mức, dù DPD/EOD
+2. **Giới tính.** Nam có FPR cao hơn nữ (bị hạ / từ chối tăng hạn mức oan nhiều hơn) và DI ratio dưới 0.8 theo policy 3 mức, dù DPD/EOD
    nhị phân dưới ngưỡng 0.1. Đây là bias "nhẹ" nhưng thuộc tính được bảo vệ mạnh nhất về pháp lý.
 3. **Học vấn** là proxy của thu nhập: nhóm high_school bị gắn cờ nhiều hơn graduate_school. Cần thận trọng vì loại bỏ
    `EDUCATION` không xoá được tương quan qua `LIMIT_BAL`.
@@ -122,7 +123,7 @@ Ba chiến lược, đánh giá trên **cùng một test split** (50% tập đá
 |---|---|---|
 | Retrained (đối chứng) | — | fit lại cùng thuật toán + hyper-parameter champion trên train split + fit split (có nhóm `<30`) — tách hiệu ứng "thêm dữ liệu" khỏi hiệu ứng mitigation |
 | Reweighing (Kamiran & Calders) | pre-processing | trọng số `w(a,y) = P(a)P(y)/P(a,y)` truyền qua `classifier__sample_weight` |
-| Unawareness | pre-processing | thay `SEX/AGE/EDUCATION/MARRIAGE` bằng hằng số (median applicant) trước khi fit và score |
+| Unawareness | pre-processing | thay `SEX/AGE/EDUCATION/MARRIAGE` bằng hằng số (chủ thẻ trung vị) trước khi fit và score |
 | ThresholdOptimizer (Fairlearn) | post-processing | ngưỡng ngẫu nhiên theo nhóm, ràng buộc `equalized_odds`, objective `balanced_accuracy_score`, fit trên fit split |
 
 <!-- rai:mitigation:start -->
@@ -148,7 +149,7 @@ Ba chiến lược, đánh giá trên **cùng một test split** (50% tập đá
 
 DI ratio ở bảng này tính trên quyết định nhị phân (không bị gắn cờ default tại threshold) để so sánh được với ThresholdOptimizer (chỉ cho ra nhãn nhị phân); bảng audit dùng tỷ lệ APPROVE của policy 3 mức.
 
-_Sinh tự động bởi `make responsible-ai` (2026-09-28T09:53:21+00:00) — không sửa tay._
+_Sinh tự động bởi `make responsible-ai` (2026-09-29T11:54:02+00:00) — không sửa tay._
 <!-- rai:mitigation:end -->
 
 ![Mitigation trade-off](../reports/figures/rai_mitigation_tradeoff.png)
@@ -179,9 +180,9 @@ _Sinh tự động bởi `make responsible-ai` (2026-09-28T09:53:21+00:00) — k
 
 | Phương pháp | Phạm vi | Cách tính |
 |---|---|---|
-| SHAP `PermutationExplainer` | global (beeswarm, bar) + local (waterfall) | trên **23 trường gốc** API nhận, bọc cả pipeline `FeatureEngineer → preprocessor → classifier` thành `f(x) = P(default)`; background 100 hồ sơ train; đơn vị = xác suất |
-| LIME `LimeTabularExplainer` | local, cùng 3 hồ sơ | 5,000 mẫu nhiễu, rời rạc hoá feature liên tục, `SEX/EDUCATION/MARRIAGE` là categorical |
-| SHAP serving (`/api/v1/explain`) | local, mỗi request | background = 1 hồ sơ tham chiếu (median applicant trong `configs/serving.yaml`), 240 lượt đánh giá (~30 ms) |
+| SHAP `PermutationExplainer` | global (beeswarm, bar) + local (waterfall) | trên **23 trường gốc** API nhận, bọc cả pipeline `FeatureEngineer → preprocessor → classifier` thành `f(x) = P(default)`; background 100 chủ thẻ trong tập train; đơn vị = xác suất |
+| LIME `LimeTabularExplainer` | local, cùng 3 chủ thẻ | 5,000 mẫu nhiễu, rời rạc hoá feature liên tục, `SEX/EDUCATION/MARRIAGE` là categorical |
+| SHAP serving (`/api/v1/explain`) | local, mỗi request | background = 1 chủ thẻ tham chiếu (chủ thẻ trung vị trong `configs/serving.yaml`), 240 lượt đánh giá (~30 ms) |
 
 Model-agnostic → áp dụng nguyên vẹn nếu champion đổi sang XGBoost/LightGBM/Random Forest.
 
@@ -197,24 +198,24 @@ Model-agnostic → áp dụng nguyên vẹn nếu champion đổi sang XGBoost/L
 | 7 | `AGE` | 0.0275 | 5.0% |
 | 8 | `PAY_2` | 0.0257 | 4.6% |
 
-| Hồ sơ | P(default) | SHAP top-3 | LIME top-3 | Overlap@5 / cùng dấu |
+| Chủ thẻ | P(default) | SHAP top-3 | LIME top-3 | Overlap@5 / cùng dấu |
 |---|---|---|---|---|
 | APPROVE | 0.245 | `PAY_0` -0.097, `LIMIT_BAL` +0.089, `BILL_AMT5` -0.061 | `LIMIT_BAL` +0.197, `PAY_0` -0.176, `PAY_AMT1` +0.106 | 60% / 100% |
 | REVIEW | 0.418 | `AGE` +0.042, `PAY_0` +0.030, `LIMIT_BAL` +0.019 | `BILL_AMT6` -0.045, `BILL_AMT5` -0.040, `AGE` +0.034 | 40% / 100% |
 | DECLINE | 0.784 | `PAY_0` +0.291, `LIMIT_BAL` -0.157, `BILL_AMT6` +0.141 | `PAY_AMT1` -0.278, `PAY_0` +0.214, `LIMIT_BAL` -0.172 | 100% / 100% |
 
-_Sinh tự động bởi `make responsible-ai` (2026-09-28T09:53:21+00:00) — không sửa tay._
+_Sinh tự động bởi `make responsible-ai` (2026-09-29T11:54:02+00:00) — không sửa tay._
 <!-- rai:explainability:end -->
 
 ![SHAP summary](../reports/figures/rai_shap_summary.png)
 ![SHAP bar](../reports/figures/rai_shap_bar.png)
 
-Waterfall + LIME cho từng hồ sơ: `reports/figures/rai_shap_waterfall_{approve,review,decline}.png`,
+Waterfall + LIME cho từng chủ thẻ mẫu: `reports/figures/rai_shap_waterfall_{approve,review,decline}.png`,
 `reports/figures/rai_lime_{approve,review,decline}.png`.
 
 **Diễn giải:** lịch sử trả nợ gần nhất (`PAY_0`, `PAY_2`), số tiền trả tháng gần nhất (`PAY_AMT1`) và hạn mức
 (`LIMIT_BAL`) chi phối điểm — đúng trực giác nghiệp vụ. `AGE` xuất hiện trong nhóm feature quan trọng và là yếu tố hàng
-đầu đẩy rủi ro của hồ sơ REVIEW mẫu (26 tuổi) — bằng chứng trực tiếp cho bias tuổi ở mục 3. SHAP và LIME luôn cùng dấu
+đầu đẩy rủi ro của chủ thẻ REVIEW mẫu (26 tuổi) — bằng chứng trực tiếp cho bias tuổi ở mục 3. SHAP và LIME luôn cùng dấu
 trên các feature chung; khác biệt thứ hạng đến từ việc LIME rời rạc hoá (trọng số của điều kiện "`PAY_AMT1 <= …`",
 không phải của giá trị cụ thể) và là xấp xỉ tuyến tính cục bộ.
 
@@ -229,10 +230,10 @@ không phải của giá trị cụ thể) và là xấp xỉ tuyến tính cụ
 - Deterministic (seed cố định), warm-up SHAP khi khởi động app để request đầu không chịu chi phí JIT.
 - Nếu SHAP lỗi → tự hạ cấp `method = "reference_substitution"` (thay từng feature bằng giá trị trung vị tập train), endpoint không bao giờ 500 vì explainer.
 - `POST /api/v1/predict` giữ `top_risk_factors` dạng rule để bảo toàn ngân sách latency p95 < 100 ms; lý do chi tiết cho
-  người duyệt/khách hàng lấy từ `/explain`.
+  chuyên viên rủi ro và cho adverse action notice gửi chủ thẻ lấy từ `/explain`.
 
 **Giới hạn:** SHAP interventional giả định các feature độc lập khi "che" (BILL_AMT1..6 tương quan mạnh → attribution có
-thể chia giữa các tháng); SHAP serving so với *một* hồ sơ tham chiếu nên trả lời câu hỏi "vì sao khác khách hàng điển
+thể chia giữa các tháng); SHAP serving so với *một* chủ thẻ tham chiếu nên trả lời câu hỏi "vì sao khác chủ thẻ điển
 hình", không phải "vì sao khác trung bình toàn bộ"; LIME không ổn định giữa các seed (cố định seed để tái lập).
 
 ## 6. Privacy
@@ -255,11 +256,11 @@ của tổ chức tín dụng thuộc nhóm dữ liệu cá nhân nhạy cảm; 
 
 | Nguyên tắc | Hiện thực | Kiểm chứng |
 |---|---|---|
-| Không log dữ liệu nhạy cảm thô | `JsonFormatter` redact mọi trường hồ sơ và `features/payload/applicant(s)` ở mọi độ sâu (`credit_risk.config.logging.PII_FIELDS`) | `test_privacy.py::test_structured_logs_never_contain_raw_applicant_fields`, `test_log_redaction_covers_every_model_feature` |
+| Không log dữ liệu nhạy cảm thô | `JsonFormatter` redact mọi trường dữ liệu chủ thẻ và `features/payload/cardholder(s)` (kể cả alias cũ `applicants` đã deprecated) ở mọi độ sâu (`credit_risk.config.logging.PII_FIELDS`) | `test_privacy.py::test_structured_logs_never_contain_raw_cardholder_fields`, `test_log_redaction_covers_every_model_feature` |
 | Pseudonymization | `privacy.pseudonymize()` — HMAC-SHA256 với khoá `PSEUDONYMIZATION_KEY` (từ `.env`, không commit); cùng input → cùng pseudonym (join được) nhưng không đảo ngược/brute-force được nếu không có khoá | `test_pseudonymize_is_keyed_and_deterministic` |
 | Data minimization khi chia sẻ | `privacy.generalize_record()` bỏ `SEX/EDUCATION/MARRIAGE`, `AGE` → dải tuổi, `LIMIT_BAL` → dải hạn mức | `test_generalize_record_drops_protected_and_bands_quasi_identifiers` |
 | Storage limitation | inference log (cần feature thô cho drift + retrain) giữ **90 ngày**; `make purge-logs` / `privacy.purge_inference_logs()` xoá bản ghi cũ, có `--dry-run`; nên lập lịch hằng ngày trong Airflow | `test_purge_inference_logs_deletes_only_expired_rows` |
-| Báo cáo chỉ chứa số liệu tổng hợp | fairness report chỉ có aggregate theo nhóm (nhóm nhỏ nhất > 100 dòng); explainability report chứa giá trị feature của 3 hồ sơ mẫu từ dataset công khai, không định danh | review report |
+| Báo cáo chỉ chứa số liệu tổng hợp | fairness report chỉ có aggregate theo nhóm (nhóm nhỏ nhất > 100 dòng); explainability report chứa giá trị feature của 3 chủ thẻ mẫu từ dataset công khai, không định danh | review report |
 | Kiểm soát truy cập | `/api/v1/*` yêu cầu API key (fail closed); `/explain` không ghi inference log | `tests/integration/test_api.py::test_protected_routes_require_api_key`, `test_auth_fails_closed_when_no_key_configured` |
 
 **Chính sách retention:** inference log 90 ngày; log ứng dụng (stdout JSON, đã redact) theo retention của log shipper,
@@ -274,33 +275,37 @@ khuyến nghị ≤ 30 ngày; report/figures lưu cùng repo (chỉ aggregate); 
 | **Disparate treatment** (dùng trực tiếp thuộc tính bảo vệ) | model nhận `SEX/AGE/MARRIAGE/EDUCATION` làm input; SHAP cho thấy `AGE` ảnh hưởng điểm | challenger unawareness (mục 4); nếu giữ `AGE` phải có căn cứ pháp lý và kiểm định |
 | **Disparate impact** (tác động không cân xứng qua proxy) | DI ratio theo tuổi/học vấn < 0.8 | reweighing, audit định kỳ, ngưỡng cảnh báo trong config |
 | **Historical/label bias** | nhãn "default" phản ánh chính sách tín dụng quá khứ (Đài Loan 2005) | không coi nhãn là chân lý; review định kỳ với dữ liệu mới |
-| **Selection bias / feedback loop** | khách bị DECLINE không bao giờ có nhãn → model chỉ học từ người được duyệt, nhóm bị từ chối nhiều càng ít dữ liệu | human review vùng REVIEW tạo nhãn; theo dõi approval rate theo nhóm; cân nhắc reject inference |
+| **Selection bias / feedback loop** | dữ liệu chỉ gồm người đã được chấp thuận trước đây; chủ thẻ bị DECLINE (tạm khoá hạn mức) ít phát sinh hành vi mới → nhóm bị hạ / khoá hạn mức nhiều càng ít dữ liệu | human review vùng REVIEW tạo nhãn; theo dõi approval rate theo nhóm; cân nhắc reject inference |
 | **Out-of-distribution** | nhóm `<30` không có trong train | drift monitor (Evidently + PSI) + retrain có feedback; guardrail tuổi tối thiểu 18 |
 | **Automation bias** | người duyệt tin điểm model tuyệt đối | hiển thị SHAP + LIME cho người duyệt, yêu cầu ghi lý do khi đồng ý/bác bỏ |
 
 ### 7.2 Human-in-the-loop cho vùng REVIEW
 
-- `0.30 ≤ P(default) < 0.60` → **REVIEW**: model *không* ra quyết định; hồ sơ vào hàng đợi người duyệt với
-  `/api/v1/explain` (top risk factors từ SHAP, guardrails). Hạn mức đề xuất bị giới hạn (≤ 50% hạn mức, tối đa 100k NTD).
-- Người duyệt phải ghi quyết định cuối và lý do; tỷ lệ override theo nhóm được theo dõi (override lệch nhóm = dấu hiệu
+- `0.30 ≤ P(default) < 0.60` → **REVIEW**: model *không* ra quyết định; tài khoản vào hàng đợi của chuyên viên rủi ro
+  với `/api/v1/explain` (top risk factors từ SHAP, guardrails). Hạn mức đề xuất là mức hạ (≤ 50% hạn mức hiện tại, tối
+  đa 100k NTD); chuyên viên quyết định giữ hay hạ.
+- Chuyên viên phải ghi quyết định cuối và lý do; tỷ lệ override theo nhóm được theo dõi (override lệch nhóm = dấu hiệu
   bias của model hoặc của người).
-- Hơn một nửa hồ sơ rơi vào REVIEW (xem cột REVIEW ở mục 3.2) → chi phí vận hành đáng kể; điều chỉnh
+- Hơn một nửa lượt chấm điểm rơi vào REVIEW (xem cột REVIEW ở mục 3.2) → chi phí vận hành đáng kể; điều chỉnh
   `REVIEW_THRESHOLD`/`DECLINE_THRESHOLD` là quyết định nghiệp vụ, phải đánh giá lại fairness sau mỗi lần đổi
   (`make responsible-ai` đọc ngưỡng từ cấu hình serving).
-- **DECLINE** tự động phải kèm *adverse action notice* (các lý do chính từ SHAP, không phải thuộc tính bảo vệ) và kênh
-  khiếu nại để người thật xem lại.
+- **Adverse action.** Theo ECOA / Regulation B, từ chối yêu cầu tăng hạn mức và thay đổi bất lợi điều khoản tài khoản
+  (hạ hoặc tạm khoá hạn mức) đều là *adverse action*. Vì vậy mọi quyết định **DECLINE** tự động, và mọi lần hạ hạn mức
+  sau REVIEW, phải kèm *adverse action notice* (các lý do chính từ SHAP, không phải thuộc tính bảo vệ) và kênh khiếu nại
+  để người thật xem lại. Tạm khoá chỉ chặn chi tiêu thêm; dư nợ hiện tại chủ thẻ vẫn phải trả.
 
 ### 7.3 Giới hạn sử dụng
 
-- Chỉ dùng để **hỗ trợ** quyết định cấp/giữ hạn mức thẻ tín dụng cho khách hàng cá nhân tương tự dữ liệu train.
+- Chỉ dùng để **hỗ trợ** quyết định quản lý hạn mức (giữ / tăng / hạ / tạm khoá) cho chủ thẻ tín dụng cá nhân đang lưu
+  hành, tương tự dữ liệu train. Không dùng để duyệt khách xin thẻ mới: họ chưa có lịch sử hành vi mà model cần.
 - **Không** dùng cho: tuyển dụng, bảo hiểm, định giá nhà ở, marketing nhắm mục tiêu, thu hồi nợ, hay bất kỳ quyết định
   nào ngoài tín dụng tiêu dùng; không dùng cho thị trường/giai đoạn khác mà chưa validate lại (dữ liệu Đài Loan 2005).
-- Không dùng làm căn cứ duy nhất để từ chối; theo EU AI Act, chấm điểm tín dụng là hệ thống **high-risk** (yêu cầu quản
+- Không dùng làm căn cứ duy nhất để từ chối tăng hạn mức hay hạ / tạm khoá hạn mức; theo EU AI Act, chấm điểm tín dụng là hệ thống **high-risk** (yêu cầu quản
   trị dữ liệu, minh bạch, giám sát của con người, logging) — dự án đáp ứng một phần qua tài liệu này, model card và audit log.
 
 ## 8. Hạn chế
 
-- Fairness đo trên 10k hồ sơ; nhóm nhỏ (`MARRIAGE=others`, `EDUCATION=others`) có khoảng tin cậy rộng — chưa có bootstrap CI.
+- Fairness đo trên 10k chủ thẻ; nhóm nhỏ (`MARRIAGE=others`, `EDUCATION=others`) có khoảng tin cậy rộng — chưa có bootstrap CI.
 - Chỉ xét fairness theo từng thuộc tính riêng lẻ, chưa xét giao thoa (vd. nữ < 30 tuổi).
 - Mitigation mới ở mức thực nghiệm; champion đang phục vụ chưa được thay (cần chạy qua gate).
 

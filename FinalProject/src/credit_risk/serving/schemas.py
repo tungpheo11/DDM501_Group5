@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 from credit_risk.serving import openapi_examples as ex
 
@@ -23,11 +23,11 @@ _REPAYMENT_HELP = "-2=no consumption, -1=paid in full, 0=revolving credit, 1..9=
 
 
 class CreditPredictRequest(BaseModel):
-    """One credit applicant; field names follow the UCI dataset columns."""
+    """One cardholder account after its latest statement; field names follow the UCI dataset columns."""
 
-    model_config = ConfigDict(extra="forbid", json_schema_extra={"examples": [ex.LOW_RISK_APPLICANT]})
+    model_config = ConfigDict(extra="forbid", json_schema_extra={"examples": [ex.LOW_RISK_CARDHOLDER]})
 
-    LIMIT_BAL: float = Field(..., gt=0, le=_MAX_AMOUNT, description="Amount of given credit (NT dollar)")
+    LIMIT_BAL: float = Field(..., gt=0, le=_MAX_AMOUNT, description="Current credit limit of the card (NT dollar)")
     SEX: int = Field(..., ge=1, le=2, description="Gender (1=male, 2=female)")
     EDUCATION: int = Field(
         ..., ge=0, le=6, description="Education (1=graduate, 2=university, 3=high school, 4=others, 0/5/6=unknown)"
@@ -56,13 +56,37 @@ class CreditPredictRequest(BaseModel):
     PAY_AMT6: float = Field(..., ge=0, le=_MAX_AMOUNT, description="Previous payment in April")
 
 
+DEPRECATED_BATCH_FIELD = "applicants"
+
+
+def _document_deprecated_batch_alias(schema: dict[str, Any]) -> None:
+    # ``validation_alias`` choices never reach the JSON schema, so the legacy name is
+    # published by hand, pointing at the same item schema and flagged as deprecated.
+    properties = schema.get("properties", {})
+    if "cardholders" not in properties:
+        return
+    legacy = {key: value for key, value in properties["cardholders"].items() if key not in {"title", "description"}}
+    properties[DEPRECATED_BATCH_FIELD] = {
+        **legacy,
+        "title": "Applicants",
+        "deprecated": True,
+        "description": "Deprecated alias of `cardholders`, still accepted for backward compatibility. "
+        "Send exactly one of the two fields: a request carrying both is rejected with 422.",
+    }
+
+
 class BatchPredictRequest(BaseModel):
-    """Several applicants scored in one vectorized call."""
+    """Several cardholder accounts scored in one vectorized call (post-statement limit review)."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", json_schema_extra=_document_deprecated_batch_alias)
 
-    applicants: list[CreditPredictRequest] = Field(
-        ..., min_length=1, description="Applicants to score; the server caps the size (see `batch_max_size`)."
+    cardholders: list[CreditPredictRequest] = Field(
+        ...,
+        min_length=1,
+        validation_alias=AliasChoices("cardholders", DEPRECATED_BATCH_FIELD),
+        description="Cardholder accounts to score; the server caps the size (see `batch_max_size`). "
+        "Validation errors report the field name the client sent (`cardholders.N.FIELD` or "
+        "`applicants.N.FIELD`).",
     )
 
 
@@ -74,14 +98,19 @@ class _ServedModel(BaseModel):
 
 
 class ScoreFields(BaseModel):
-    """Model output plus business decision for one applicant."""
+    """Model output plus business decision for one cardholder."""
 
     default_prediction: int = Field(..., description="0 = no default expected, 1 = default risk")
     default_probability: float = Field(..., ge=0.0, le=1.0, description="Probability of default (0.0 to 1.0)")
     credit_score: int = Field(..., ge=300, le=850, description="Credit score on a 300-850 scale (higher is better)")
     credit_tier: CreditTier = Field(..., description="Risk tier")
     risk_decision: Decision = Field(..., description="Business decision")
-    recommended_limit_ntd: float = Field(..., ge=0, description="Suggested safe credit limit in NT dollars")
+    recommended_limit_ntd: float = Field(
+        ...,
+        ge=0,
+        description="Suggested credit limit in NT dollars: raise on APPROVE, cut on REVIEW, 0 on DECLINE "
+        "(available limit frozen, outstanding balance still due)",
+    )
     top_risk_factors: list[str] = Field(default_factory=list, description="Human-readable drivers of the score")
     policy_guardrails: dict[str, str] = Field(default_factory=dict, description="Deterministic compliance checks")
 
@@ -96,9 +125,9 @@ class PredictionResponse(ScoreFields, _ServedModel):
 
 
 class BatchPredictionItem(ScoreFields):
-    """Result for one applicant of a batch, in request order."""
+    """Result for one cardholder of a batch, in request order."""
 
-    index: int = Field(..., ge=0, description="Position of the applicant in the request")
+    index: int = Field(..., ge=0, description="Position of the cardholder in the request")
     request_id: str = Field(..., description="Per-item id (`<batch request id>-<index>`) stored in the inference log")
 
 
@@ -109,7 +138,7 @@ class BatchPredictionResponse(_ServedModel):
 
     request_id: str
     count: int
-    decision_summary: dict[str, int] = Field(..., description="Number of applicants per decision")
+    decision_summary: dict[str, int] = Field(..., description="Number of cardholders per decision")
     predictions: list[BatchPredictionItem]
     latency_ms: float
 
@@ -123,8 +152,8 @@ class FeatureContribution(BaseModel):
     contribution: float = Field(
         ...,
         description="Change in default probability attributed to this feature. shap_permutation: SHAP value "
-        "against the reference applicant; reference_substitution: probability(applicant) - "
-        "probability(applicant with this feature set to reference)",
+        "against the reference cardholder; reference_substitution: probability(cardholder) - "
+        "probability(cardholder with this feature set to reference)",
     )
     direction: Literal["increases_risk", "decreases_risk", "neutral"]
 
@@ -138,7 +167,7 @@ class ExplainResponse(ScoreFields, _ServedModel):
     method: Literal["shap_permutation", "reference_substitution"] = Field(
         ..., description="Attribution method (reference_substitution = degraded fallback)"
     )
-    reference_probability: float = Field(..., description="Default probability of the reference (median) applicant")
+    reference_probability: float = Field(..., description="Default probability of the reference (median) cardholder")
     contributions: list[FeatureContribution] = Field(..., description="Top features by absolute contribution")
     latency_ms: float
 

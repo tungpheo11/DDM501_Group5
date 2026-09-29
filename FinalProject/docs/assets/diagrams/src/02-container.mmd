@@ -1,7 +1,8 @@
 %% Container diagram (Docker Compose project `credit-risk-mlops`)
 %% Màu theo Compose profile: xanh dương = core, xanh lá = monitoring, tím = orchestration
 flowchart TB
-    client["<b>Loan Origination System</b><br/><i>[External / persona simulator]</i><br/>gửi hồ sơ cần chấm điểm"]:::external
+    client["<b>Card Management System /<br/>Mobile app backend</b><br/><i>[External / persona simulator]</i><br/>yêu cầu tăng hạn mức realtime"]:::external
+    batch["<b>Batch limit-review job</b><br/><i>[External]</i><br/>rà soát hạn mức sau kỳ sao kê"]:::external
     engineer["<b>MLOps Engineer</b><br/><i>[Person]</i><br/>vận hành qua Grafana, MLflow, Airflow UI"]:::person
 
     subgraph platform["Credit Default Risk Scoring Platform  -  docker compose project credit-risk-mlops"]
@@ -25,7 +26,8 @@ flowchart TB
 
     telegram["<b>Telegram Bot API</b><br/><i>[External, optional]</i><br/>bật khi có TELEGRAM_BOT_TOKEN"]:::external
 
-    client -- "HTTPS JSON + X-API-Key" --> api
+    client -- "predict, explain<br/>HTTPS JSON + X-API-Key" --> api
+    batch -- "predict/batch (≤ 500)<br/>HTTPS JSON + X-API-Key" --> api
     engineer -- "dashboards" --> graf
     engineer -- "trigger / theo dõi DAG" --> web
 
