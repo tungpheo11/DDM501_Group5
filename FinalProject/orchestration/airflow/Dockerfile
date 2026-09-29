@@ -52,9 +52,10 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONDONTWRITEBYTECODE=1
 
 RUN python -m venv /opt/airflow-venv
+COPY orchestration/airflow/constraints-3.11.txt /tmp/constraints-3.11.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
     /opt/airflow-venv/bin/pip install "apache-airflow[postgres,statsd]==${AIRFLOW_VERSION}" \
-      --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-3.11.txt" \
+      --constraint /tmp/constraints-3.11.txt \
     && /opt/airflow-venv/bin/airflow version
 
 # -----------------------------------------------------------------------------

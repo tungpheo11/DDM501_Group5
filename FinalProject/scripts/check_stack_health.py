@@ -15,6 +15,7 @@ import shlex
 import subprocess
 import sys
 import time
+from pathlib import Path
 from typing import Any
 
 ONE_SHOT = {"minio-init", "model-bootstrap", "airflow-init"}
@@ -70,6 +71,8 @@ def main() -> int:
     parser.add_argument("--interval", type=float, default=5)
     args = parser.parse_args()
     compose = shlex.split(args.compose)
+    if "--env-file" not in compose and Path(".env").exists():
+        compose.extend(["--env-file", ".env"])
 
     deadline = time.monotonic() + args.timeout
     containers: list[dict[str, Any]] = []

@@ -7,6 +7,7 @@
 !data/reference/
 !data/processed/
 !orchestration/airflow/init_airflow.sh
+!orchestration/airflow/constraints-3.11.txt
 !orchestration/airflow/utils/
 !orchestration/airflow/dags/
 **/__pycache__

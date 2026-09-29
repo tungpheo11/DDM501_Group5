@@ -33,7 +33,7 @@ coverage.xml
 htmlcov
 
 # Data, reports and local service state (never baked into the image)
-data
+data/raw
 reports
 mlruns
 mlartifacts
@@ -46,9 +46,7 @@ docs
 notebooks
 tests
 simulations
-orchestration
 monitoring
-services
 scripts
 deploy
 Makefile
