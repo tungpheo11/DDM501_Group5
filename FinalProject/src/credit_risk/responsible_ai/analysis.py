@@ -10,7 +10,7 @@ Steps:
    (stratified by group x label) and compare champion, retrained, reweighing,
    unawareness and ThresholdOptimizer on the test half.
 5. Explain the champion with SHAP (global beeswarm/bar + local waterfalls) and LIME on
-   three representative applicants (APPROVE / REVIEW / DECLINE).
+   three representative cardholders (APPROVE / REVIEW / DECLINE).
 6. Write ``reports/fairness_report.{json,md}``, ``reports/explainability_report.{json,md}``,
    figures ``reports/figures/rai_*.png`` and refresh the generated blocks in the docs.
 """
@@ -131,7 +131,7 @@ def load_champion(settings: Settings) -> Champion:
 
 
 def load_evaluation_data(settings: Settings) -> pd.DataFrame:
-    """Labeled, never-trained-on applicants covering all ages, with a ``source`` column."""
+    """Labeled, never-trained-on cardholders covering all ages, with a ``source`` column."""
     paths = settings.paths
     normal = pd.read_csv(paths.normal_stream).assign(source="stream_normal")
     drifted = pd.read_csv(paths.drifted_stream).merge(pd.read_csv(paths.ground_truth), on=REQUEST_ID_COLUMN)
@@ -318,7 +318,7 @@ def plot_decisions_by_group(audit: dict[str, Any], attribute: str, path: Path) -
         values = np.array([row[key] for row in groups], dtype=float)
         ax.bar(labels, values, bottom=bottom, color=color, label=key.replace("_rate", "").upper())
         bottom += values
-    ax.set_ylabel("share of applicants")
+    ax.set_ylabel("share of cardholders")
     ax.set_title(f"Serving decisions by {attribute}")
     ax.legend(loc="upper right")
     del fig
@@ -341,7 +341,7 @@ def plot_mitigation_tradeoff(mitigation: dict[str, Any], path: Path) -> Path:
                 textcoords="offset points",
             )
         ax.set_xlabel("equalized odds difference (lower = fairer)")
-        ax.set_ylabel("expected loss per applicant (lower = better)")
+        ax.set_ylabel("expected loss per cardholder (lower = better)")
         ax.set_title(f"Mitigation trade-off — {attribute}")
         ax.grid(alpha=0.3)
     del fig
@@ -360,7 +360,7 @@ def _save(path: Path) -> Path:
 
 
 def select_profiles(probabilities: np.ndarray, review_threshold: float, decline_threshold: float) -> dict[str, int]:
-    """One representative row per decision: the applicant closest to that decision's median probability."""
+    """One representative row per decision: the cardholder closest to that decision's median probability."""
     decisions = fairness.approval_decisions(probabilities, review_threshold, decline_threshold)
     selected = {}
     for decision in PROFILE_DECISIONS:
@@ -379,14 +379,14 @@ def run_explainability(
     cfg: ResponsibleAIConfig,
     figures_dir: Path,
 ) -> dict[str, Any]:
-    """SHAP global + local explanations and LIME for the same representative applicants."""
+    """SHAP global + local explanations and LIME for the same representative cardholders."""
     serving = settings.serving
     features = evaluation[ALL_FEATURES].reset_index(drop=True)
     background = x_train.sample(n=min(cfg.background_size, len(x_train)), random_state=cfg.random_state)
     sample = features.sample(n=min(cfg.sample_size, len(features)), random_state=cfg.random_state)
     explainer = xai.ShapExplainer(champion.model, background, max_evals=cfg.max_evals, seed=cfg.random_state)
 
-    logger.info("SHAP: explaining %d applicants against %d background rows", len(sample), len(background))
+    logger.info("SHAP: explaining %d cardholders against %d background rows", len(sample), len(background))
     global_explanation = explainer.explain(sample)
     importance = xai.global_importance(global_explanation)
     figures = {
@@ -415,12 +415,12 @@ def run_explainability(
         figures[f"shap_waterfall_{slug}"] = xai.plot_shap_waterfall(
             local_explanation[position],
             figures_dir / f"rai_shap_waterfall_{slug}.png",
-            f"SHAP — {decision} applicant (P(default) = {probability:.3f})",
+            f"SHAP — {decision} cardholder (P(default) = {probability:.3f})",
         )
         figures[f"lime_{slug}"] = xai.plot_lime(
             lime_items,
             figures_dir / f"rai_lime_{slug}.png",
-            f"LIME — {decision} applicant (P(default) = {probability:.3f})",
+            f"LIME — {decision} cardholder (P(default) = {probability:.3f})",
         )
         serving_view = xai.explain_against_reference(
             champion.model,
@@ -450,9 +450,9 @@ def run_explainability(
     return {
         "method": {
             "shap": f"PermutationExplainer on P(default) of the full pipeline, {len(background)} background "
-            f"training applicants, max_evals={cfg.max_evals}",
+            f"training cardholders, max_evals={cfg.max_evals}",
             "lime": f"LimeTabularExplainer, {cfg.lime_num_samples} samples, discretized continuous features",
-            "serving": "PermutationExplainer against the reference applicant, "
+            "serving": "PermutationExplainer against the reference cardholder, "
             f"max_evals={serving.explain_shap_max_evals}",
         },
         "sample_size": int(len(sample)),

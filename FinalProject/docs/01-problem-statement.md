@@ -6,51 +6,91 @@
 
 ## 1. Bối cảnh kinh doanh
 
-Một ngân hàng phát hành thẻ tín dụng nhận hàng nghìn hồ sơ mỗi ngày. Thẩm định thủ công chậm (1–3 ngày), không nhất
-quán giữa chuyên viên và không giải thích được bằng số liệu. Sai lầm có **chi phí bất đối xứng**:
+Ngân hàng đang có hàng trăm nghìn thẻ tín dụng lưu hành. Việc quản lý hạn mức cho danh mục này hiện gặp hai vấn đề:
+
+- **Rà soát hạn mức thủ công theo quý.** Chậm, và không phát hiện sớm những chủ thẻ đang xấu đi giữa hai lần rà soát.
+- **Yêu cầu tăng hạn mức qua app mất 1–3 ngày.** Quyết định không nhất quán giữa các chuyên viên và không giải thích
+  được bằng số liệu.
+
+Hệ thống này là nền tảng **Credit Line Management (quản lý hạn mức thẻ)** cho chủ thẻ đang lưu hành. Sau mỗi kỳ sao kê,
+hệ thống dự báo xác suất vỡ nợ `P(default)` của từng chủ thẻ ở kỳ thanh toán kế tiếp — ví dụ dùng sao kê tháng 04–09 để
+dự báo vỡ nợ tháng 10 — rồi dùng xác suất đó để quyết định giữ, tăng, hạ hay tạm khoá hạn mức.
+
+Quyết định sai có **chi phí bất đối xứng**:
 
 | | Thực tế: trả nợ tốt | Thực tế: vỡ nợ |
 |---|---|---|
-| **Duyệt** | Đúng — thu lãi | **False Negative** — mất gốc (≈ hạn mức × LGD) |
-| **Từ chối** | **False Positive** — mất khách, mất doanh thu | Đúng — tránh được tổn thất |
+| **Giữ / tăng hạn mức** | Đúng — thu lãi + phí interchange | **False Negative** — mất dư nợ + phần hạn mức vừa tăng (≈ hạn mức × LGD) |
+| **Hạ / khoá hạn mức** | **False Positive** — mất doanh thu, khách khó chịu, có thể rời bỏ | Đúng — giảm exposure trước khi vỡ nợ |
 
-Hệ thống dùng cost matrix **FN = 10, FP = 1** (một khoản vỡ nợ lọt lưới tốn ngang 10 khách tốt bị từ chối) và
-LGD 0.45 (Basel II foundation IRB, `configs/serving.yaml`) cho metric tiền tệ. Vì vậy mục tiêu không phải *accuracy*
-mà là **giảm expected financial loss** trong khi vẫn giữ recall lớp vỡ nợ cao.
+Hệ thống dùng cost matrix **FN = 10, FP = 1** (bỏ sót một chủ thẻ sắp vỡ nợ tốn ngang 10 lần hạ hạn mức nhầm một khách
+tốt) và LGD 0.45 (Basel II foundation IRB, `configs/serving.yaml`) cho metric tiền tệ. Vì vậy mục tiêu không phải
+*accuracy* mà là **giảm expected financial loss** trong khi vẫn giữ recall lớp vỡ nợ cao.
 
-**Bài toán ML:** phân loại nhị phân có xác suất — dự báo `P(default)` của chủ thẻ ở kỳ thanh toán kế tiếp từ hạn mức,
-nhân khẩu học, 6 tháng lịch sử trả nợ / dư nợ / số tiền đã trả (UCI *Default of Credit Card Clients*, 30.000 hồ sơ,
-xem [data card](data-card.md)). Xác suất được chuyển thành quyết định 3 vùng:
+**Bài toán ML:** phân loại nhị phân có xác suất — dự báo `P(default)` của chủ thẻ ở kỳ thanh toán kế tiếp từ hạn mức
+hiện tại, nhân khẩu học, 6 tháng lịch sử trả nợ / dư nợ sao kê / số tiền đã trả (UCI *Default of Credit Card Clients*,
+30.000 chủ thẻ, xem [data card](data-card.md)). Đây là bài toán *behavioral scoring*: mọi feature đều là hành vi của
+người đã có thẻ. Xác suất được chuyển thành quyết định 3 vùng:
 
 ```text
-P(default) < 0.30          → APPROVE  (tự động duyệt)
-0.30 ≤ P(default) < 0.60   → REVIEW   (chuyển chuyên viên — human-in-the-loop)
-P(default) ≥ 0.60          → DECLINE  (tự động từ chối, kèm lý do)
+P(default) < 0.30          → APPROVE  (tự động chấp thuận / giữ hạn mức)
+0.30 ≤ P(default) < 0.60   → REVIEW   (chuyển chuyên viên rủi ro — human-in-the-loop)
+P(default) ≥ 0.60          → DECLINE  (tự động từ chối tăng / tạm khoá hạn mức, kèm lý do)
 ```
+
+Mỗi vùng đi kèm một hạn mức đề xuất (`recommended_limit_ntd` trong response):
+
+| Vùng | Yêu cầu tăng hạn mức (realtime) | Rà soát định kỳ (batch) | Hạn mức đề xuất |
+|---|---|---|---|
+| `APPROVE` | Chấp thuận | Giữ hoặc đề xuất tăng | min(`LIMIT_BAL` × 1.25, 500.000) |
+| `REVIEW` | Chuyển chuyên viên rủi ro xem xét | Đề xuất hạ hạn mức, chuyên viên quyết định | min(`LIMIT_BAL` × 0.5, 100.000) |
+| `DECLINE` | Từ chối, bắt buộc kèm reason codes (SHAP) | Tạm khoá hạn mức khả dụng: không cho chi tiêu thêm, dư nợ hiện tại vẫn phải trả | 0 |
+
+Theo luật tín dụng (ECOA / Regulation B), từ chối yêu cầu tăng hạn mức hoặc thay đổi bất lợi điều khoản tài khoản (hạ,
+tạm khoá hạn mức) đều là *adverse action*, nên mọi quyết định `DECLINE` và mọi lần hạ hạn mức phải gửi được thông báo kèm
+lý do cho chủ thẻ.
 
 Ngưỡng nằm trong `configs/serving.yaml` (override bằng `REVIEW_THRESHOLD`, `DECLINE_THRESHOLD`).
 
-**Vì sao cần MLOps chứ không chỉ một model:** tập khách hàng thay đổi theo chiến dịch marketing (ví dụ chiến dịch
-Gen-Z đưa người < 30 tuổi — nhóm model chưa từng thấy khi train, xem [data card §4](data-card.md#4-partition-và-mục-đích)).
-Không có giám sát drift và retrain có kiểm soát, model âm thầm xuống cấp và có thể phân biệt đối xử theo tuổi.
+**Vì sao cần MLOps chứ không chỉ một model:** tập chủ thẻ thay đổi theo chiến dịch marketing (ví dụ chiến dịch Gen-Z
+đưa nhiều chủ thẻ < 30 tuổi vào danh mục — nhóm model chưa từng thấy khi train, xem
+[data card §4](data-card.md#4-partition-và-mục-đích)). Không có giám sát drift và retrain có kiểm soát, model âm thầm
+xuống cấp và có thể phân biệt đối xử theo tuổi.
 
 ## 2. Stakeholder & người dùng
 
 | Stakeholder | Nhu cầu | Tương tác với hệ thống |
 |---|---|---|
-| Loan Origination System (LOS) | Chấm điểm realtime khi khách nộp hồ sơ | `POST /api/v1/predict`, `/predict/batch` với `X-API-Key` |
-| Chuyên viên thẩm định | Xử lý hồ sơ REVIEW, biết vì sao | `POST /api/v1/explain` (top risk factors, SHAP) |
+| Card Management System (CMS) + mobile app backend | Trả kết quả yêu cầu tăng hạn mức ngay trong phiên app của chủ thẻ | `POST /api/v1/predict` realtime với `X-API-Key` |
+| Batch job rà soát hạn mức | Chấm điểm toàn danh mục sau mỗi kỳ sao kê, lập danh sách cảnh báo sớm | `POST /api/v1/predict/batch` (lô ≤ 500 chủ thẻ) |
+| Chuyên viên rủi ro tín dụng / quản lý hạn mức (Credit Risk Analyst) | Xử lý tài khoản vùng REVIEW, theo dõi danh sách cảnh báo sớm, biết vì sao | `POST /api/v1/explain` (top risk factors, SHAP) |
 | Risk manager / Model risk | Biết model có còn đúng, có công bằng | Grafana *Business*, *ML model*, *Drift*; [fairness report](../reports/fairness_report.md) |
 | MLOps / SRE | Vận hành, xử lý sự cố, release | Grafana *Infra & SLA*, Alertmanager/Telegram, Airflow, runbook |
-| Compliance / kiểm toán | Truy vết model, dữ liệu, quyết định | MLflow registry + lineage, `data/manifest.json`, inference log (pseudonymized), [model card](model-card.md) |
+| Compliance / kiểm toán | Truy vết model, dữ liệu, quyết định; adverse action notice | MLflow registry + lineage, `data/manifest.json`, inference log (pseudonymized), [model card](model-card.md) |
 
 ## 3. Use case
 
+Use case nghiệp vụ và chế độ gọi API:
+
+| Use case nghiệp vụ | Kích hoạt | Chế độ | Endpoint |
+|---|---|---|---|
+| Duyệt yêu cầu tăng hạn mức (tạm thời / vĩnh viễn), yêu cầu rút tiền mặt / chuyển trả góp | Chủ thẻ gửi yêu cầu trên mobile app / Internet banking, chờ kết quả ngay trong phiên | Realtime | `POST /api/v1/predict` |
+| Rà soát hạn mức định kỳ toàn danh mục (giữ / tăng / giảm / tạm khoá hạn mức khả dụng), gia hạn thẻ | Job chạy sau mỗi kỳ sao kê, chia lô ≤ 500 | Batch | `POST /api/v1/predict/batch` |
+| Danh sách cảnh báo sớm cho chuyên viên rủi ro (chỉ theo dõi và liên hệ nhắc nợ mềm; **không** tự động chuyển thu hồi nợ) | Job chạy sau kỳ sao kê | Batch | `/predict/batch` + `/explain` |
+| Giải thích quyết định cho chuyên viên / adverse action notice | Tài khoản rơi vào vùng REVIEW hoặc DECLINE | On-demand | `POST /api/v1/explain` |
+
+**Realtime và batch.** Luồng realtime phục vụ chủ thẻ đang chờ kết quả yêu cầu tăng hạn mức ngay trên app: cả luồng app
+phải phản hồi dưới 1 giây, nên riêng phần chấm điểm được ngân sách **p95 ≤ 100 ms** (NFR-01), phần còn lại dành cho
+CMS, xác thực và mạng. Luồng batch phục vụ rà soát định kỳ toàn danh mục sau mỗi kỳ sao kê; ở đây throughput quan trọng
+hơn latency của từng request, nên API chấm vector hoá tối đa 500 chủ thẻ mỗi lần gọi.
+
+Use case hệ thống:
+
 | ID | Use case | Actor | Luồng chính | Kết quả |
 |---|---|---|---|---|
-| UC-01 | Chấm điểm một hồ sơ | LOS | Gửi 23 feature → validate → model `@champion` → quyết định | `default_probability`, `credit_score` 300–850, `risk_decision`, `model_version`, `request_id` |
-| UC-02 | Chấm điểm theo lô | LOS / batch job | ≤ 500 hồ sơ/lần, giữ thứ tự | Danh sách kết quả; > 500 → `413` |
-| UC-03 | Giải thích quyết định | Chuyên viên | Gửi hồ sơ → SHAP permutation so với hồ sơ tham chiếu | Top-k yếu tố tăng/giảm rủi ro (reason codes) |
+| UC-01 | Chấm điểm một chủ thẻ (yêu cầu tăng hạn mức) | CMS / mobile app backend | Gửi 23 feature → validate → model `@champion` → quyết định | `default_probability`, `credit_score` 300–850, `risk_decision`, `recommended_limit_ntd`, `model_version`, `request_id` |
+| UC-02 | Chấm điểm theo lô (rà soát hạn mức) | Batch job rà soát hạn mức | ≤ 500 chủ thẻ/lần, giữ thứ tự | Danh sách kết quả + `decision_summary`; > 500 → `413` |
+| UC-03 | Giải thích quyết định | Credit Risk Analyst | Gửi dữ liệu tài khoản → SHAP permutation so với chủ thẻ tham chiếu | Top-k yếu tố tăng/giảm rủi ro (reason codes) |
 | UC-04 | Giám sát sức khoẻ & drift | Risk manager, MLOps | Prometheus scrape API + drift monitor mỗi 60 s | Dashboard, alert `DataDriftDetected`, `PredictionDistributionShift`, … |
 | UC-05 | Retrain có kiểm soát | Airflow (tự động) / MLOps | Drift → `model_retrain`: train challenger → quality gate → promote → hot reload | `@champion` mới, không downtime; hoặc giữ champion |
 | UC-06 | Rollback model | MLOps | `make rollback` → alias `@champion` về version trước → reload | API phục vụ version cũ trong vài giây |
@@ -66,7 +106,7 @@ Không có giám sát drift và retrain có kiểm soát, model âm thầm xuố
 
 | ID | Yêu cầu | Ưu tiên | Hiện thực / bằng chứng |
 |---|---|---|---|
-| FR-01 | API REST versioned chấm điểm một hồ sơ, trả xác suất + score + quyết định 3 vùng | M | `POST /api/v1/predict` — [04 — API](04-api-reference.md) |
+| FR-01 | API REST versioned chấm điểm một chủ thẻ, trả xác suất + score + quyết định 3 vùng + hạn mức đề xuất | M | `POST /api/v1/predict` — [04 — API](04-api-reference.md) |
 | FR-02 | Validate input theo miền giá trị UCI, từ chối field lạ, lỗi có schema chuẩn | M | `serving/schemas.py`, `422 VALIDATION_ERROR` |
 | FR-03 | Xác thực bằng API key, hỗ trợ nhiều key để rotate | M | `X-API-Key`, env `API_KEYS`, `401`/`403` |
 | FR-04 | Pipeline train tái lập: validate dữ liệu → feature engineering → HPO + CV → so sánh ≥ 3 thuật toán | M | `make train` — [03 — ML pipeline](03-ml-pipeline.md) |
@@ -77,19 +117,19 @@ Không có giám sát drift và retrain có kiểm soát, model âm thầm xuố
 | FR-09 | Alert rule có ngưỡng + runbook, gửi Telegram (fallback webhook nội bộ) | M | 11 alert — [runbook](runbooks/alerts.md) |
 | FR-10 | Phát hiện data drift (PSI + Evidently) và prediction drift | M | `services/drift_monitor`, `make drift` |
 | FR-11 | Retrain tự động khi drift, quality gate champion/challenger, rollback | M | Airflow `drift_monitoring`, `model_retrain` |
-| FR-12 | Giải thích quyết định từng hồ sơ | S | `POST /api/v1/explain` (SHAP) |
-| FR-13 | Chấm điểm theo lô | S | `POST /api/v1/predict/batch` |
+| FR-12 | Giải thích quyết định cho từng chủ thẻ (reason codes cho adverse action notice) | S | `POST /api/v1/explain` (SHAP) |
+| FR-13 | Chấm điểm theo lô cho rà soát hạn mức sau kỳ sao kê | S | `POST /api/v1/predict/batch` |
 | FR-14 | Audit fairness + mitigation, SHAP + LIME | M | `make responsible-ai` — [06](06-responsible-ai.md) |
 | FR-15 | Pseudonymize định danh, retention inference log 90 ngày | S | `responsible_ai.privacy`, `make purge-logs` |
 | FR-16 | Giả lập traffic thực tế (normal, drift, attack, load, outage) | S | `make simulate SCENARIO=…` — [kịch bản](guides/scenario-simulation.md) |
 | FR-17 | Canary / A-B test nhiều model đồng thời | C | Chưa làm — champion/challenger offline thay thế |
-| FR-18 | UI web cho chuyên viên thẩm định | W | Ngoài phạm vi (LOS có sẵn UI) |
+| FR-18 | UI web cho chuyên viên rủi ro | W | Ngoài phạm vi (CMS có sẵn UI) |
 
 ### 4.2 Non-functional requirements
 
 | ID | Loại | Yêu cầu | Target | Ưu tiên | Kiểm chứng |
 |---|---|---|---|---|---|
-| NFR-01 | Hiệu năng | Latency `POST /api/v1/predict` | p95 ≤ 100 ms | M | `make bench`, alert `HighLatencyP95` |
+| NFR-01 | Hiệu năng | Latency `POST /api/v1/predict` (để luồng tăng hạn mức trên app phản hồi < 1 s) | p95 ≤ 100 ms | M | `make bench`, alert `HighLatencyP95` |
 | NFR-02 | Khả dụng | Uptime API | ≥ 99.5 %/tháng; mọi service có healthcheck, `restart` policy | M | `up{job="credit-risk-api"}`, `APIDown` |
 | NFR-03 | Tin cậy | Tỷ lệ 5xx trên `/api/v1/*` | < 5 % (cửa sổ 2 phút) | M | `HighErrorRate` |
 | NFR-04 | Tin cậy | Registry/DB down không làm API ngừng chấm điểm | degraded nhưng vẫn phục vụ | M | kịch bản 9 |
@@ -107,8 +147,8 @@ Không có giám sát drift và retrain có kiểm soát, model âm thầm xuố
 
 | Cấp | Metric | Target | Hiện tại | Nguồn |
 |---|---|---|---|---|
-| **Business** | Expected financial loss / hồ sơ (FN=10, FP=1), normal stream | ≤ 1.10 và không tăng qua mỗi lần promote | **1.0848** | [`model_comparison.json`](../reports/model_comparison.json) |
-| Business | Recall lớp vỡ nợ (tỷ lệ bắt được khoản xấu) | ≥ 0.60 | **0.6213** (holdout) | [`model_comparison.md`](../reports/model_comparison.md) |
+| **Business** | Expected financial loss / chủ thẻ (FN=10, FP=1), normal stream | ≤ 1.10 và không tăng qua mỗi lần promote | **1.0848** | [`model_comparison.json`](../reports/model_comparison.json) |
+| Business | Recall lớp vỡ nợ (tỷ lệ phát hiện được chủ thẻ sắp vỡ nợ) | ≥ 0.60 | **0.6213** (holdout) | [`model_comparison.md`](../reports/model_comparison.md) |
 | Business | Tỷ lệ tự động hoá (APPROVE + DECLINE, không cần người) | ≥ 40 % | **45.4 %** (REVIEW 54.6 %, 2.500 request normal) | [`reports/simulations/normal_*.json`](../reports/simulations/) |
 | Business | Disparate impact (approval) nhóm tuổi sau mitigation | ≥ 0.80 | **0.911** (reweighing), baseline 0.772 | [`fairness_report.md`](../reports/fairness_report.md) |
 | **Model** | ROC-AUC holdout / normal stream | ≥ 0.75 / sàn gate ≥ 0.70 | **0.7700 / 0.7519** | [`model_comparison.json`](../reports/model_comparison.json) |
@@ -129,8 +169,15 @@ Không có giám sát drift và retrain có kiểm soát, model âm thầm xuố
 container/orchestration, monitoring/alerting, drift → retrain → promote/rollback, Responsible AI, test + CI/CD,
 triển khai một host Ubuntu.
 
-**Ngoài phạm vi:** UI cho chuyên viên; tích hợp core banking/credit bureau thật; streaming (Kafka); Kubernetes/
-multi-host HA; canary traffic splitting; quản lý consent khách hàng.
+**Ngoài phạm vi:**
+
+- **Duyệt mở thẻ mới / application scoring.** Khách chưa có thẻ thì chưa có hạn mức, sao kê hay 6 tháng lịch sử trả nợ
+  mà model cần (18/23 feature không tồn tại lúc đó), và "vỡ nợ kỳ tới" chỉ có nghĩa với người đang có dư nợ.
+- **Thu hồi nợ tự động.** Danh sách cảnh báo sớm chỉ để chuyên viên theo dõi và nhắc nợ mềm; hệ thống không tự chuyển
+  tài khoản sang thu hồi nợ.
+- **Khách hàng doanh nghiệp** (thẻ công ty): dữ liệu chỉ gồm chủ thẻ cá nhân.
+- UI cho chuyên viên; tích hợp core banking / credit bureau thật; streaming (Kafka); Kubernetes / multi-host HA; canary
+  traffic splitting; quản lý consent khách hàng.
 
 | Ràng buộc | Ảnh hưởng tới thiết kế |
 |---|---|
@@ -145,8 +192,8 @@ multi-host HA; canary traffic splitting; quản lý consent khách hàng.
 
 | Giả định / rủi ro | Giảm thiểu |
 |---|---|
-| Nhãn vỡ nợ về trễ (≥ 1 kỳ thanh toán) | Retrain dùng feedback có nhãn; gate trên tập không dùng để train |
+| Nhãn trễ: chỉ biết chủ thẻ có vỡ nợ hay không sau 1 kỳ thanh toán kể từ lúc chấm điểm | Retrain dùng feedback đã có nhãn; gate trên tập không dùng để train |
 | Drift covariate (tuổi) làm model kém trên nhóm mới | Drift monitor + retrain có gate; theo dõi fairness theo nhóm tuổi |
-| Tấn công có tổ chức (hồ sơ nợ quá hạn dồn dập) | Alert `PredictionDistributionShift`, dashboard tỷ lệ DECLINE |
+| Tấn công có tổ chức (dồn dập yêu cầu tăng hạn mức từ tài khoản đang nợ quá hạn) | Alert `PredictionDistributionShift`, dashboard tỷ lệ DECLINE |
 | Registry / DB gián đoạn | Fallback artifact local, readiness `degraded`, alert `ModelServedFromFallback` |
 | Model mới tệ hơn lọt ra production | Quality gate + `@previous_champion` + `make rollback` |

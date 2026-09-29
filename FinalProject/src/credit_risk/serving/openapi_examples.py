@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-LOW_RISK_APPLICANT: dict[str, Any] = {
+LOW_RISK_CARDHOLDER: dict[str, Any] = {
     "LIMIT_BAL": 200000.0,
     "SEX": 2,
     "EDUCATION": 1,
@@ -30,7 +30,7 @@ LOW_RISK_APPLICANT: dict[str, Any] = {
     "PAY_AMT6": 9500.0,
 }
 
-HIGH_RISK_APPLICANT: dict[str, Any] = {
+HIGH_RISK_CARDHOLDER: dict[str, Any] = {
     "LIMIT_BAL": 20000.0,
     "SEX": 1,
     "EDUCATION": 2,
@@ -58,22 +58,28 @@ HIGH_RISK_APPLICANT: dict[str, Any] = {
 
 PREDICT_REQUEST_EXAMPLES: dict[str, Any] = {
     "low_risk": {
-        "summary": "Low-risk applicant",
+        "summary": "Low-risk cardholder",
         "description": "Pays in full every month, low utilization.",
-        "value": LOW_RISK_APPLICANT,
+        "value": LOW_RISK_CARDHOLDER,
     },
     "high_risk": {
-        "summary": "High-risk applicant",
+        "summary": "High-risk cardholder",
         "description": "Two months late on every statement, card maxed out.",
-        "value": HIGH_RISK_APPLICANT,
+        "value": HIGH_RISK_CARDHOLDER,
     },
 }
 
 BATCH_REQUEST_EXAMPLES: dict[str, Any] = {
-    "two_applicants": {
-        "summary": "Two applicants",
-        "value": {"applicants": [LOW_RISK_APPLICANT, HIGH_RISK_APPLICANT]},
-    }
+    "two_cardholders": {
+        "summary": "Two cardholders",
+        "description": "Post-statement limit review of two accounts.",
+        "value": {"cardholders": [LOW_RISK_CARDHOLDER, HIGH_RISK_CARDHOLDER]},
+    },
+    "deprecated_alias": {
+        "summary": "Deprecated `applicants` field",
+        "description": "Same request with the deprecated field name; returns the same result. Prefer `cardholders`.",
+        "value": {"applicants": [LOW_RISK_CARDHOLDER, HIGH_RISK_CARDHOLDER]},
+    },
 }
 
 PREDICTION_RESPONSE: dict[str, Any] = {
@@ -87,7 +93,7 @@ PREDICTION_RESPONSE: dict[str, Any] = {
     "top_risk_factors": [
         "Severe Delinquency: PAY_0=2 indicates 2+ months payment default",
         "Excessive Credit Line Utilization: 97.5% of limit consumed",
-        "Demographic Cohort: Young applicant profile (23yo) with nascent credit history",
+        "Demographic Cohort: Young cardholder profile (23yo) with short account history",
     ],
     "policy_guardrails": {
         "age_verification": "PASS",
@@ -256,7 +262,7 @@ def _error(code: str, message: str, details: Any = None) -> dict[str, Any]:
 ERROR_MISSING_KEY = _error("MISSING_API_KEY", "Missing X-API-Key header.")
 ERROR_INVALID_KEY = _error("INVALID_API_KEY", "The provided API key is not valid.")
 ERROR_BATCH_TOO_LARGE = _error(
-    "BATCH_TOO_LARGE", "Batch contains 800 applicants; the maximum is 500.", {"max_size": 500, "received": 800}
+    "BATCH_TOO_LARGE", "Batch contains 800 cardholders; the maximum is 500.", {"max_size": 500, "received": 800}
 )
 ERROR_MODEL_UNAVAILABLE = _error("MODEL_UNAVAILABLE", "No model is loaded; check GET /health/ready.")
 ERROR_INTERNAL = _error("INTERNAL_ERROR", "Internal server error.")

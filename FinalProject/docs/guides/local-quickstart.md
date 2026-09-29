@@ -69,7 +69,7 @@ export API_KEY=$(grep -E '^API_KEYS=' .env | cut -d= -f2 | cut -d, -f1)
 curl -s $API_URL/health/ready | jq .
 # {"status":"ready", ..., "checks":{"model":{"status":"ok","detail":"mlflow_registry version 1"}, ...}}
 
-python scripts/sample_predict.py        # 1 hồ sơ rủi ro thấp + 1 hồ sơ rủi ro cao
+python scripts/sample_predict.py        # 1 chủ thẻ rủi ro thấp + 1 chủ thẻ rủi ro cao
 ```
 
 Hoặc dùng curl với body đầy đủ trong [API reference §2.1](../04-api-reference.md#21-post-apiv1predict). Kết quả mong đợi:

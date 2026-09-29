@@ -43,8 +43,8 @@ def test_readiness_reports_every_dependency(stack: Stack) -> None:
     assert set(body["checks"]) >= {"model", "mlflow", "database"}
 
 
-def test_predict_returns_full_contract(stack: Stack, auth: dict[str, str], low_risk_applicant: dict) -> None:
-    response = stack.post(f"{stack.api_url}/api/v1/predict", json=low_risk_applicant, headers=auth)
+def test_predict_returns_full_contract(stack: Stack, auth: dict[str, str], low_risk_cardholder: dict) -> None:
+    response = stack.post(f"{stack.api_url}/api/v1/predict", json=low_risk_cardholder, headers=auth)
     assert response.status_code == 200
     body = response.json()
     assert 0.0 <= body["default_probability"] <= 1.0
@@ -55,21 +55,21 @@ def test_predict_returns_full_contract(stack: Stack, auth: dict[str, str], low_r
     assert body["request_id"] == response.headers["X-Request-ID"]
 
 
-def test_high_risk_applicant_scores_worse(
-    stack: Stack, auth: dict[str, str], low_risk_applicant: dict, high_risk_applicant: dict
+def test_high_risk_cardholder_scores_worse(
+    stack: Stack, auth: dict[str, str], low_risk_cardholder: dict, high_risk_cardholder: dict
 ) -> None:
     url = f"{stack.api_url}/api/v1/predict"
-    low = stack.post(url, json=low_risk_applicant, headers=auth).json()
-    high = stack.post(url, json=high_risk_applicant, headers=auth).json()
+    low = stack.post(url, json=low_risk_cardholder, headers=auth).json()
+    high = stack.post(url, json=high_risk_cardholder, headers=auth).json()
     assert high["default_probability"] > low["default_probability"]
     assert high["credit_score"] < low["credit_score"]
     assert high["risk_decision"] == "DECLINE"
 
 
-def test_batch_predict_scores_every_applicant(
-    stack: Stack, auth: dict[str, str], low_risk_applicant: dict, high_risk_applicant: dict
+def test_batch_predict_scores_every_cardholder(
+    stack: Stack, auth: dict[str, str], low_risk_cardholder: dict, high_risk_cardholder: dict
 ) -> None:
-    payload = {"applicants": [low_risk_applicant, high_risk_applicant, low_risk_applicant]}
+    payload = {"cardholders": [low_risk_cardholder, high_risk_cardholder, low_risk_cardholder]}
     response = stack.post(f"{stack.api_url}/api/v1/predict/batch", json=payload, headers=auth)
     assert response.status_code == 200
     body = response.json()
@@ -77,14 +77,31 @@ def test_batch_predict_scores_every_applicant(
     assert results is not None and len(results) == 3
 
 
+def test_batch_deprecated_applicants_alias_matches_cardholders(
+    stack: Stack, auth: dict[str, str], low_risk_cardholder: dict, high_risk_cardholder: dict
+) -> None:
+    url = f"{stack.api_url}/api/v1/predict/batch"
+    rows = [low_risk_cardholder, high_risk_cardholder]
+    current = stack.post(url, json={"cardholders": rows}, headers=auth)
+    legacy = stack.post(url, json={"applicants": rows}, headers=auth)
+    assert current.status_code == legacy.status_code == 200
+
+    def scores(body: dict) -> list[dict]:
+        return [{k: v for k, v in item.items() if k != "request_id"} for item in body["predictions"]]
+
+    assert scores(legacy.json()) == scores(current.json())
+    both = stack.post(url, json={"cardholders": rows, "applicants": rows}, headers=auth)
+    assert both.status_code == 422
+
+
 @pytest.mark.parametrize(
     ("headers", "status", "code"),
     [({}, 401, "MISSING_API_KEY"), ({"X-API-Key": "wrong-key"}, 403, "INVALID_API_KEY")],
 )
 def test_auth_errors_use_error_contract(
-    stack: Stack, low_risk_applicant: dict, headers: dict, status: int, code: str
+    stack: Stack, low_risk_cardholder: dict, headers: dict, status: int, code: str
 ) -> None:
-    response = stack.post(f"{stack.api_url}/api/v1/predict", json=low_risk_applicant, headers=headers)
+    response = stack.post(f"{stack.api_url}/api/v1/predict", json=low_risk_cardholder, headers=headers)
     assert response.status_code == status
     body = response.json()
     assert set(body) == ERROR_KEYS
@@ -101,8 +118,8 @@ def test_validation_error_lists_fields_without_echoing_input(stack: Stack, auth:
     assert str(secret_value) not in response.text
 
 
-def test_oversized_batch_is_rejected(stack: Stack, auth: dict[str, str], low_risk_applicant: dict) -> None:
-    payload = {"applicants": [low_risk_applicant] * 501}
+def test_oversized_batch_is_rejected(stack: Stack, auth: dict[str, str], low_risk_cardholder: dict) -> None:
+    payload = {"cardholders": [low_risk_cardholder] * 501}
     response = stack.post(f"{stack.api_url}/api/v1/predict/batch", json=payload, headers=auth)
     assert response.status_code == 413
     assert response.json()["code"] == "BATCH_TOO_LARGE"

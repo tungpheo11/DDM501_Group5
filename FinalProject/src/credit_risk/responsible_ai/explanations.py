@@ -26,12 +26,12 @@ def top_risk_factors(pay_0: int, utilization: float, age: int, limit_bal: float,
         factors.append(f"Moderate Debt Utilization: {utilization * 100:.1f}% credit utilization")
 
     if age < 25:
-        factors.append(f"Demographic Cohort: Young applicant profile ({age}yo) with nascent credit history")
+        factors.append(f"Demographic Cohort: Young cardholder profile ({age}yo) with short account history")
     elif age >= 45:
-        factors.append(f"Demographic Cohort: Mature applicant profile ({age}yo) with established credit history")
+        factors.append(f"Demographic Cohort: Mature cardholder profile ({age}yo) with long account history")
 
     if limit_bal <= 30000.0:
-        factors.append("Sub-prime Credit Ceiling: Low initial assigned limit")
+        factors.append("Sub-prime Credit Ceiling: Low current credit limit")
 
     return factors[:limit]
 

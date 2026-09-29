@@ -1,6 +1,6 @@
 """Measure client-side latency of POST /api/v1/predict against a running API (``make bench``).
 
-Sends real applicants from data/processed/stream_normal.csv sequentially over a
+Sends real cardholders from data/processed/stream_normal.csv sequentially over a
 keep-alive session after a warm-up, then prints p50/p95/p99 and exits non-zero
 when p95 exceeds the budget (default 100 ms). Optional ``--output`` writes JSON.
 """

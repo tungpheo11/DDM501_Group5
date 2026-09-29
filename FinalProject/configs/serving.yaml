@@ -21,7 +21,7 @@ mlflow_probe_timeout_seconds: 0.5
 # Dependency probes behind GET /health/ready are cached for this many seconds.
 readiness_cache_seconds: 10
 
-# Upper bound on applicants per POST /api/v1/predict/batch call (backpressure).
+# Upper bound on cardholders per POST /api/v1/predict/batch call (backpressure).
 batch_max_size: 500
 
 # API-key auth for /api/v1/*. Keys come from the API_KEYS env var (comma-separated,
@@ -41,7 +41,7 @@ explain:
   # permutations: ~40 ms per request, attributions within ~0.01 of 500 evals.
   shap_max_evals: 240
   seed: 42
-  # Median applicant of data/reference/train_baseline.csv: the SHAP background and
+  # Median cardholder of data/reference/train_baseline.csv: the SHAP background and
   # the substitution reference of POST /api/v1/explain.
   reference_profile:
     LIMIT_BAL: 100000.0

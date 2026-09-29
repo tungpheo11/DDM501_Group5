@@ -117,7 +117,7 @@ def auth(stack: Stack) -> dict[str, str]:
 
 
 @pytest.fixture
-def low_risk_applicant() -> dict[str, float]:
+def low_risk_cardholder() -> dict[str, float]:
     return {
         "LIMIT_BAL": 200000.0,
         "SEX": 2,
@@ -131,7 +131,7 @@ def low_risk_applicant() -> dict[str, float]:
 
 
 @pytest.fixture
-def high_risk_applicant() -> dict[str, float]:
+def high_risk_cardholder() -> dict[str, float]:
     return {
         "LIMIT_BAL": 20000.0,
         "SEX": 1,

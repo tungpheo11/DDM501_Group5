@@ -35,7 +35,7 @@ EXPLAIN_METHOD_SUBSTITUTION: ExplainMethod = "reference_substitution"
 
 @dataclass(frozen=True)
 class ScoreResult:
-    """Model output, business decision and rule-based explanations for one applicant."""
+    """Model output, business decision and rule-based explanations for one cardholder."""
 
     features: dict[str, Any]
     prediction: int
@@ -101,7 +101,7 @@ def default_probabilities(model: Any, frame: pd.DataFrame) -> np.ndarray:
 
 
 class ScoringService:
-    """Scores applicants with a model snapshot and records telemetry + inference logs."""
+    """Scores cardholders with a model snapshot and records telemetry + inference logs."""
 
     def __init__(self, settings: Settings, rolling_stats: RollingFeatureStats) -> None:
         self._settings = settings
@@ -125,19 +125,19 @@ class ScoringService:
             guardrails=policy_guardrails(age, utilization, pay_0),
         )
 
-    def score(self, loaded: LoadedModel, applicants: list[dict[str, Any]]) -> list[ScoreResult]:
-        """Score applicants (request order preserved)."""
-        frame = _frame(applicants, loaded.feature_names)
+    def score(self, loaded: LoadedModel, cardholders: list[dict[str, Any]]) -> list[ScoreResult]:
+        """Score cardholders (request order preserved)."""
+        frame = _frame(cardholders, loaded.feature_names)
         with PREDICTION_LATENCY.time():
             probabilities = default_probabilities(loaded.model, frame)
-        return [self._build_result(features, float(p)) for features, p in zip(applicants, probabilities, strict=True)]
+        return [self._build_result(features, float(p)) for features, p in zip(cardholders, probabilities, strict=True)]
 
     def explain(
-        self, loaded: LoadedModel, applicant: dict[str, Any]
+        self, loaded: LoadedModel, cardholder: dict[str, Any]
     ) -> tuple[ScoreResult, float, list[Contribution], ExplainMethod]:
-        """Score one applicant and attribute its probability to its features.
+        """Score one cardholder and attribute its probability to its features.
 
-        Uses permutation SHAP against the reference (median training) applicant when
+        Uses permutation SHAP against the reference (median training) cardholder when
         ``serving.explain.method`` is ``shap``: contributions then sum to
         ``probability - reference_probability`` and ``top_risk_factors`` is rewritten
         from them. Any SHAP failure degrades to reference substitution.
@@ -147,14 +147,14 @@ class ScoringService:
         """
         if self._settings.serving.explain_method == "shap":
             try:
-                return self._explain_shap(loaded, applicant)
+                return self._explain_shap(loaded, cardholder)
             except Exception as exc:  # Explanations must never take the endpoint down.
                 logger.warning(
                     "SHAP explanation failed (%s); falling back to reference substitution.",
                     type(exc).__name__,
                     extra={"event": "explain_fallback"},
                 )
-        result, reference_probability, contributions = self._explain_substitution(loaded, applicant)
+        result, reference_probability, contributions = self._explain_substitution(loaded, cardholder)
         return result, reference_probability, contributions, EXPLAIN_METHOD_SUBSTITUTION
 
     def warm_up_explainer(self, loaded: LoadedModel | None) -> None:
@@ -168,14 +168,14 @@ class ScoringService:
             logger.warning("SHAP warm-up failed: %s", type(exc).__name__)
 
     def _explain_shap(
-        self, loaded: LoadedModel, applicant: dict[str, Any]
+        self, loaded: LoadedModel, cardholder: dict[str, Any]
     ) -> tuple[ScoreResult, float, list[Contribution], ExplainMethod]:
         serving = self._settings.serving
-        feature_names = loaded.feature_names or tuple(applicant)
-        reference = {k: v for k, v in serving.explain_reference.items() if k in applicant}
+        feature_names = loaded.feature_names or tuple(cardholder)
+        reference = {k: v for k, v in serving.explain_reference.items() if k in cardholder}
         explanation = explain_against_reference(
             loaded.model,
-            applicant,
+            cardholder,
             reference,
             feature_names,
             max_evals=serving.explain_shap_max_evals,
@@ -184,15 +184,15 @@ class ScoringService:
         contributions = [
             Contribution(
                 feature=feature,
-                value=float(applicant[feature]),
-                reference_value=float(reference.get(feature, applicant[feature])),
+                value=float(cardholder[feature]),
+                reference_value=float(reference.get(feature, cardholder[feature])),
                 contribution=round(value, 6),
             )
             for feature, value in explanation.contributions.items()
         ]
         contributions.sort(key=lambda item: abs(item.contribution), reverse=True)
         top = contributions[: serving.explain_top_k]
-        result = self._build_result(applicant, explanation.probability)
+        result = self._build_result(cardholder, explanation.probability)
         factors = risk_factor_messages(
             [{"feature": c.feature, "value": c.value, "contribution": c.contribution} for c in contributions]
         )
@@ -200,19 +200,19 @@ class ScoringService:
         return result, round(explanation.reference_probability, 6), top, EXPLAIN_METHOD_SHAP
 
     def _explain_substitution(
-        self, loaded: LoadedModel, applicant: dict[str, Any]
+        self, loaded: LoadedModel, cardholder: dict[str, Any]
     ) -> tuple[ScoreResult, float, list[Contribution]]:
         """Attribute the probability by reference substitution.
 
-        For each feature with a reference value, the applicant is re-scored with that
-        feature replaced by the reference (median training applicant); the drop in
+        For each feature with a reference value, the cardholder is re-scored with that
+        feature replaced by the reference (median training cardholder); the drop in
         probability is the feature's contribution. All variants go through a single
         ``predict_proba`` call.
         """
-        reference = {k: v for k, v in self._settings.serving.explain_reference.items() if k in applicant}
+        reference = {k: v for k, v in self._settings.serving.explain_reference.items() if k in cardholder}
         features = list(reference)
-        rows = [applicant, {**applicant, **reference}]
-        rows.extend({**applicant, feature: reference[feature]} for feature in features)
+        rows = [cardholder, {**cardholder, **reference}]
+        rows.extend({**cardholder, feature: reference[feature]} for feature in features)
         probabilities = default_probabilities(loaded.model, _frame(rows, loaded.feature_names))
 
         probability = float(probabilities[0])
@@ -220,7 +220,7 @@ class ScoringService:
         contributions = [
             Contribution(
                 feature=feature,
-                value=float(applicant[feature]),
+                value=float(cardholder[feature]),
                 reference_value=float(reference[feature]),
                 contribution=round(probability - float(p_without), 6),
             )
@@ -228,7 +228,7 @@ class ScoringService:
         ]
         contributions.sort(key=lambda item: abs(item.contribution), reverse=True)
         top = contributions[: self._settings.serving.explain_top_k]
-        return self._build_result(applicant, probability), round(reference_probability, 6), top
+        return self._build_result(cardholder, probability), round(reference_probability, 6), top
 
     def record(
         self, results: list[ScoreResult], request_ids: list[str], loaded: LoadedModel, latency_ms: float

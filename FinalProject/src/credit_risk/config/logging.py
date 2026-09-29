@@ -20,7 +20,7 @@ from credit_risk.utils.request_context import get_request_id
 
 _configured = False
 
-# Applicant attributes of the UCI dataset. They must never reach the logs raw.
+# Cardholder attributes of the UCI dataset. They must never reach the logs raw.
 PII_FIELDS = frozenset(
     {
         "LIMIT_BAL",
@@ -35,6 +35,8 @@ PII_FIELDS = frozenset(
         "payload",
         "applicant",
         "applicants",
+        "cardholder",
+        "cardholders",
     }
 )
 REDACTED = "[REDACTED]"

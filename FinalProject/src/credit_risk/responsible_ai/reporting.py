@@ -167,7 +167,7 @@ def explainability_global_table(report: Mapping[str, Any], top: int = 10) -> str
 
 
 def explainability_local_table(report: Mapping[str, Any]) -> str:
-    """Representative applicants: SHAP vs LIME top features and their agreement."""
+    """Representative cardholders: SHAP vs LIME top features and their agreement."""
     rows = []
     for item in report["local"]:
         shap_top = ", ".join(f"`{x['feature']}` {x['contribution']:+.3f}" for x in item["shap_top"][:3])
@@ -183,7 +183,7 @@ def explainability_local_table(report: Mapping[str, Any]) -> str:
             ]
         )
     k = report["local"][0]["agreement"]["k"] if report["local"] else 5
-    headers = ["Hồ sơ", "P(default)", "SHAP top-3", "LIME top-3", f"Overlap@{k} / cùng dấu"]
+    headers = ["Chủ thẻ", "P(default)", "SHAP top-3", "LIME top-3", f"Overlap@{k} / cùng dấu"]
     return _table(headers, rows)
 
 
@@ -311,11 +311,11 @@ def render_fairness_markdown(report: Mapping[str, Any]) -> str:
         "",
         model_details_block(report),
         "",
-        f"- Tập đánh giá: {overall['rows']:,} hồ sơ chưa từng dùng để train "
+        f"- Tập đánh giá: {overall['rows']:,} chủ thẻ chưa từng dùng để train "
         f"({', '.join(f'`{k}` {v:,}' for k, v in report['sources'].items())}); default rate "
         f"{_pct(overall['default_rate'])}, ROC-AUC {overall['roc_auc']:.4f}, APPROVE {_pct(overall['approve_rate'])}.",
         f"- Cost matrix: FN = {report['costs']['false_negative']}, FP = {report['costs']['false_positive']} "
-        "(expected loss = tổng loss / số hồ sơ).",
+        "(expected loss = tổng loss / số chủ thẻ).",
         "",
         "## Tổng quan theo thuộc tính nhạy cảm",
         "",
@@ -358,7 +358,7 @@ def render_explainability_markdown(report: Mapping[str, Any]) -> str:
         "",
         "## Phương pháp",
         "",
-        f"- SHAP: {report['method']['shap']} — {report['sample_size']} hồ sơ đánh giá.",
+        f"- SHAP: {report['method']['shap']} — {report['sample_size']} chủ thẻ trong tập đánh giá.",
         f"- LIME: {report['method']['lime']}.",
         f"- Serving (`POST /api/v1/explain`): {report['method']['serving']}.",
         "",
@@ -370,7 +370,7 @@ def render_explainability_markdown(report: Mapping[str, Any]) -> str:
         "",
         "![SHAP bar](figures/rai_shap_bar.png)",
         "",
-        "## Local — 3 hồ sơ đại diện (SHAP vs LIME)",
+        "## Local — 3 chủ thẻ đại diện (SHAP vs LIME)",
         "",
         explainability_local_table(report),
         "",

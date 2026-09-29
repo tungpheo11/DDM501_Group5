@@ -4,7 +4,7 @@ The UCI dataset carries no direct identifiers (no name, national ID or account n
 but every row is still personal data: demographics are *protected attributes* and the
 repayment/bill history is *financial* personal data. Controls:
 
-* application logs never contain raw applicant fields (``credit_risk.config.logging``
+* application logs never contain raw cardholder fields (``credit_risk.config.logging``
   redacts them; :func:`assert_no_raw_pii` is used by tests);
 * identifiers that leave the serving boundary are pseudonymized with a keyed HMAC;
 * analytics exports generalize quasi-identifiers (age band, limit band) and drop
@@ -93,7 +93,7 @@ def limit_band(limit_bal: float) -> str:
 
 
 def generalize_record(features: Mapping[str, Any]) -> dict[str, Any]:
-    """Export-safe copy of one applicant: bands for AGE/LIMIT_BAL, protected attributes dropped."""
+    """Export-safe copy of one cardholder: bands for AGE/LIMIT_BAL, protected attributes dropped."""
     record = {key: value for key, value in features.items() if key not in DROPPED_IN_EXPORTS}
     if "AGE" in record:
         record["AGE"] = age_band(float(record["AGE"]))
@@ -103,7 +103,7 @@ def generalize_record(features: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def assert_no_raw_pii(entry: Mapping[str, Any], raw: Mapping[str, Any]) -> None:
-    """Raise ``AssertionError`` when a structured log ``entry`` exposes a raw applicant field.
+    """Raise ``AssertionError`` when a structured log ``entry`` exposes a raw cardholder field.
 
     Checks every schema feature key at any nesting level of ``entry`` whose value equals
     the raw value in ``raw``.
@@ -113,7 +113,7 @@ def assert_no_raw_pii(entry: Mapping[str, Any], raw: Mapping[str, Any]) -> None:
         if isinstance(node, Mapping):
             for key, value in node.items():
                 if key in ALL_FEATURES and key in raw and value == raw[key]:
-                    raise AssertionError(f"raw applicant field {key!r} leaked into a log entry")
+                    raise AssertionError(f"raw cardholder field {key!r} leaked into a log entry")
                 _walk(value)
         elif isinstance(node, list | tuple):
             for item in node:

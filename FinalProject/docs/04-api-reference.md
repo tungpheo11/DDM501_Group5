@@ -16,16 +16,16 @@
 | Content type | `application/json`, UTF-8 |
 | Correlation | Gửi `X-Request-ID` để nối log; không gửi thì server sinh `req_<uuid>`. Luôn có trong response header và body |
 | Input | Pydantic strict: `extra="forbid"` (field lạ ⇒ 422), miền giá trị UCI (xem §3) |
-| Rate limit | Production: Nginx 20 req/s/IP, burst 40 ⇒ `429 TOO_MANY_REQUESTS`. Batch tối đa 500 hồ sơ |
+| Rate limit | Production: Nginx 20 req/s/IP, burst 40 ⇒ `429 TOO_MANY_REQUESTS`. Batch tối đa 500 chủ thẻ |
 | Không auth | `/health/live`, `/health/ready`, `/metrics` (cho Docker/Prometheus/Airflow) — Nginx chặn `/metrics` từ Internet |
 
 ## 2. Endpoints
 
 | Method | Path | Auth | Mô tả | Mã lỗi |
 |---|---|---|---|---|
-| `POST` | `/api/v1/predict` | ✔ | Chấm điểm 1 hồ sơ | 401, 403, 422, 500, 503 |
-| `POST` | `/api/v1/predict/batch` | ✔ | Chấm điểm tối đa 500 hồ sơ (vectorized) | 401, 403, 413, 422, 500, 503 |
-| `POST` | `/api/v1/explain` | ✔ | Chấm điểm + SHAP top-5 đóng góp | 401, 403, 422, 500, 503 |
+| `POST` | `/api/v1/predict` | ✔ | Chấm điểm 1 chủ thẻ realtime (yêu cầu tăng hạn mức, rút tiền mặt, chuyển trả góp trên app) | 401, 403, 422, 500, 503 |
+| `POST` | `/api/v1/predict/batch` | ✔ | Chấm điểm tối đa 500 chủ thẻ (vectorized) cho rà soát hạn mức sau kỳ sao kê và cảnh báo sớm | 401, 403, 413, 422, 500, 503 |
+| `POST` | `/api/v1/explain` | ✔ | Chấm điểm + SHAP top-5 đóng góp, cho chuyên viên rủi ro và adverse action notice | 401, 403, 422, 500, 503 |
 | `GET` | `/api/v1/model/info` | ✔ | Metadata model đang phục vụ | 401, 403, 503 |
 | `POST` | `/api/v1/model/reload` | ✔ | Hot reload `@champion` từ MLflow, không downtime | 401, 403, 503 |
 | `GET` | `/health/live` | — | Liveness: process còn nhận HTTP | — |
@@ -77,8 +77,8 @@ curl -s "$API_URL/api/v1/predict" \
 | `risk_decision` | `APPROVE` (PD < 0.30) · `REVIEW` (0.30 ≤ PD < 0.60) · `DECLINE` (PD ≥ 0.60) — `configs/serving.yaml` |
 | `credit_score` | `round(850 − PD × 550)`, kẹp trong 300–850 |
 | `credit_tier` | `PRIME` ≥ 740 · `NEAR_PRIME` ≥ 670 · `SUBPRIME` ≥ 580 · `HIGH_RISK` |
-| `recommended_limit_ntd` | APPROVE: `min(LIMIT_BAL × 1.25, 500 000)` · REVIEW: `min(LIMIT_BAL × 0.5, 100 000)` · DECLINE: 0 |
-| `top_risk_factors` | Lý do dạng rule-based dễ đọc cho khách hàng/nhân viên |
+| `recommended_limit_ntd` | Hạn mức đề xuất. APPROVE: `min(LIMIT_BAL × 1.25, 500 000)` (chấp thuận tăng / giữ) · REVIEW: `min(LIMIT_BAL × 0.5, 100 000)` (đề xuất hạ, chuyên viên quyết định) · DECLINE: 0 (tạm khoá hạn mức khả dụng; dư nợ hiện tại vẫn phải trả) |
+| `top_risk_factors` | Lý do dạng rule-based dễ đọc cho chủ thẻ / chuyên viên rủi ro |
 | `policy_guardrails` | Kiểm tra tuân thủ tất định: tuổi ≥ 18, utilization < 95 %, `PAY_0 ≤ 1` |
 | `served_by` | `mlflow_registry` hoặc `local_artifact` (fallback khi MLflow down — readiness `degraded`) |
 
@@ -86,8 +86,28 @@ Mọi request thành công được ghi vào bảng `inference_logs` (Postgres) 
 
 ### 2.2 `POST /api/v1/predict/batch`
 
-Body `{"applicants": [<applicant>, ...]}` (1–500 phần tử). Thứ tự kết quả giữ nguyên; mỗi item có id
-`<request_id>-<index>` trong inference log.
+Body `{"cardholders": [<cardholder>, ...]}` (1–500 phần tử, mỗi phần tử là 23 field như §3). Thứ tự kết quả giữ
+nguyên; mỗi item có id `<request_id>-<index>` trong inference log.
+
+```bash
+curl -s "$API_URL/api/v1/predict/batch" \
+  -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
+  -d '{"cardholders": [
+        {"LIMIT_BAL":200000,"SEX":2,"EDUCATION":1,"MARRIAGE":2,"AGE":35,
+         "PAY_0":0,"PAY_2":0,"PAY_3":0,"PAY_4":0,"PAY_5":0,"PAY_6":0,
+         "BILL_AMT1":50000,"BILL_AMT2":48000,"BILL_AMT3":46000,"BILL_AMT4":44000,"BILL_AMT5":42000,"BILL_AMT6":40000,
+         "PAY_AMT1":5000,"PAY_AMT2":5000,"PAY_AMT3":5000,"PAY_AMT4":5000,"PAY_AMT5":5000,"PAY_AMT6":5000},
+        {"LIMIT_BAL":200000,"SEX":2,"EDUCATION":1,"MARRIAGE":2,"AGE":35,
+         "PAY_0":0,"PAY_2":0,"PAY_3":0,"PAY_4":0,"PAY_5":0,"PAY_6":0,
+         "BILL_AMT1":50000,"BILL_AMT2":48000,"BILL_AMT3":46000,"BILL_AMT4":44000,"BILL_AMT5":42000,"BILL_AMT6":40000,
+         "PAY_AMT1":5000,"PAY_AMT2":5000,"PAY_AMT3":5000,"PAY_AMT4":5000,"PAY_AMT5":5000,"PAY_AMT6":5000}
+      ]}'
+```
+
+> **Deprecated — field `applicants`.** Tên cũ `applicants` vẫn được nhận như alias của `cardholders` để client cũ không
+> bị vỡ, cho cùng kết quả, và được đánh dấu `deprecated: true` trong [`openapi.yaml`](openapi.yaml). Client mới dùng
+> `cardholders`. Chỉ gửi **một** trong hai field: request chứa cả `cardholders` lẫn `applicants` (hoặc thêm field lạ
+> khác) bị `422 VALIDATION_ERROR`. Alias sẽ bị gỡ ở phiên bản API chính kế tiếp (`/api/v2`).
 
 ```json
 {
@@ -107,7 +127,7 @@ Body `{"applicants": [<applicant>, ...]}` (1–500 phần tử). Thứ tự kế
 ### 2.3 `POST /api/v1/explain`
 
 Cùng body với `/predict`. Trả thêm `method` (`shap_permutation`, degrade sang `reference_substitution` nếu SHAP lỗi),
-`reference_probability` (PD của hồ sơ trung vị tập train) và `contributions` top-5 theo độ lớn; tổng contributions ≈
+`reference_probability` (PD của chủ thẻ trung vị tập train) và `contributions` top-5 theo độ lớn; tổng contributions ≈
 `default_probability − reference_probability`. Không ghi vào inference log.
 
 ```json
@@ -165,11 +185,11 @@ Kết quả probe dependency cache 10 s (`readiness_cache_seconds`). `/health/li
 
 ## 3. Schema input (`CreditPredictRequest`)
 
-23 feature UCI, tất cả bắt buộc, không nhận field lạ:
+Một chủ thẻ sau kỳ sao kê gần nhất: 23 feature UCI, tất cả bắt buộc, không nhận field lạ:
 
 | Field | Kiểu | Ràng buộc |
 |---|---|---|
-| `LIMIT_BAL` | float | > 0, ≤ 10 000 000 (NT$) |
+| `LIMIT_BAL` | float | Hạn mức hiện tại của thẻ; > 0, ≤ 10 000 000 (NT$) |
 | `SEX` | int | 1 = nam, 2 = nữ |
 | `EDUCATION` | int | 0–6 (1 sau đại học, 2 đại học, 3 THPT, 4 khác, 0/5/6 không rõ) |
 | `MARRIAGE` | int | 0–3 (1 kết hôn, 2 độc thân, 3 khác, 0 không rõ) |
@@ -201,7 +221,7 @@ Mọi response non-2xx có cùng schema `ErrorResponse`:
 | 500 | `INTERNAL_ERROR` | Lỗi không lường trước | Retry; báo kèm `request_id` |
 | 503 | `MODEL_UNAVAILABLE` | Chưa có model nào được load | Retry sau; kiểm tra `/health/ready` |
 
-`details[]` của 422 liệt kê từng field lỗi — **cố ý không echo lại giá trị input** để không rò dữ liệu khách hàng vào log:
+`details[]` của 422 liệt kê từng field lỗi — **cố ý không echo lại giá trị input** để không rò dữ liệu chủ thẻ vào log:
 
 ```json
 {"code": "VALIDATION_ERROR", "message": "Request validation failed.",
@@ -213,13 +233,26 @@ Mọi response non-2xx có cùng schema `ErrorResponse`:
  "request_id": "req_31fb6f30c5554876ab64d112acef4b32"}
 ```
 
+Với `/predict/batch`, `field` là đường dẫn tới phần tử lỗi và **dùng đúng tên field client đã gửi**:
+`cardholders.<index>.<FIELD>` khi gửi `cardholders`, `applicants.<index>.<FIELD>` khi còn dùng alias cũ. Ví dụ phần tử
+thứ hai thiếu `AGE`:
+
+```json
+{"code": "VALIDATION_ERROR", "message": "Request validation failed.",
+ "details": [{"field": "cardholders.1.AGE", "message": "Field required", "type": "missing"}],
+ "request_id": "req_…"}
+```
+
+Gửi cả hai field trong cùng request: field thứ hai bị coi là field lạ, ví dụ
+`{"field": "applicants", "message": "Extra inputs are not permitted", "type": "extra_forbidden"}`.
+
 Mỗi lần auth thất bại tăng `credit_api_auth_failures_total{reason="missing"|"invalid"}`; tỉ lệ 5xx cao kích hoạt alert
 `HighErrorRate` ([monitoring](05-monitoring-alerting.md)).
 
 ## 5. Client mẫu
 
 ```bash
-.venv/bin/python scripts/sample_predict.py   # 1 hồ sơ tốt + 1 hồ sơ xấu (API_URL, API_KEY từ env)
+.venv/bin/python scripts/sample_predict.py   # 1 chủ thẻ tốt + 1 chủ thẻ xấu (API_URL, API_KEY từ env)
 make bench                                   # scripts/benchmark_latency.py: p95 /predict (fail nếu > 100 ms)
 ```
 
@@ -229,8 +262,8 @@ import requests
 
 response = requests.post(
     f"{os.environ['API_URL']}/api/v1/predict",
-    headers={"X-API-Key": os.environ["API_KEY"], "X-Request-ID": "loan-app-42"},
-    json=applicant,  # dict 23 field như §3
+    headers={"X-API-Key": os.environ["API_KEY"], "X-Request-ID": "limit-increase-42"},
+    json=cardholder,  # dict 23 field như §3
     timeout=5,
 )
 if response.status_code == 422:

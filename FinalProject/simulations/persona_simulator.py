@@ -1,6 +1,8 @@
 """Production-grade multi-persona and behavioral-evolution traffic simulator.
 
-Simulates real-world macroeconomic and customer behavioral shifts across 5 distinct archetypes:
+Each request is an existing cardholder asking for a credit limit increase in the mobile app
+(realtime ``/api/v1/predict``). Simulates macroeconomic and cardholder behavioral shifts across
+5 distinct archetypes:
 1. Traditional Prime Worker (Stable salary, age 35-52, prompt repayment, low utilization)
 2. Holiday Shopping Spurt (Prime borrower under holiday/inflation spending surge, high utilization)
 3. Gen-Z Gig Freelancer (Age 19-25, lumpy gig cashflows, PAY_0=1 delay, lower credit limit)
@@ -10,7 +12,7 @@ Simulates real-world macroeconomic and customer behavioral shifts across 5 disti
 Simulation Modes:
 - 'normal': Baseline operations (80% Prime, 10% Shoppers, 10% Gen-Z) -> PSI < 0.05
 - 'holiday_spike': Seasonal festival surge (60% Shoppers, 30% Prime, 10% Gen-Z)
-- 'campaign_drift': Viral Gen-Z acquisition campaign (75% Gen-Z, 15% Prime, 10% Speculator) -> PSI >= 0.25
+- 'campaign_drift': Viral Gen-Z limit-increase campaign (75% Gen-Z, 15% Prime, 10% Speculator) -> PSI >= 0.25
 - 'fraud_attack': Coordinated high-risk debt maxing (70% Speculators, 20% Gen-Z, 10% Prime)
 - 'staged_progression': Executes all 4 market regimes sequentially to produce dynamic Grafana charts.
 """
@@ -195,7 +197,7 @@ def generate_recovering_borrower() -> tuple[str, dict[str, Any]]:
 
 
 def sample_persona_by_mode(mode: str) -> tuple[str, dict[str, Any]]:
-    """Draw one applicant from the persona mix of the given market regime."""
+    """Draw one cardholder from the persona mix of the given market regime."""
     r = random.random()
     if mode == "normal":
         if r < 0.75:
@@ -236,7 +238,7 @@ def sample_persona_by_mode(mode: str) -> tuple[str, dict[str, Any]]:
 
 
 def execute_simulation_batch(mode: str, count: int, delay: float, api_url: str = DEFAULT_API_URL) -> dict[str, Any]:
-    """Send ``count`` applications of the given regime to ``/api/v1/predict`` and print a summary."""
+    """Send ``count`` limit-increase requests of the given regime to ``/api/v1/predict`` and print a summary."""
     predict_url = f"{api_url.rstrip('/')}/api/v1/predict"
     headers = {"X-API-Key": API_KEY} if API_KEY else {}
     print("\n" + "=" * 70)
@@ -314,7 +316,7 @@ def run_staged_progression(requests_per_stage: int = 30, delay: float = 0.02, ap
     stages = [
         ("normal", "Stage 1: Traditional Prime Borrowers (Steady State)"),
         ("holiday_spike", "Stage 2: Holiday Shopping Spurt (High Utilization Shock)"),
-        ("campaign_drift", "Stage 3: Gen-Z Acquisition Campaign (Demographic & Payment Drift)"),
+        ("campaign_drift", "Stage 3: Gen-Z Limit-Increase Campaign (Demographic & Payment Drift)"),
         ("fraud_attack", "Stage 4: Coordinated Delinquency Attack (Default Rate Spike)"),
     ]
 
@@ -332,8 +334,8 @@ if __name__ == "__main__":
         default="normal",
         help="Market regime or staged progression",
     )
-    parser.add_argument("--count", type=int, default=40, help="Number of simulated applications per batch")
-    parser.add_argument("--delay", type=float, default=0.02, help="Delay between applications in seconds")
+    parser.add_argument("--count", type=int, default=40, help="Number of simulated cardholder requests per stage")
+    parser.add_argument("--delay", type=float, default=0.02, help="Delay between requests in seconds")
     parser.add_argument("--api-url", default=DEFAULT_API_URL, help="Base URL of the scoring API")
     args = parser.parse_args()
 

@@ -1,14 +1,14 @@
 """Model-agnostic explanations of the default probability: SHAP (global + local) and LIME.
 
-Explanations are computed on the **23 raw applicant fields** the API accepts, by
+Explanations are computed on the **23 raw cardholder fields** the API accepts, by
 wrapping the whole served pipeline (feature engineering -> preprocessing -> classifier)
 as ``f(x) = P(default | x)``. They therefore work for any champion algorithm and are
 expressed in probability units (a SHAP value of +0.05 = +5 percentage points).
 
-* Offline reports use a background sample of training applicants (interventional SHAP).
-* ``POST /api/v1/explain`` uses a single background row, the median training applicant
+* Offline reports use a background sample of training cardholders (interventional SHAP).
+* ``POST /api/v1/explain`` uses a single background row, the median training cardholder
   from ``configs/serving.yaml``: the SHAP base value is then exactly the reference
-  applicant's probability and contributions sum to ``probability - reference_probability``.
+  cardholder's probability and contributions sum to ``probability - reference_probability``.
 """
 
 from __future__ import annotations
@@ -130,7 +130,7 @@ def local_contributions(explanation: Any, index: int, top_k: int | None = None) 
 
 @dataclass(frozen=True)
 class ReferenceExplanation:
-    """SHAP attribution of one applicant against the single reference applicant."""
+    """SHAP attribution of one cardholder against the single reference cardholder."""
 
     probability: float
     reference_probability: float
@@ -139,22 +139,22 @@ class ReferenceExplanation:
 
 def explain_against_reference(
     model: Any,
-    applicant: Mapping[str, Any],
+    cardholder: Mapping[str, Any],
     reference: Mapping[str, float],
     feature_names: Sequence[str],
     *,
     max_evals: int = 240,
     seed: int = 42,
 ) -> ReferenceExplanation:
-    """Baseline-Shapley values of ``applicant`` w.r.t. ``reference`` (used by ``/api/v1/explain``).
+    """Baseline-Shapley values of ``cardholder`` w.r.t. ``reference`` (used by ``/api/v1/explain``).
 
-    Features without a reference value keep the applicant's value in the background, so
+    Features without a reference value keep the cardholder's value in the background, so
     they receive zero attribution.
     """
     columns = list(feature_names)
-    background = pd.DataFrame([{name: reference.get(name, applicant[name]) for name in columns}])
+    background = pd.DataFrame([{name: reference.get(name, cardholder[name]) for name in columns}])
     explainer = ShapExplainer(model, background, tuple(columns), max_evals=max_evals, seed=seed)
-    explanation = explainer.explain(pd.DataFrame([{name: applicant[name] for name in columns}]))
+    explanation = explainer.explain(pd.DataFrame([{name: cardholder[name] for name in columns}]))
     values = np.asarray(explanation.values[0], dtype=float)
     base = float(np.ravel(explanation.base_values)[0])
     return ReferenceExplanation(
@@ -204,7 +204,7 @@ def lime_explain(
     num_samples: int = 5000,
     seed: int = 42,
 ) -> list[dict[str, Any]]:
-    """LIME weights for ``P(default)`` of one applicant, strongest first.
+    """LIME weights for ``P(default)`` of one cardholder, strongest first.
 
     Returns:
         ``[{"feature", "rule", "weight"}]`` where ``rule`` is LIME's discretized condition
@@ -268,7 +268,7 @@ def _save(path: Path) -> Path:
 
 
 def plot_shap_summary(explanation: Any, path: Path, max_display: int = 15) -> Path:
-    """SHAP beeswarm: per-applicant contributions coloured by feature value."""
+    """SHAP beeswarm: per-cardholder contributions coloured by feature value."""
     import shap
 
     shap.plots.beeswarm(explanation, max_display=max_display, show=False)
@@ -286,7 +286,7 @@ def plot_shap_bar(explanation: Any, path: Path, max_display: int = 15) -> Path:
 
 
 def plot_shap_waterfall(explanation: Any, path: Path, title: str, max_display: int = 12) -> Path:
-    """Local waterfall of one applicant (``explanation`` is a single-row explanation)."""
+    """Local waterfall of one cardholder (``explanation`` is a single-row explanation)."""
     import shap
 
     shap.plots.waterfall(explanation, max_display=max_display, show=False)

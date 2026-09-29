@@ -22,13 +22,14 @@ trong test report). Trạng thái dưới đây là **sau khi sửa BUG-01/02/03
 | [TC-008](#tc-008--latency-tăng-dưới-tải--highlatencyp95) | Kịch bản 7 — latency tăng dưới tải | PASS |
 | [TC-009](#tc-009--lỗi-client-4xx-và-mất-model-5xx) | Kịch bản 8 — lỗi 4xx, mất model 5xx | PASS |
 | [TC-010](#tc-010--postgres--mlflow-down) | Kịch bản 9 — Postgres / MLflow down | PASS |
-| [TC-011](#tc-011--tấn-công-hồ-sơ-nợ-quá-hạn) | Kịch bản 10 — tấn công có tổ chức | PASS |
+| [TC-011](#tc-011--tấn-công-từ-tài-khoản-nợ-quá-hạn) | Kịch bản 10 — tấn công có tổ chức | PASS |
 | [TC-012](#tc-012--fairness-audit-và-mitigation) | Kịch bản 11 — fairness trước / sau mitigation | PASS |
 | [TC-013](#tc-013--triển-khai-ubuntu-2404) | Triển khai Ubuntu 24.04 | PASS\* |
 | [TC-014](#tc-014--alert-pipeline-đủ-11-rule) | Alert pipeline: 11 rule firing → resolved, webhook, Telegram | PASS |
 | [TC-015](#tc-015--test-tự-động-lint-coverage-e2e) | Test tự động: lint, type check, coverage, e2e | PASS |
 | [TC-016](#tc-016--load-test-tải-danh-định-locust) | Load test tải danh định (Locust 10 user) | PASS |
 | [TC-017](#tc-017--load-test-tải-gấp-đôi-locust-20-user) | Load test tải gấp đôi (Locust 20 user) | PASS (BUG-01 đã sửa) |
+| [TC-018](#tc-018--nghiệm-thu-đổi-framing-sang-quản-lý-hạn-mức-chủ-thẻ) | Nghiệm thu đổi framing sang quản lý hạn mức chủ thẻ (29/09) | PASS |
 
 ---
 
@@ -36,13 +37,16 @@ trong test report). Trạng thái dưới đây là **sau khi sửa BUG-01/02/03
 
 - **Tiền điều kiện:** stack chạy, `/health/ready` = `ready`, champion = v1.
 - **Bước:** mở `http://localhost:18020/docs`; chạy `make test-e2e` (17 test trên stack thật); gửi request thiếu key,
-  sai key, sai schema, batch 501 hồ sơ.
+  sai key, sai schema, batch 501 chủ thẻ.
 - **Kỳ vọng:** Swagger liệt kê đủ endpoint `/api/v1/*`; 401 `MISSING_API_KEY`, 403 `INVALID_API_KEY`, 422
   `VALIDATION_ERROR` không echo input, 413 `BATCH_TOO_LARGE`; `/metrics` có `credit_api_requests_total`.
-- **Thực tế:** đúng như kỳ vọng; e2e 17/17 pass (readiness, `/predict`, hồ sơ rủi ro cao → DECLINE, batch, 401/403,
+- **Thực tế:** đúng như kỳ vọng; e2e 17/17 pass (readiness, `/predict`, chủ thẻ rủi ro cao → DECLINE, batch, 401/403,
   422, 413, `/metrics`, alias MLflow khớp model đang phục vụ, drift `/analyze` + report HTML, Prometheus targets, 11
   alert rule, Alertmanager + webhook, 4 dashboard Grafana, Airflow DAG + `importErrors = 0`).
 - **Evidence:** [TC-001_swagger-ui.png](evidence/TC-001_swagger-ui.png),
+  [TC-001_swagger-batch-example.png](evidence/TC-001_swagger-batch-example.png),
+  [TC-001_swagger-batch-schema-deprecated.png](evidence/TC-001_swagger-batch-schema-deprecated.png) (3 ảnh Swagger
+  chụp lại 29/09 sau khi đổi mô tả API sang chủ thẻ, xem [TC-018](#tc-018--nghiệm-thu-đổi-framing-sang-quản-lý-hạn-mức-chủ-thẻ)),
   [TC-009_client-errors-4xx.png](evidence/TC-009_client-errors-4xx.png), [TC-015](#tc-015--test-tự-động-lint-coverage-e2e).
 - **Trạng thái:** PASS
 
@@ -57,7 +61,8 @@ trong test report). Trạng thái dưới đây là **sau khi sửa BUG-01/02/03
 - **Evidence:** [TC-002_normal-traffic-simulation.png](evidence/TC-002_normal-traffic-simulation.png),
   [TC-002_normal-no-drift-no-alert.png](evidence/TC-002_normal-no-drift-no-alert.png),
   [TC-002_grafana-infra-sla-normal.png](evidence/TC-002_grafana-infra-sla-normal.png),
-  [TC-002_grafana-business-kpis-normal.png](evidence/TC-002_grafana-business-kpis-normal.png)
+  [TC-002_grafana-business-kpis-normal.png](evidence/TC-002_grafana-business-kpis-normal.png) (chụp lại 29/09 sau khi
+  đổi tên panel; traffic normal 1 800 request, xem [TC-018](#tc-018--nghiệm-thu-đổi-framing-sang-quản-lý-hạn-mức-chủ-thẻ))
 - **Trạng thái:** PASS
 
 ## TC-003 — Data drift → alert → `drift_monitoring`
@@ -216,7 +221,7 @@ trong test report). Trạng thái dưới đây là **sau khi sửa BUG-01/02/03
   [TC-010_mlflow-back-reload.png](evidence/TC-010_mlflow-back-reload.png)
 - **Trạng thái:** PASS
 
-## TC-011 — Tấn công hồ sơ nợ quá hạn
+## TC-011 — Tấn công từ tài khoản nợ quá hạn
 
 - **Bước:** `make simulate SCENARIO=attack` → `POST /analyze` → pause `drift_monitoring` (phản ứng đúng: không retrain
   trên traffic tấn công) → chờ alert → `make simulate SCENARIO=normal SIM_ARGS="--count 600"` → unpause.
@@ -312,7 +317,7 @@ trong test report). Trạng thái dưới đây là **sau khi sửa BUG-01/02/03
 ## TC-016 — Load test tải danh định (Locust)
 
 - **Bước:** `LOAD_DURATION=45s make test-load` (Locust headless 10 user, spawn 10/s; 20 phần `/predict`, 2 phần batch
-  10 hồ sơ, 1 phần readiness).
+  10 chủ thẻ, 1 phần readiness).
 - **Kỳ vọng:** 0 lỗi; p95 `/predict` ≤ 100 ms; throughput ≥ số user.
 - **Thực tế (14:22:32–14:23:17):** 1 321 request, 0 lỗi, 29.95 rps, p50 17 ms, p95 `/predict` 53 ms, p99
   150 ms; 3/3 test pass. Kết quả `reports/load/locust_summary.json`, `reports/load/locust_report.html`.
@@ -334,8 +339,58 @@ trong test report). Trạng thái dưới đây là **sau khi sửa BUG-01/02/03
   `reports/load/locust_stress_20u_summary.json`, `locust_stress_20u_report.html`.
 - **Retest sau fix BUG-01 (16:39:19–16:40:19):** stack build lại, API gunicorn 2 worker (ADR 0007), không chạy tác vụ
   nặng khác trên host. 3 556 request theo CSV (HTML 3 594), **0 lỗi**, 60.07 rps; `/predict` 3 079 request, p50 18 ms,
-  **p95 72 ms**, p99 290 ms; batch 10 hồ sơ p95 62 ms; tổng hợp p95 69 ms. 3/3 test pass. Kết quả
+  **p95 72 ms**, p99 290 ms; batch 10 chủ thẻ p95 62 ms; tổng hợp p95 69 ms. 3/3 test pass. Kết quả
   `reports/load/locust_stress_summary.json`, `locust_stress_report.html`.
 - **Evidence:** [TC-017_locust-report-20-users.png](evidence/TC-017_locust-report-20-users.png) (lần đầu),
   [TC-017_locust-report-20-users-after-fix.png](evidence/TC-017_locust-report-20-users-after-fix.png) (sau fix)
 - **Trạng thái:** PASS (lần đầu FAIL → BUG-01; đã sửa và retest)
+
+## TC-018 — Nghiệm thu đổi framing sang quản lý hạn mức chủ thẻ
+
+- **Tiền điều kiện:** working tree đã đổi câu chuyện nghiệp vụ sang Credit Line Management (behavioral scoring cho chủ
+  thẻ đang lưu hành); so sánh với commit gốc `dc95bc1`. Chạy ngày 29/09/2026, 11:59–12:15 UTC.
+- **Bước:**
+  1. Chạy 2 lệnh `rg` kiểm tra thuật ngữ cũ (danh sách từ khoá thống nhất trong yêu cầu đổi framing; không chép nguyên
+     văn vào đây vì chính file này sẽ bị match).
+  2. `make lint`, `make test-ci`, `make test-e2e`.
+  3. So sánh mọi số trong `reports/{fairness,explainability}_report.{json,md}` và 10 khối `<!-- rai:... -->` của
+     `docs/model-card.md`, `docs/data-card.md`, `docs/06-responsible-ai.md` với `dc95bc1` (bỏ qua timestamp); chạy lại
+     `make responsible-ai` và so với bản đã stage.
+  4. `make up`; mở `/docs`; gọi `POST /api/v1/predict/batch` cùng 2 chủ thẻ mẫu qua field `cardholders`, qua alias cũ
+     (deprecated), gửi cả hai field, gửi field lạ.
+  5. Tạo traffic `run_scenario.py normal` (600 + 4 × 300 request) + 15 batch + 3 explain; đánh giá mọi truy vấn PromQL
+     của dashboard Business và ML Model trên Prometheus; chụp 2 dashboard.
+  6. Render lại 7 file `.mmd` bằng `@mermaid-js/mermaid-cli@12` + `mermaid.config.json` vào thư mục tạm, so với SVG
+     trong repo.
+  7. Đọc `docs/01-problem-statement.md` từ đầu đến cuối.
+- **Kỳ vọng:** chỉ còn match được chấp nhận (câu "Ngoài phạm vi" trong problem statement / model card, alias batch cũ
+  trong schema / test / API reference / CHANGELOG); lint sạch, test pass, coverage ≥ 80 %; không lệch số nào; Swagger
+  dùng "cardholder", alias hiện `deprecated`; 2 cách gọi batch đều 200 và cùng kết quả, gửi cả hai → 422; không panel
+  nào "No data" vì đổi tên metric; SVG khớp `.mmd`; problem statement không còn ngụ ý duyệt cho khách chưa có thẻ.
+- **Thực tế:**
+  - Lệnh `rg` thứ hai: 0 match. Lệnh thứ nhất: 36 dòng, tất cả thuộc nhóm được chấp nhận, cộng key redact cũ giữ lại có
+    chủ đích trong `config/logging.py` và 1 false positive trong JS minified của `reports/drift_report.html` (chuỗi
+    tiếng Tây Ban Nha của Evidently, file không đổi so với `dc95bc1`). Chi tiết: test report §10.
+  - `make lint`: ruff sạch, black 131 file không đổi, mypy 0 lỗi / 88 file. `make test-ci`: unit 311 pass + 2 skip,
+    integration 71, data quality 10, model validation 4 (**396 pass**), coverage **91 %**. `make test-e2e`: 18/18 pass.
+  - 4 file report + 10 khối rai: số lượng và thứ tự mọi số trùng khớp 100 % với `dc95bc1`; chỉ khác chữ và
+    `generated_at`.
+  - Swagger: tag `prediction` và summary/description 3 endpoint dùng "cardholder"; ví dụ "Two cardholders",
+    "Low-risk cardholder"; schema `BatchPredictRequest` có `cardholders` (bắt buộc) và alias cũ gắn `deprecated`,
+    `additionalProperties: false`. Batch: `cardholders` → 200, alias cũ → 200, `predictions` + `decision_summary`
+    giống hệt (APPROVE 0.109174, DECLINE 0.993453); gửi cả hai field → 422 `extra_forbidden` tại alias; field lạ → 422.
+    Lỗi validation báo đúng tên field đã gửi (`cardholders.1.SEX`, hoặc tiền tố alias cũ khi client gửi alias).
+  - `/metrics` có `credit_cardholder_score_distribution` (help "scored cardholders"), tên metric cũ không còn series.
+    27 panel có truy vấn: 26 có dữ liệu; "Last promoted version" hiện "none since restart" (metric Airflow không đổi
+    tên, chỉ có sau khi promote champion mới).
+  - 7/7 SVG render lại **trùng từng byte** với file trong repo.
+  - Problem statement: nêu rõ nền tảng quản lý hạn mức cho thẻ đang lưu hành, lý do realtime (chủ thẻ chờ kết quả tăng
+    hạn mức trên app, p95 ≤ 100 ms để cả luồng < 1 s) và batch (rà soát toàn danh mục sau kỳ sao kê); application
+    scoring chỉ xuất hiện ở mục Ngoài phạm vi kèm lý do.
+- **Evidence:** [TC-001_swagger-ui.png](evidence/TC-001_swagger-ui.png),
+  [TC-001_swagger-batch-example.png](evidence/TC-001_swagger-batch-example.png),
+  [TC-001_swagger-batch-schema-deprecated.png](evidence/TC-001_swagger-batch-schema-deprecated.png),
+  [TC-002_grafana-business-kpis-normal.png](evidence/TC-002_grafana-business-kpis-normal.png),
+  [TC-018_grafana-ml-model-cardholder-score.png](evidence/TC-018_grafana-ml-model-cardholder-score.png),
+  [TC-018_system-context-diagram.png](evidence/TC-018_system-context-diagram.png)
+- **Trạng thái:** PASS

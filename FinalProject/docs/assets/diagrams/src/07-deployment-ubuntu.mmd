@@ -1,6 +1,6 @@
 %% Deployment - single Ubuntu 24.04 host (VPS or Multipass/UTM VM): Nginx + TLS, systemd, Docker Compose prod overlay, volumes, backup
 flowchart LR
-    user["<b>Client / Loan Origination System</b><br/><i>HTTPS 443</i>"]:::external
+    user["<b>Client: Card Management System /</b><br/><b>app backend, Batch limit-review job</b><br/><i>HTTPS 443</i>"]:::external
     ops["<b>MLOps Engineer</b><br/><i>SSH key-only + tunnel</i>"]:::person
     gh["<b>GitHub Actions CD</b><br/><i>tag v* → environment production<br/>(required reviewers)</i>"]:::external
     ghcr["<b>GHCR</b><br/><i>ghcr.io/&lt;owner&gt;/credit-risk-api@sha256</i>"]:::external

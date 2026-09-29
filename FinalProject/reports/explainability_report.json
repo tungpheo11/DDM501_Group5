@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-28T09:53:21+00:00",
+  "generated_at": "2026-09-29T11:54:02+00:00",
   "model": {
     "candidate": "logistic_regression",
     "params": {
@@ -13,9 +13,9 @@
     "registered_version": "1"
   },
   "method": {
-    "shap": "PermutationExplainer on P(default) of the full pipeline, 100 background training applicants, max_evals=500",
+    "shap": "PermutationExplainer on P(default) of the full pipeline, 100 background training cardholders, max_evals=500",
     "lime": "LimeTabularExplainer, 5000 samples, discretized continuous features",
-    "serving": "PermutationExplainer against the reference applicant, max_evals=240"
+    "serving": "PermutationExplainer against the reference cardholder, max_evals=240"
   },
   "sample_size": 500,
   "background_size": 100,

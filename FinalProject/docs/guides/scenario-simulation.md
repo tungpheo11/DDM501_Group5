@@ -252,7 +252,7 @@ B=$(python -c "import json;print(json.dumps({'LIMIT_BAL':200000,'SEX':2,'EDUCATI
 curl -s -H 'Content-Type: application/json' -d "$B" $API_URL/api/v1/predict                          # 401 MISSING_API_KEY
 curl -s -H 'X-API-Key: wrong' -H 'Content-Type: application/json' -d "$B" $API_URL/api/v1/predict   # 403 INVALID_API_KEY
 curl -s -H "X-API-Key: $API_KEY" -H 'Content-Type: application/json' -d '{"LIMIT_BAL":-1,"AGE":12}' $API_URL/api/v1/predict | jq '.code, .details[0]'   # 422
-python -c "import json,sys;b=json.loads(sys.argv[1]);print(json.dumps({'applicants':[b]*501}))" "$B" > /tmp/big.json
+python -c "import json,sys;b=json.loads(sys.argv[1]);print(json.dumps({'cardholders':[b]*501}))" "$B" > /tmp/big.json
 curl -s -H "X-API-Key: $API_KEY" -H 'Content-Type: application/json' -d @/tmp/big.json $API_URL/api/v1/predict/batch | jq .code   # 413 BATCH_TOO_LARGE
 curl -s localhost:18020/metrics | grep credit_api_auth_failures_total
 ```
@@ -315,7 +315,8 @@ gửi traffic — xem kịch bản 8 bước 2.
 
 ## Kịch bản 10 — Tấn công nợ quá hạn có tổ chức
 
-**Mục tiêu:** một nhóm hồ sơ giả mạo (70 % maxed-out, `PAY_0 ≥ 2`) dồn dập nộp đơn → tỉ lệ DECLINE tăng vọt →
+**Mục tiêu:** một nhóm chủ thẻ đầu cơ (70 % đã dùng hết hạn mức, `PAY_0 ≥ 2`) dồn dập gửi yêu cầu tăng hạn mức → tỉ lệ
+DECLINE tăng vọt →
 `PredictionDistributionShift` cảnh báo dù đây không phải drift tự nhiên.
 
 **Bước:**

@@ -7,7 +7,8 @@ Chi tiết từng test case (bước, kỳ vọng, thực tế): [test-cases.md]
 
 | Hạng mục | Kết quả |
 |---|---|
-| Test case | 17 TC: 16 PASS, 1 PASS\* (TC-013, giới hạn môi trường §5); lần đầu 14 PASS, 2 PASS\*, 1 FAIL — đã retest sau fix (§7) |
+| Test case | 18 TC: 17 PASS, 1 PASS\* (TC-013, giới hạn môi trường §5); lần đầu 14 PASS, 2 PASS\*, 1 FAIL — đã retest sau fix (§7) |
+| Nghiệm thu đổi framing (29/09) | TC-018: 7/7 tiêu chí PASS trên working tree đã đổi sang quản lý hạn mức chủ thẻ — xem §10 |
 | 11 kịch bản vận hành | 11/11 đã chạy trên stack thật, có số liệu và screenshot |
 | Test tự động | unit + integration + data quality + model validation pass; e2e 17/17 trên stack thật; load 3/3 ở 10 user và 20 user (sau fix) |
 | Coverage `credit_risk` | 91.3 % trên working tree cuối (ngưỡng 80 %), 372 test pass — xem §2 |
@@ -170,8 +171,8 @@ tác vụ nặng khác trên host trong lúc load test.
 | BUG-02 / TC-014 | restart `alert-webhook`; `notify()` trong `airflow-scheduler` với Telegram rỗng | 2 event `kind=event` trong `GET /alerts`; `/alerts/state` 0 mục `source=airflow` → **PASS** |
 | BUG-03 / TC-004 | `sample_predict.py` + load; `/metrics`; Prometheus; Grafana ML Model | `credit_prediction_duration_seconds_count` > 0; panel "Model inference latency" có p50/p95 → **PASS** |
 | `/health/live`, `/health/ready` | `curl` | 200 `alive`; 200 `ready`, không có reason |
-| `/api/v1/predict` | hồ sơ rủi ro thấp / cao; thiếu API key | 200 (PD 0.363, `REVIEW`) / 200 (PD 0.993); thiếu key 401 `MISSING_API_KEY` |
-| `/api/v1/predict/batch` | 3 hồ sơ | 200, `count` 3 |
+| `/api/v1/predict` | chủ thẻ rủi ro thấp / cao; thiếu API key | 200 (PD 0.363, `REVIEW`) / 200 (PD 0.993); thiếu key 401 `MISSING_API_KEY` |
+| `/api/v1/predict/batch` | 3 chủ thẻ | 200, `count` 3 |
 | Reload model | `POST /api/v1/model/reload` rồi 30 × `GET /model/info` | `reloaded` v1 → v1; 2 mốc `loaded_at` khác nhau 0.4 s → cả 2 worker đã nạp lại |
 | Alert → Telegram | `make alerts-send-test` 16:43:22 | FIRING webhook 16:43:37, RESOLVED 16:45:37; bộ đếm Alertmanager `telegram` 46 → 48, `webhook` 45 → 47, 0 lỗi gửi |
 | OpenAPI | `make openapi` | `docs/openapi.yaml` sinh lại trùng bản trong working tree (8 path) |
@@ -184,8 +185,8 @@ run `model_retrain` 15:46:28 success, challenger v9 bị gate loại (expected l
 
 | TC | Screenshot |
 |---|---|
-| TC-001 | [swagger-ui](evidence/TC-001_swagger-ui.png) |
-| TC-002 | [normal-traffic-simulation](evidence/TC-002_normal-traffic-simulation.png), [normal-no-drift-no-alert](evidence/TC-002_normal-no-drift-no-alert.png), [grafana-infra-sla-normal](evidence/TC-002_grafana-infra-sla-normal.png), [grafana-business-kpis-normal](evidence/TC-002_grafana-business-kpis-normal.png) |
+| TC-001 | [swagger-ui](evidence/TC-001_swagger-ui.png), [swagger-batch-example](evidence/TC-001_swagger-batch-example.png), [swagger-batch-schema-deprecated](evidence/TC-001_swagger-batch-schema-deprecated.png) (chụp lại 29/09) |
+| TC-002 | [normal-traffic-simulation](evidence/TC-002_normal-traffic-simulation.png), [normal-no-drift-no-alert](evidence/TC-002_normal-no-drift-no-alert.png), [grafana-infra-sla-normal](evidence/TC-002_grafana-infra-sla-normal.png), [grafana-business-kpis-normal](evidence/TC-002_grafana-business-kpis-normal.png) (chụp lại 29/09) |
 | TC-003 | [drift-simulation-analyze](evidence/TC-003_drift-simulation-analyze.png), [prometheus-datadrift-firing](evidence/TC-003_prometheus-datadrift-firing.png), [drift-dag-trigger](evidence/TC-003_drift-dag-trigger.png), [airflow-drift-monitoring-run](evidence/TC-003_airflow-drift-monitoring-run.png), [evidently-drift-report](evidence/TC-003_evidently-drift-report.png), [grafana-drift-dashboard](evidence/TC-003_grafana-drift-dashboard.png), [drift-rerun-retrain-trigger](evidence/TC-003_drift-rerun-retrain-trigger.png), [airflow-drift-rerun-trigger-retrain](evidence/TC-003_airflow-drift-rerun-trigger-retrain.png), [airflow-model-retrain-from-drift](evidence/TC-003_airflow-model-retrain-from-drift.png), [telegram-DataDriftDetected](evidence/TC-003_telegram-DataDriftDetected.png) |
 | TC-004 | [promote-hot-reload-under-traffic](evidence/TC-004_promote-hot-reload-under-traffic.png), [mlflow-champion-v5](evidence/TC-004_mlflow-champion-v5.png), [grafana-ml-model-version-5](evidence/TC-004_grafana-ml-model-version-5.png), [mlflow-registry-aliases](evidence/TC-004_mlflow-registry-aliases.png), [grafana-model-inference-latency](evidence/TC-004_grafana-model-inference-latency.png) (sau fix BUG-03) |
 | TC-005 | [retrain-fail-trigger](evidence/TC-005_retrain-fail-trigger.png), [airflow-quality-gate-failed](evidence/TC-005_airflow-quality-gate-failed.png), [prometheus-3-alerts-firing](evidence/TC-005_prometheus-3-alerts-firing.png), [alertmanager-3-alerts-firing](evidence/TC-005_alertmanager-3-alerts-firing.png), [telegram-RetrainFailed](evidence/TC-005_telegram-RetrainFailed.png), [restore-and-retrain-success](evidence/TC-005_restore-and-retrain-success.png), [airflow-model-retrain-success-graph](evidence/TC-005_airflow-model-retrain-success-graph.png), [mlflow-experiment-runs](evidence/TC-005_mlflow-experiment-runs.png) |
@@ -201,6 +202,10 @@ run `model_retrain` 15:46:28 success, challenger v9 bị gate loại (expected l
 | TC-015 | [make-lint](evidence/TC-015_make-lint.png), [coverage-html-report](evidence/TC-015_coverage-html-report.png), [alerts-test-e2e](evidence/TC-015_alerts-test-e2e.png) |
 | TC-016 | [locust-report-10-users](evidence/TC-016_locust-report-10-users.png) |
 | TC-017 | [locust-report-20-users](evidence/TC-017_locust-report-20-users.png) (lần đầu), [locust-report-20-users-after-fix](evidence/TC-017_locust-report-20-users-after-fix.png) (sau fix BUG-01) |
+| TC-018 | [grafana-ml-model-cardholder-score](evidence/TC-018_grafana-ml-model-cardholder-score.png), [system-context-diagram](evidence/TC-018_system-context-diagram.png); dùng chung 3 ảnh Swagger của TC-001 và dashboard Business của TC-002 |
+
+Các ảnh dashboard chụp trước 29/09 (TC-003, TC-004, TC-008 → TC-011) giữ nguyên làm bằng chứng lịch sử của từng kịch
+bản; tiêu đề panel trong các ảnh đó là tên trước khi đổi framing, số liệu không bị ảnh hưởng.
 
 ## 9. Kiểm chứng traceability
 
@@ -220,3 +225,49 @@ Lần chạy cuối: 16:34 UTC, sau khi hoàn thiện `test-cases.md`, `test-rep
 Kiểm lại sau retest (16:52 UTC), trong `FinalProject/` trên `docs`, `README.md`, `CONTRIBUTING.md` với mẫu nhãn tiến độ
 nội bộ, mã ticket và tên công cụ: 0 match. Trước đó cột "Rubric" của `docs/assets/diagrams/README.md` dùng mã mục viết
 tắt (3 dòng match); đã đổi sang số mục rubric `3.1.x` giống [docs/README.md](../README.md#3-rubric--file--bằng-chứng).
+
+## 10. Nghiệm thu đổi framing sang quản lý hạn mức chủ thẻ (29/09/2026)
+
+Working tree đổi câu chuyện nghiệp vụ sang **Credit Line Management** (behavioral scoring cho chủ thẻ đang lưu hành:
+duyệt tăng hạn mức realtime, rà soát hạn mức sau kỳ sao kê, cảnh báo sớm, giải thích quyết định), so với commit gốc
+`dc95bc1`. Model, dữ liệu, ngưỡng 0.30/0.60, cost matrix FN=10/FP=1, LGD 0.45 và logic `decision_engine.py` giữ
+nguyên (diff chỉ gồm docstring, comment, tên biến). Chạy 11:59–12:15 UTC; test case: [TC-018](test-cases.md#tc-018--nghiệm-thu-đổi-framing-sang-quản-lý-hạn-mức-chủ-thẻ).
+
+| # | Tiêu chí | Cách kiểm | Kết quả |
+|---|---|---|---|
+| 1 | Không còn thuật ngữ của câu chuyện cũ | 2 lệnh `rg` thống nhất trong yêu cầu đổi framing (không chép nguyên văn vì chính file này sẽ bị match) | **PASS** — xem bảng dưới |
+| 2 | Lint + test | `make lint`; `make test-ci`; `make test-e2e` | **PASS** — lint 0 lỗi (black 131 file, mypy 88 file); 396 pass + 2 skip (unit 311, integration 71, data quality 10, model validation 4), coverage **91 %**; e2e 18/18 |
+| 3 | Số liệu report giữ nguyên | Script so chuỗi số (bỏ timestamp) giữa `dc95bc1` và bản stage cho `reports/{fairness,explainability}_report.{json,md}` và 10 khối `rai:`; chạy lại `make responsible-ai` | **PASS** — 4 file + 10 khối trùng 100 % (ví dụ `fairness_report.json` 452/452 số, `data-overview` 93/93); render lại chỉ khác `generated_at`, 8 figure PNG trùng byte |
+| 4 | API contract + Swagger | `make up`; `/docs`; `POST /api/v1/predict/batch` 4 kiểu payload | **PASS** — summary/description/ví dụ dùng "cardholder", alias cũ `deprecated`; `cardholders` 200 và alias cũ 200 cùng kết quả; cả hai field → 422 `extra_forbidden`; field lạ → 422 |
+| 5 | Grafana không "No data" vì đổi tên metric | Traffic normal 1 800 request + 15 batch + 3 explain; chạy mọi truy vấn PromQL của dashboard Business và ML Model trên Prometheus; chụp dashboard | **PASS** — 26/27 panel có dữ liệu; "Last promoted version" hiện "none since restart" (metric Airflow không đổi tên) |
+| 6 | Diagram khớp nguồn | Render lại 7 `.mmd` bằng `@mermaid-js/mermaid-cli@12` + `mermaid.config.json`, so với SVG trong repo | **PASS** — 7/7 trùng byte |
+| 7 | Problem statement dễ hiểu với người mới | Đọc `docs/01-problem-statement.md` từ đầu đến cuối | **PASS** — nêu rõ hệ thống quản lý hạn mức thẻ đang lưu hành, lý do realtime và batch; application scoring chỉ ở mục Ngoài phạm vi kèm lý do |
+
+**Match còn lại của lệnh `rg` thứ nhất** (36 dòng; lệnh thứ hai: 0 match):
+
+| File | Số dòng | Giải thích |
+|---|---|---|
+| `docs/01-problem-statement.md`, `docs/model-card.md` | 1 + 1 | Câu Ngoài phạm vi về application scoring — được chấp nhận |
+| `src/credit_risk/serving/schemas.py`, `openapi_examples.py`, `routers/predict.py`, `docs/openapi.yaml` | 3 + 2 + 1 + 6 | Định nghĩa, mô tả và ví dụ OpenAPI của alias batch cũ (deprecated) |
+| `tests/integration/test_api.py`, `tests/e2e/test_stack_e2e.py` | 8 + 3 | Test alias cũ vẫn được nhận, gửi cả hai field → 422, tên field trong lỗi |
+| `docs/04-api-reference.md` | 4 | Ghi chú deprecated và ví dụ lỗi của alias |
+| `CHANGELOG.md` | 3 | Entry đổi framing: alias deprecated và ghi chú breaking đổi tên metric (cần nêu tên cũ để người dùng dashboard/alert tự đổi) |
+| `src/credit_risk/config/logging.py` | 2 | Key redact cũ giữ lại có chủ đích (thêm key mới, không xoá key cũ) để log từ client dùng alias vẫn bị che |
+| `docs/06-responsible-ai.md` | 1 | Mô tả danh sách redact ở trên, ghi rõ alias cũ đã deprecated |
+| `reports/drift_report.html` | 1 | False positive: chuỗi tiếng Tây Ban Nha trong JS minified của Evidently; file không đổi so với `dc95bc1` |
+
+**Breaking change cần báo người dùng:**
+
+- API: không có breaking. Field chính của batch là `cardholders`; alias cũ vẫn chạy như trước nhưng đã `deprecated`
+  và sẽ bị gỡ ở phiên bản major kế tiếp. Request gửi đồng thời cả hai field bị 422. Path, response schema, enum
+  `risk_decision` và mã lỗi giữ nguyên.
+- Monitoring: histogram điểm tín dụng đổi tên dứt điểm thành `credit_cardholder_score_distribution` (không phát song
+  song tên cũ). Series cũ trong Prometheus đứt lịch sử tại thời điểm deploy; dashboard ML Model đã sinh lại; truy vấn
+  hoặc dashboard tự làm bên ngoài repo phải đổi tên metric. Tiêu đề một số panel Business/ML đổi chữ, `uid` dashboard
+  giữ nguyên nên link cũ vẫn mở được.
+
+**Quan sát ngoài phạm vi (không do thay đổi này):** `make simulate SCENARIO=...` lỗi `ModuleNotFoundError: simulations`
+khi không đặt `PYTHONPATH` (dòng import không đổi so với `dc95bc1`); lần nghiệm thu chạy `PYTHONPATH=. .venv/bin/python
+simulations/run_scenario.py normal ...`. Traffic dồn trong vài giây ngay sau khi API khởi động lại làm `increase()` của
+counter mới xuất hiện bằng 0 (Prometheus chưa có mẫu trước đó); cần traffic trải qua ít nhất 2 lần scrape trước khi chụp
+dashboard.

@@ -1,6 +1,6 @@
 # Báo cáo Fairness
 
-> Sinh tự động bởi `make responsible-ai` (2026-09-28T09:53:21+00:00). Không sửa tay — số liệu trong docs được render từ `reports/fairness_report.json`.
+> Sinh tự động bởi `make responsible-ai` (2026-09-29T11:54:02+00:00). Không sửa tay — số liệu trong docs được render từ `reports/fairness_report.json`.
 
 ## Thiết lập
 
@@ -12,8 +12,8 @@
 | Decision threshold (nhị phân) | 0.50 |
 | Policy serving | APPROVE < 0.30 ≤ REVIEW < 0.60 ≤ DECLINE |
 
-- Tập đánh giá: 10,000 hồ sơ chưa từng dùng để train (`stream_normal` 5,000, `stream_drifted+feedback` 5,000); default rate 24.3%, ROC-AUC 0.7513, APPROVE 21.3%.
-- Cost matrix: FN = 10.0, FP = 1.0 (expected loss = tổng loss / số hồ sơ).
+- Tập đánh giá: 10,000 chủ thẻ chưa từng dùng để train (`stream_normal` 5,000, `stream_drifted+feedback` 5,000); default rate 24.3%, ROC-AUC 0.7513, APPROVE 21.3%.
+- Cost matrix: FN = 10.0, FP = 1.0 (expected loss = tổng loss / số chủ thẻ).
 
 ## Tổng quan theo thuộc tính nhạy cảm
 

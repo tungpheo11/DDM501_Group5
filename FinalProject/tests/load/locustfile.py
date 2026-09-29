@@ -32,8 +32,8 @@ def _api_key() -> str:
     return ""
 
 
-def random_applicant(rng: random.Random) -> dict[str, float]:
-    """Applicant drawn from ranges that match the training data (UCI Credit Default)."""
+def random_cardholder(rng: random.Random) -> dict[str, float]:
+    """Cardholder drawn from ranges that match the training data (UCI Credit Default)."""
     limit = float(rng.choice([20000, 50000, 80000, 120000, 200000, 360000, 500000]))
     delay = rng.choices([-1, 0, 1, 2, 3], weights=[20, 55, 12, 10, 3])[0]
     bills = [round(limit * rng.uniform(0.0, 0.9), 0) for _ in range(6)]
@@ -50,7 +50,11 @@ def random_applicant(rng: random.Random) -> dict[str, float]:
 
 
 class ScoringUser(HttpUser):
-    """A loan-origination client calling the scoring API."""
+    """Card management system / mobile app backend traffic against the scoring API.
+
+    Single calls are cardholder limit-increase requests; batches of 10 stand in for the
+    post-statement limit-review job.
+    """
 
     wait_time = between(0.1, 0.5)
 
@@ -60,11 +64,11 @@ class ScoringUser(HttpUser):
 
     @task(20)
     def predict(self) -> None:
-        self.client.post("/api/v1/predict", json=random_applicant(self.rng), name="POST /api/v1/predict")
+        self.client.post("/api/v1/predict", json=random_cardholder(self.rng), name="POST /api/v1/predict")
 
     @task(2)
     def predict_batch(self) -> None:
-        payload = {"applicants": [random_applicant(self.rng) for _ in range(10)]}
+        payload = {"cardholders": [random_cardholder(self.rng) for _ in range(10)]}
         self.client.post("/api/v1/predict/batch", json=payload, name="POST /api/v1/predict/batch (10)")
 
     @task(1)

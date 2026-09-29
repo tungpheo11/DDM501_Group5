@@ -12,7 +12,7 @@ MAX_REVIEW_LIMIT = 100_000.0
 
 @dataclass(frozen=True)
 class CreditDecision:
-    """Decision, score, tier and recommended limit for one applicant."""
+    """Decision, score, tier and recommended limit for one cardholder."""
 
     decision: str
     credit_score: int
@@ -47,7 +47,12 @@ def credit_tier(score: int) -> str:
 
 
 def recommended_limit(decision: str, limit_bal: float) -> float:
-    """Suggested credit line rounded to 100 NTD: raise on approve, cut on review, zero on decline."""
+    """Suggested credit line rounded to 100 NTD.
+
+    APPROVE grants the limit increase (or keeps/raises the limit in the periodic review), REVIEW
+    proposes a cut for the credit risk analyst, DECLINE freezes the available limit (0: no new
+    spending, the outstanding balance is still due).
+    """
     if decision == "APPROVE":
         return round(min(limit_bal * 1.25, MAX_APPROVE_LIMIT), -2)
     if decision == "REVIEW":
@@ -56,7 +61,7 @@ def recommended_limit(decision: str, limit_bal: float) -> float:
 
 
 def decide(probability: float, limit_bal: float, review_threshold: float, decline_threshold: float) -> CreditDecision:
-    """Combine all decision rules for one applicant."""
+    """Combine all decision rules for one cardholder."""
     decision = risk_decision(probability, review_threshold, decline_threshold)
     score = credit_score(probability)
     return CreditDecision(

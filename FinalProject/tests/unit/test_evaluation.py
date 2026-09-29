@@ -49,7 +49,7 @@ def test_evaluate_model_without_predict_proba_single_class():
     assert metrics["true_negatives"] == 3
 
 
-def test_expected_financial_loss_is_per_applicant():
+def test_expected_financial_loss_is_per_cardholder():
     assert expected_financial_loss([1, 1, 0, 0], [0, 1, 1, 0]) == pytest.approx(11.0 / 4)
     assert expected_financial_loss([], []) == 0.0
 

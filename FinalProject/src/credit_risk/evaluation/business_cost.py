@@ -25,7 +25,7 @@ def expected_financial_loss(
     cost_fn: float = 10.0,
     cost_fp: float = 1.0,
 ) -> float:
-    """Average loss per applicant, comparable across evaluation sets of different sizes."""
+    """Average loss per cardholder, comparable across evaluation sets of different sizes."""
     n_samples = len(y_true)
     if n_samples == 0:
         return 0.0

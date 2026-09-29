@@ -25,9 +25,9 @@ mitigation:
     objective: balanced_accuracy_score
 
 explainability:
-  background_size: 100    # training applicants used as the SHAP background
-  sample_size: 500        # evaluation applicants explained for the global plots
-  max_evals: 500          # permutation SHAP model evaluations per applicant
+  background_size: 100    # training cardholders used as the SHAP background
+  sample_size: 500        # evaluation cardholders explained for the global plots
+  max_evals: 500          # permutation SHAP model evaluations per cardholder
   top_k: 5                # features compared between SHAP and LIME
   lime_num_features: 10
   lime_num_samples: 5000

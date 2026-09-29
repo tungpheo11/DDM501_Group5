@@ -2,7 +2,7 @@
 
 ## Context
 
-Hệ thống cần một online scoring service cho bài toán Credit Default Risk: nhận hồ sơ một khách hàng (23 feature của UCI dataset), trả về xác suất vỡ nợ, quyết định `APPROVE/REVIEW/DECLINE`, credit score, giải thích và guardrail. Yêu cầu phi chức năng:
+Hệ thống cần một online scoring service cho bài toán Credit Default Risk: nhận dữ liệu hành vi của một chủ thẻ (23 feature của UCI dataset) khi chủ thẻ gửi yêu cầu tăng hạn mức trên app hoặc khi batch rà soát hạn mức chạy, trả về xác suất vỡ nợ, quyết định `APPROVE/REVIEW/DECLINE`, credit score, giải thích và guardrail. Yêu cầu phi chức năng:
 
 - p95 latency < 100 ms cho một request (model RandomForest sklearn, in-process).
 - Validation input chặt chẽ, trả lỗi 4xx rõ ràng; OpenAPI tự sinh để làm tài liệu + contract test.

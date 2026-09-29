@@ -306,7 +306,7 @@ def decision_rate_stat(decision: str) -> Panel:
         decimals=1,
         color_mode="value",
         no_value="no traffic",
-        description="Share of scored applications in the last 15 minutes. Colour identifies the decision "
+        description="Share of scored cardholders in the last 15 minutes. Colour identifies the decision "
         "(same hue as the series below); it is not an alert state.",
     )
 
@@ -317,12 +317,12 @@ def business_dashboard() -> dict:
         lay.row("Portfolio decisions"),
         lay.place(
             stat(
-                "Applications (1h)",
+                "Scored cardholders (1h)",
                 f"sum(increase(credit_prediction_requests_total{{{API}}}[1h]))",
                 decimals=0,
                 color_mode="value",
                 no_value="0",
-                description="Applications scored by /api/v1/predict and /predict/batch in the last hour.",
+                description="Cardholders scored by /api/v1/predict and /predict/batch in the last hour.",
             ),
             4,
             4,
@@ -339,7 +339,7 @@ def business_dashboard() -> dict:
                 color_mode="value",
                 steps=thresholds((None, "orange")),
                 no_value="NT$0",
-                description="Sum of PD x exposure x LGD (NTD) for approved applications.",
+                description="Sum of PD x exposure x LGD (NTD) for approved cardholders.",
             ),
             4,
             4,
@@ -352,7 +352,7 @@ def business_dashboard() -> dict:
                 decimals=1,
                 color_mode="value",
                 no_value="NT$0",
-                description="Expected loss (NTD) on the requested limit of declined applications.",
+                description="Expected loss (NTD) on the frozen current limit of declined cardholders.",
             ),
             4,
             4,
@@ -369,7 +369,7 @@ def business_dashboard() -> dict:
                 stack=True,
                 min_value=0,
                 colors=DECISION_COLORS,
-                description="Stacked applications per minute by decision (APPROVE PD < 0.30, REVIEW < 0.60).",
+                description="Stacked scored cardholders per minute by decision (APPROVE PD < 0.30, REVIEW < 0.60).",
             ),
             12,
             8,
@@ -409,22 +409,22 @@ def business_dashboard() -> dict:
                 "Credit volume per hour",
                 [
                     target(f"rate(credit_approved_volume_ntd_total{{{API}}}[5m]) * 3600", "approved limit"),
-                    target(f"rate(credit_declined_volume_ntd_total{{{API}}}[5m]) * 3600", "declined requested limit"),
+                    target(f"rate(credit_declined_volume_ntd_total{{{API}}}[5m]) * 3600", "frozen current limit"),
                 ],
                 unit=NTD,
                 min_value=0,
                 colors={
                     "approved limit": DECISION_COLORS["APPROVE"],
-                    "declined requested limit": DECISION_COLORS["DECLINE"],
+                    "frozen current limit": DECISION_COLORS["DECLINE"],
                 },
             ),
             12,
             8,
         ),
-        lay.row("Applicant profile (rolling window)"),
+        lay.row("Cardholder profile (rolling window)"),
         lay.place(
             timeseries(
-                "Mean applicant age",
+                "Mean cardholder age",
                 [
                     target(f"credit_customer_age_rolling_mean{{{API}}}", "age"),
                 ],
@@ -435,7 +435,7 @@ def business_dashboard() -> dict:
         ),
         lay.place(
             timeseries(
-                "Mean requested limit",
+                "Mean current limit",
                 [
                     target(f"credit_customer_limit_bal_rolling_mean{{{API}}}", "LIMIT_BAL"),
                 ],
@@ -461,7 +461,7 @@ def business_dashboard() -> dict:
     return dashboard(
         "credit-business",
         "Credit Risk - Business KPIs",
-        "Approve/decline rates, expected loss and applicant profile.",
+        "Approve/decline rates, expected loss and cardholder profile.",
         panels,
     )
 
@@ -530,8 +530,8 @@ def ml_model_dashboard() -> dict:
         ),
         lay.place(
             bar_gauge(
-                "Applicant score distribution (15m)",
-                f"sum by (le) (increase(credit_applicant_score_distribution_bucket{{{API}}}[15m]))",
+                "Cardholder score distribution (15m)",
+                f"sum by (le) (increase(credit_cardholder_score_distribution_bucket{{{API}}}[15m]))",
                 "{{le}}",
                 fmt="heatmap",
             ),
@@ -1037,7 +1037,7 @@ def infra_sla_dashboard() -> dict:
     return dashboard(
         "credit-infra-sla",
         "Credit Risk - Infrastructure & SLA",
-        "Availability, latency and error-rate SLOs, active alerts and platform health.",
+        "Availability, latency and error-rate SLO targets, active alerts and platform health.",
         panels,
     )
 

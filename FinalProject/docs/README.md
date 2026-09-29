@@ -44,7 +44,7 @@ lấy từ file sinh tự động trong [`reports/`](../reports/) (không nhập
 | [`adr/`](adr/) | 7 Architecture Decision Record (bảng bên dưới) |
 | [`runbooks/alerts.md`](runbooks/alerts.md) | Runbook từng alert (đích của `runbook_url`) |
 | [`assets/`](assets/) | [Diagram](assets/diagrams/README.md) (nguồn Mermaid + SVG), ảnh chụp Grafana/slide |
-| [`presentation/`](presentation/README.md) | Slide (`index.html`, PDF, PPTX), [demo script](presentation/demo-script.md) |
+| [`presentation/`](presentation/README.md) | Slide HTML (`index.html`), [demo script](presentation/demo-script.md) |
 | [`qa/`](qa/README.md) | Kế hoạch và kết quả kiểm thử thủ công |
 | Root | [README](../README.md) · [ARCHITECTURE](../ARCHITECTURE.md) · [CONTRIBUTING](../CONTRIBUTING.md) · [CHANGELOG](../CHANGELOG.md) · [SECURITY](../SECURITY.md) |
 

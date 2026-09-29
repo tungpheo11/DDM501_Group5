@@ -1,6 +1,6 @@
 %% Component diagram of the Scoring API container (package credit_risk.serving)
 flowchart TB
-    client["<b>Loan Origination System</b><br/><i>[External]</i>"]:::external
+    client["<b>Card Management System / app backend</b><br/><b>Batch limit-review job</b><br/><i>[External]</i>"]:::external
     airflow["<b>Airflow model_retrain</b><br/><i>[Container]</i>"]:::container
     prom["<b>Prometheus</b><br/><i>[Container]</i>"]:::container
 

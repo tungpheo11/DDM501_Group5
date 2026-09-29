@@ -62,7 +62,7 @@ def classification_report_from_proba(
     Returns ranking metrics (``roc_auc``, ``pr_auc``, ``brier``), decision metrics at
     ``threshold`` (``accuracy``, ``precision``, ``recall``, ``f1_score``, confusion
     counts) and the cost-matrix loss (``financial_loss`` total and
-    ``expected_loss`` per applicant).
+    ``expected_loss`` per cardholder).
     """
     labels = np.asarray(y_true, dtype=int)
     probs = np.asarray(y_prob, dtype=float)

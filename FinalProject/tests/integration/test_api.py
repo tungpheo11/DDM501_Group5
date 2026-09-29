@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import pytest
 from prometheus_client import REGISTRY
 
@@ -141,7 +143,7 @@ def test_malformed_request_id_is_replaced(client, valid_payload):
     assert response.headers["X-Request-ID"].startswith("req_")
 
 
-def test_high_risk_applicant_is_not_approved(client, high_risk_payload):
+def test_high_risk_cardholder_is_not_approved(client, high_risk_payload):
     data = client.post("/api/v1/predict", json=high_risk_payload).json()
     assert data["risk_decision"] in {"REVIEW", "DECLINE"}
     assert data["policy_guardrails"]["delinquency_guardrail"] == "ELEVATED_DEFAULT_RISK"
@@ -234,7 +236,7 @@ def test_wrong_method_uses_error_schema(client):
 
 def test_batch_scores_in_request_order(client, valid_payload, high_risk_payload):
     before = database.count_inference_logs()
-    response = client.post("/api/v1/predict/batch", json={"applicants": [valid_payload, high_risk_payload]})
+    response = client.post("/api/v1/predict/batch", json={"cardholders": [valid_payload, high_risk_payload]})
     assert response.status_code == 200
     data = response.json()
     request_id = response.headers["X-Request-ID"]
@@ -247,27 +249,76 @@ def test_batch_scores_in_request_order(client, valid_payload, high_risk_payload)
 
 
 def test_batch_matches_single_predictions(client, valid_payload, high_risk_payload):
-    batch = client.post("/api/v1/predict/batch", json={"applicants": [valid_payload, high_risk_payload]}).json()
+    batch = client.post("/api/v1/predict/batch", json={"cardholders": [valid_payload, high_risk_payload]}).json()
     for item, payload in zip(batch["predictions"], (valid_payload, high_risk_payload), strict=True):
         single = client.post("/api/v1/predict", json=payload).json()
         assert item["default_probability"] == pytest.approx(single["default_probability"])
 
 
 def test_empty_batch_is_rejected(client):
-    assert_error(client.post("/api/v1/predict/batch", json={"applicants": []}), 422, "VALIDATION_ERROR")
+    assert_error(client.post("/api/v1/predict/batch", json={"cardholders": []}), 422, "VALIDATION_ERROR")
 
 
 def test_oversized_batch_is_rejected(make_client, auth_headers, valid_payload):
     test_client = make_client(batch_max_size=2)
-    response = test_client.post("/api/v1/predict/batch", json={"applicants": [valid_payload] * 3}, headers=auth_headers)
+    response = test_client.post(
+        "/api/v1/predict/batch", json={"cardholders": [valid_payload] * 3}, headers=auth_headers
+    )
     body = assert_error(response, 413, "BATCH_TOO_LARGE")
     assert body["details"] == {"max_size": 2, "received": 3}
 
 
 def test_batch_reports_invalid_item_position(client, valid_payload):
+    response = client.post("/api/v1/predict/batch", json={"cardholders": [valid_payload, {**valid_payload, "SEX": 9}]})
+    body = assert_error(response, 422, "VALIDATION_ERROR")
+    assert body["details"][0]["field"] == "cardholders.1.SEX"
+
+
+def _without_request_ids(batch: dict) -> list[dict]:
+    return [{key: value for key, value in item.items() if key != "request_id"} for item in batch["predictions"]]
+
+
+def test_batch_accepts_deprecated_applicants_alias(client, valid_payload, high_risk_payload):
+    cardholders = client.post("/api/v1/predict/batch", json={"cardholders": [valid_payload, high_risk_payload]})
+    legacy = client.post("/api/v1/predict/batch", json={"applicants": [valid_payload, high_risk_payload]})
+    assert cardholders.status_code == legacy.status_code == 200
+    new_body, legacy_body = cardholders.json(), legacy.json()
+    assert legacy_body["count"] == new_body["count"] == 2
+    assert legacy_body["decision_summary"] == new_body["decision_summary"]
+    assert _without_request_ids(legacy_body) == _without_request_ids(new_body)
+
+
+def test_deprecated_alias_errors_report_the_field_name_sent(client, valid_payload):
     response = client.post("/api/v1/predict/batch", json={"applicants": [valid_payload, {**valid_payload, "SEX": 9}]})
     body = assert_error(response, 422, "VALIDATION_ERROR")
     assert body["details"][0]["field"] == "applicants.1.SEX"
+
+
+def test_deprecated_alias_is_limited_by_batch_max_size(make_client, auth_headers, valid_payload):
+    test_client = make_client(batch_max_size=2)
+    response = test_client.post("/api/v1/predict/batch", json={"applicants": [valid_payload] * 3}, headers=auth_headers)
+    body = assert_error(response, 413, "BATCH_TOO_LARGE")
+    assert body["message"] == "Batch contains 3 cardholders; the maximum is 2."
+
+
+@pytest.mark.parametrize(
+    ("extra_field", "order_first"),
+    [("applicants", False), ("applicants", True), ("customers", False)],
+)
+def test_batch_rejects_both_fields_or_unknown_fields(client, valid_payload, extra_field, order_first):
+    extra = {extra_field: [valid_payload]}
+    main = {"cardholders": [valid_payload]}
+    payload = {**extra, **main} if order_first else {**main, **extra}
+    body = assert_error(client.post("/api/v1/predict/batch", json=payload), 422, "VALIDATION_ERROR")
+    assert {"field": extra_field, "type": "extra_forbidden"} in [
+        {"field": item["field"], "type": item["type"]} for item in body["details"]
+    ]
+
+
+def test_batch_requires_cardholders_field(client):
+    body = assert_error(client.post("/api/v1/predict/batch", json={}), 422, "VALIDATION_ERROR")
+    assert body["details"][0]["field"] == "cardholders"
+    assert body["details"][0]["type"] == "missing"
 
 
 # --- Explain ----------------------------------------------------------------
@@ -406,7 +457,16 @@ def test_metrics_expose_custom_series(client, valid_payload):
     assert "credit_model_loaded 1.0" in body
     assert "credit_model_degraded 1.0" in body
     assert "credit_customer_age_rolling_mean" in body
-    assert "credit_applicant_score_distribution_bucket" in body
+    assert "credit_cardholder_score_distribution_bucket" in body
+
+
+def test_score_distribution_is_exported_only_under_the_cardholder_name(client, valid_payload):
+    assert client.post("/api/v1/predict", json=valid_payload).status_code == 200
+    body = client.get("/metrics").text
+    families = re.findall(r"^# TYPE (credit_\w*score_distribution) histogram$", body, flags=re.MULTILINE)
+    assert families == ["credit_cardholder_score_distribution"]
+    assert "# HELP credit_cardholder_score_distribution Credit score distribution of scored cardholders" in body
+    assert re.search(r"^credit_cardholder_score_distribution_count [1-9]", body, flags=re.MULTILINE)
 
 
 def test_model_inference_latency_is_observed_once_per_model_call(client, valid_payload, high_risk_payload):
@@ -417,7 +477,7 @@ def test_model_inference_latency_is_observed_once_per_model_call(client, valid_p
     assert client.post("/api/v1/predict", json=valid_payload).status_code == 200
     assert inference_count() == before + 1
 
-    batch = {"applicants": [valid_payload, high_risk_payload]}
+    batch = {"cardholders": [valid_payload, high_risk_payload]}
     assert client.post("/api/v1/predict/batch", json=batch).status_code == 200
     assert inference_count() == before + 2
     assert "credit_prediction_duration_seconds_bucket" in client.get("/metrics").text
@@ -457,6 +517,16 @@ def test_api_key_security_scheme_is_documented(anon_client):
     }
     assert spec["paths"]["/api/v1/predict"]["post"]["security"] == [{"ApiKeyAuth": []}]
     assert "security" not in spec["paths"]["/health/ready"]["get"]
+
+
+def test_batch_schema_documents_deprecated_applicants_alias(anon_client):
+    schema = anon_client.get("/openapi.json").json()["components"]["schemas"]["BatchPredictRequest"]
+    assert schema["required"] == ["cardholders"]
+    assert schema["additionalProperties"] is False
+    assert "deprecated" not in schema["properties"]["cardholders"]
+    legacy = schema["properties"]["applicants"]
+    assert legacy["deprecated"] is True
+    assert legacy["items"] == schema["properties"]["cardholders"]["items"]
 
 
 def test_committed_openapi_document_is_up_to_date(anon_client, settings):

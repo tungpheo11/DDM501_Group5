@@ -55,7 +55,7 @@ def test_generalize_record_drops_protected_and_bands_quasi_identifiers():
     assert record == {"AGE": "30-39", "LIMIT_BAL": "50k-100k", "PAY_0": 2}
 
 
-def test_structured_logs_never_contain_raw_applicant_fields(valid_payload):
+def test_structured_logs_never_contain_raw_cardholder_fields(valid_payload):
     record = logging.LogRecord("t", logging.INFO, __file__, 1, "scored", None, None)
     record.features = valid_payload
     record.context = {"AGE": valid_payload["AGE"], "nested": [{"LIMIT_BAL": valid_payload["LIMIT_BAL"]}]}

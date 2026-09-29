@@ -44,10 +44,10 @@ class BaseScenario:
 
 
 class NormalTrafficScenario(BaseScenario):
-    """Simulates healthy, stable baseline applicant traffic (PSI < 0.05)."""
+    """Simulates healthy, stable baseline cardholder traffic (PSI < 0.05)."""
 
     def run(self, count: int = 50, delay_sec: float = 0.02) -> dict[str, Any]:
-        logger.info("Executing NormalTrafficScenario (%d applications)...", count)
+        logger.info("Executing NormalTrafficScenario (%d cardholder requests)...", count)
         stats = {
             "scenario": "NormalTraffic",
             "total_sent": count,
@@ -87,10 +87,10 @@ class NormalTrafficScenario(BaseScenario):
 
 
 class GenZDriftScenario(BaseScenario):
-    """Simulates viral Gen-Z acquisition campaign with severe demographic and covariate drift (PSI >= 0.25)."""
+    """Simulates a viral Gen-Z limit-increase campaign with severe demographic and covariate drift (PSI >= 0.25)."""
 
     def run(self, count: int = 60, delay_sec: float = 0.02) -> dict[str, Any]:
-        logger.info("Executing GenZDriftScenario (%d applications)...", count)
+        logger.info("Executing GenZDriftScenario (%d cardholder requests)...", count)
         stats = {
             "scenario": "GenZDrift",
             "total_sent": count,
@@ -133,7 +133,7 @@ class HolidaySpikeScenario(BaseScenario):
     """Simulates festival shopping surge with high credit line utilization."""
 
     def run(self, count: int = 50, delay_sec: float = 0.02) -> dict[str, Any]:
-        logger.info("Executing HolidaySpikeScenario (%d applications)...", count)
+        logger.info("Executing HolidaySpikeScenario (%d cardholder requests)...", count)
         stats = {
             "scenario": "HolidaySpike",
             "total_sent": count,
@@ -176,7 +176,7 @@ class FraudAttackScenario(BaseScenario):
     """Simulates delinquent / syndicate attack with elevated default probabilities."""
 
     def run(self, count: int = 50, delay_sec: float = 0.02) -> dict[str, Any]:
-        logger.info("Executing FraudAttackScenario (%d applications)...", count)
+        logger.info("Executing FraudAttackScenario (%d cardholder requests)...", count)
         stats = {
             "scenario": "FraudAttack",
             "total_sent": count,

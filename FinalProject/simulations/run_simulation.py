@@ -71,7 +71,7 @@ def run_full_lifecycle_simulation(
     time.sleep(1.0)
 
     logger.info("=================================================================")
-    logger.info("🚨 PHASE 2: Gen-Z Acquisition Drift Shock Simulation (%d requests)", count)
+    logger.info("🚨 PHASE 2: Gen-Z Limit-Increase Campaign Drift Shock Simulation (%d requests)", count)
     logger.info("=================================================================")
     drift_scenario = GenZDriftScenario(api_url=predict_url, api_key=api_key)
     res_drift = drift_scenario.run(count=count, delay_sec=delay)
@@ -95,7 +95,7 @@ def main():
         default="all",
         help="Simulation scenario to execute",
     )
-    parser.add_argument("--count", type=int, default=40, help="Number of simulated applications")
+    parser.add_argument("--count", type=int, default=40, help="Number of simulated cardholder requests")
     parser.add_argument("--delay", type=float, default=0.02, help="Delay between requests in seconds")
     parser.add_argument("--skip-health-check", action="store_true", help="Skip initial API health verification")
 

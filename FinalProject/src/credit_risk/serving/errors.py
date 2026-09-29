@@ -58,7 +58,7 @@ def error_response(
 
 
 def _validation_details(exc: RequestValidationError) -> list[dict[str, Any]]:
-    # The rejected ``input`` is dropped on purpose: it would echo applicant data
+    # The rejected ``input`` is dropped on purpose: it would echo cardholder data
     # back into responses and into any log line built from them.
     details = []
     for err in exc.errors():
