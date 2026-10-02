@@ -147,16 +147,14 @@ FinalProject/
 ## 5. Kết Quả Huấn Luyện & Tuyển Chọn Mô Hình
 
 <!-- model-comparison:start -->
-_Sinh tự động từ `reports/model_comparison.json` (session `20260928T092715Z`)._
+_Sinh tự động từ `reports/model_comparison.json` (session `20261001T082709Z`)._
 
 | Model | CV ROC-AUC (mean ± std) | Holdout ROC-AUC | Holdout PR-AUC | Holdout F1 | Holdout Recall | Holdout expected loss | Normal-stream ROC-AUC | Normal-stream expected loss |
 |---|---|---|---|---|---|---|---|---|
-| **Logistic Regression** (selected) | 0.7513 ± 0.0152 | 0.7700 | 0.5688 | 0.5314 | 0.6213 | 1.0030 | 0.7519 | 1.0848 |
-| Random Forest | 0.7472 ± 0.0114 | 0.7657 | 0.5635 | 0.5312 | 0.5344 | 1.1430 | 0.7474 | 1.2262 |
-| XGBoost | 0.7509 ± 0.0127 | 0.7671 | 0.5671 | 0.5318 | 0.5629 | 1.0967 | 0.7556 | 1.1598 |
-| LightGBM | 0.7488 ± 0.0123 | 0.7678 | 0.5705 | 0.5226 | 0.5793 | 1.0787 | 0.7549 | 1.1368 |
+| **XGBoost** (selected) | 0.7505 ± 0.0130 | 0.7676 | 0.5666 | 0.5319 | 0.5554 | 1.1087 | 0.7545 | 1.1734 |
+| LightGBM | 0.7486 ± 0.0138 | 0.7689 | 0.5704 | 0.5309 | 0.5778 | 1.0733 | 0.7543 | 1.1502 |
 
-Model được chọn: **Logistic Regression** — gate: **promote**. Chi tiết: [`reports/model_comparison.md`](reports/model_comparison.md).
+Model được chọn: **XGBoost** — gate: **giữ champion hiện tại**. Chi tiết: [`reports/model_comparison.md`](reports/model_comparison.md).
 <!-- model-comparison:end -->
 
 ---

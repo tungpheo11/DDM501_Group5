@@ -171,6 +171,17 @@ ssh -N -L 15040:127.0.0.1:15040 -L 18080:127.0.0.1:18080 -L 19090:127.0.0.1:1909
 # rồi mở http://localhost:15040 (MLflow), :18080 (Airflow), :19090 (Prometheus), :19093, :19041
 ```
 
+MLflow 3.x không có màn hình đăng nhập mặc định. Nếu mở UI bằng IP/domain thay vì `localhost`
+(không qua tunnel), các request POST của UI bị chặn với `403 Cross-origin request blocked`. Khai báo
+đúng origin trình duyệt đang dùng trong `.env` rồi tạo lại container `mlflow`:
+
+```bash
+MLFLOW_CORS_ALLOWED_ORIGINS=http://<server-ip>:15040,https://mlflow.example.com
+docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file ../../.env up -d mlflow
+```
+
+Mở MLflow ra mạng thì phải tự đặt lớp xác thực phía trước (Nginx basic auth hoặc `mlflow server --app-name basic-auth`).
+
 ## 8. systemd: tự khởi động cùng máy
 
 `credit-risk.service` (oneshot, `RemainAfterExit`) gọi `deploy.sh start|stop` trên release `current`:
