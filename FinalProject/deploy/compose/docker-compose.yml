@@ -175,6 +175,9 @@ services:
       # MLflow 3.x otherwise forks ~7 huey job consumers (~150 MB each) and gets
       # OOM-killed under the 1G limit; server-side jobs are not used here.
       MLFLOW_SERVER_ENABLE_JOB_EXECUTION: "false"
+      # MLflow 3.x answers 403 "Cross-origin request blocked" to UI POST calls whose
+      # Origin is not localhost; list the public UI origin(s) here when not using a tunnel.
+      MLFLOW_SERVER_CORS_ALLOWED_ORIGINS: ${MLFLOW_CORS_ALLOWED_ORIGINS:-}
     command: >
       mlflow server
       --backend-store-uri postgresql://${POSTGRES_USER:-mlops}:${POSTGRES_PASSWORD:-mlopspass}@postgres:5432/${POSTGRES_DB:-credit_mlops_db}
