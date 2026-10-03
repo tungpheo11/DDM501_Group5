@@ -73,10 +73,10 @@ _Sinh tự động bởi `make responsible-ai` (2026-09-29T11:54:02+00:00) — k
 <!-- rai:model-performance:start -->
 | Tập | ROC-AUC | PR-AUC | F1 | Recall | Precision | Brier | Expected loss |
 |---|---|---|---|---|---|---|---|
-| Holdout (15k baseline, 20%) | 0.7700 | 0.5688 | 0.5314 | 0.6213 | 0.4642 | 0.1885 | 1.0030 |
-| Gate set `stream_normal` | 0.7519 | 0.5447 | 0.5183 | 0.5958 | 0.4586 | 0.1914 | 1.0848 |
+| Holdout (15k baseline, 20%) | 0.7676 | 0.5666 | 0.5319 | 0.5554 | 0.5103 | 0.1882 | 1.1087 |
+| Gate set `stream_normal` | 0.7545 | 0.5503 | 0.5229 | 0.5389 | 0.5078 | 0.1903 | 1.1734 |
 
-CV 5-fold ROC-AUC: 0.7513 ± 0.0152 · session `20260928T092715Z` · nguồn: `reports/model_comparison.json`.
+CV 5-fold ROC-AUC: 0.7505 ± 0.0130 · session `20261001T082709Z` · nguồn: `reports/model_comparison.json`.
 
 _Sinh tự động bởi `make responsible-ai` (2026-09-29T11:54:02+00:00) — không sửa tay._
 <!-- rai:model-performance:end -->
