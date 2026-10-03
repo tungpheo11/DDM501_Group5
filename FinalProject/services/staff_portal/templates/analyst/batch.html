@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Rà soát hạn mức theo lô{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Rà soát hạn mức theo lô</h1>
+    <p>Sau mỗi kỳ sao kê, chấm lại cả lô chủ thẻ bằng <code>/api/v1/predict/batch</code> (tối đa {{ max_size }} chủ thẻ một lô).</p>
+  </div>
+</div>
+<div class="grid grid--sidebar">
+  <section class="card" aria-labelledby="run-title">
+    <div class="card__title"><h2 id="run-title">Chạy lô mới</h2></div>
+    <form method="post" action="/analyst/batch" hx-post="/analyst/batch" hx-target="#batch-result" hx-swap="innerHTML"
+          hx-indicator="#batch-indicator" hx-disabled-elt="find button">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="inline-fields">
+        <div class="field">
+          <label for="cohort">Lô chủ thẻ</label>
+          <select id="cohort" name="cohort">
+            {% for key, label, size in cohorts %}<option value="{{ key }}">{{ label }} ({{ size }} chủ thẻ)</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <button class="btn" type="submit">Chấm điểm cả lô</button>
+          <span id="batch-indicator" class="htmx-indicator row muted small"><span class="spinner" aria-hidden="true"></span> Đang chấm…</span>
+        </div>
+      </div>
+    </form>
+  </section>
+  <aside class="card" aria-labelledby="history-title">
+    <div class="card__title"><h2 id="history-title">Các lô gần đây</h2></div>
+    {% if history %}
+    <ul class="result-list">
+      {% for item in history %}
+      <li><a href="/analyst/batch/{{ item.id }}"><span>Lô #{{ item.id }} · {{ item.count }} chủ thẻ<br><span class="muted small">{{ item.created_at|dt(False) }}</span></span>
+        <span class="small">D {{ item.decision_summary.get("DECLINE", 0) }} · R {{ item.decision_summary.get("REVIEW", 0) }}</span></a></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="empty">Chưa chạy lô nào.</div>
+    {% endif %}
+  </aside>
+</div>
+<section id="batch-result" class="card" aria-live="polite">
+  {% include "analyst/_batch_result.html" %}
+</section>
+{% endblock %}

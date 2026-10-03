@@ -1,0 +1,5 @@
+<div class="alert alert--ok" role="status">
+  <p>Đã xoá {{ deleted|number }} dòng khỏi <code>inference_logs</code>. Còn lại {{ remaining|number }} dòng. Thao tác đã được ghi vào nhật ký.</p>
+  <p class="small">Drift monitor sẽ báo “chưa đủ dữ liệu” cho tới khi có log mới. Metric Prometheus không reset.</p>
+</div>
+<div id="audit" hx-swap-oob="true">{% include "admin/_audit.html" %}</div>

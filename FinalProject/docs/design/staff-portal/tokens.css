@@ -1,0 +1,276 @@
+/*
+ * Staff Portal — design tokens + base styles.
+ *
+ * Root stylesheet of the portal: load it first, then components.css.
+ * No web fonts, no CDN: everything resolves to system fonts so the portal works offline.
+ * Contrast ratios below are WCAG 2.1 values against the background named in the comment.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* ---------- Neutral palette ---------- */
+  --gray-0: #ffffff;
+  --gray-25: #f5f7fa;   /* page background */
+  --gray-50: #eef2f6;
+  --gray-100: #e3e8ef;
+  --gray-200: #d3dae3;  /* decorative border */
+  --gray-300: #b8c2cf;
+  --gray-400: #7d8999;  /* input border: 3.55:1 on white (WCAG 1.4.11) */
+  --gray-500: #66717f;  /* subtle text: 4.96:1 on white, 4.62:1 on gray-25 */
+  --gray-600: #4f5b6d;  /* muted text: 6.89:1 on white */
+  --gray-700: #3a4555;
+  --gray-900: #142033;  /* body text: 16.35:1 on white */
+
+  /* ---------- Brand (bank navy) ---------- */
+  --brand-950: #0b2545; /* app header: white text 15.39:1 */
+  --brand-800: #0f3a6e;
+  --brand-700: #1452a3; /* primary action: white text 7.59:1 */
+  --brand-600: #1a5bb5; /* links, focus ring: 6.55:1 on white */
+  --brand-200: #b9c7da; /* secondary text on brand-950: 8.97:1 */
+  --brand-100: #e7f0fc;
+  --brand-50: #f2f7fe;
+
+  /* ---------- Risk decisions (fixed by policy: APPROVE green / REVIEW amber / DECLINE red) ---------- */
+  --approve-fg: #116329;      /* 6.51:1 on approve-bg, 7.39:1 on white */
+  --approve-bg: #e6f4ea;
+  --approve-border: #9fd3b0;
+  --approve-solid: #1a7f37;   /* white text 5.08:1 */
+  --approve-on-solid: #ffffff;
+
+  --review-fg: #7a4b00;       /* 6.74:1 on review-bg, 7.41:1 on white */
+  --review-bg: #fff4d1;
+  --review-border: #b07a00;   /* 3.39:1 on review-bg */
+  --review-solid: #f5b800;    /* dark text 9.18:1 — never put white text on it */
+  --review-on-solid: #2b1d00;
+
+  --decline-fg: #b42318;      /* 5.75:1 on decline-bg, 6.57:1 on white */
+  --decline-bg: #fdecea;
+  --decline-border: #f1a9a1;
+  --decline-solid: #b42318;   /* white text 6.57:1 */
+  --decline-on-solid: #ffffff;
+
+  /* ---------- Semantic feedback (aliases, reuse decision hues) ---------- */
+  --success-fg: var(--approve-fg);
+  --success-bg: var(--approve-bg);
+  --success-border: var(--approve-border);
+  --warning-fg: var(--review-fg);
+  --warning-bg: var(--review-bg);
+  --warning-border: var(--review-border);
+  --danger-fg: var(--decline-fg);
+  --danger-bg: var(--decline-bg);
+  --danger-border: var(--decline-border);
+  --danger-solid: var(--decline-solid);
+  --info-fg: #0f4c99;         /* 7.27:1 on info-bg */
+  --info-bg: var(--brand-100);
+  --info-border: #9dbbe6;
+
+  /* ---------- Surfaces & text roles ---------- */
+  --color-page: var(--gray-25);
+  --color-surface: var(--gray-0);
+  --color-surface-sunken: var(--gray-50);
+  --color-surface-hover: var(--brand-50);
+  --color-border: var(--gray-200);
+  --color-border-strong: var(--gray-400);
+  --color-text: var(--gray-900);
+  --color-text-muted: var(--gray-600);
+  --color-text-subtle: var(--gray-500);
+  --color-link: var(--brand-600);
+  --color-primary: var(--brand-700);
+  --color-primary-hover: var(--brand-800);
+  --color-on-primary: #ffffff;
+  --color-header: var(--brand-950);
+  --color-on-header: #ffffff;
+  --color-on-header-muted: var(--brand-200);
+  --color-focus: var(--brand-600);
+  --color-overlay: rgb(11 37 69 / 0.48);
+
+  /* ---------- Typography (system fonts only, Vietnamese diacritics supported) ---------- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    "Noto Sans", "Liberation Sans", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  --text-xs: 0.75rem;    /* 12px — meta, table captions */
+  --text-sm: 0.8125rem;  /* 13px — table cells, hints */
+  --text-base: 0.875rem; /* 14px — body, form controls */
+  --text-md: 1rem;       /* 16px — card titles */
+  --text-lg: 1.125rem;   /* 18px — section titles */
+  --text-xl: 1.375rem;   /* 22px — page titles */
+  --text-2xl: 1.75rem;   /* 28px — key figures */
+  --text-3xl: 2.25rem;   /* 36px — decision headline */
+
+  --leading-tight: 1.25;
+  --leading-snug: 1.4;
+  --leading-normal: 1.55;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ---------- Spacing (4px grid) ---------- */
+  --space-0: 0;
+  --space-1: 0.25rem;  /* 4 */
+  --space-2: 0.5rem;   /* 8 */
+  --space-3: 0.75rem;  /* 12 */
+  --space-4: 1rem;     /* 16 */
+  --space-5: 1.25rem;  /* 20 */
+  --space-6: 1.5rem;   /* 24 */
+  --space-8: 2rem;     /* 32 */
+  --space-10: 2.5rem;  /* 40 */
+  --space-12: 3rem;    /* 48 */
+  --space-16: 4rem;    /* 64 */
+
+  /* ---------- Radii ---------- */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-pill: 999px;
+
+  /* ---------- Elevation ---------- */
+  --shadow-sm: 0 1px 2px rgb(20 32 51 / 0.06), 0 1px 1px rgb(20 32 51 / 0.04);
+  --shadow-md: 0 4px 12px rgb(20 32 51 / 0.08), 0 1px 3px rgb(20 32 51 / 0.06);
+  --shadow-lg: 0 16px 40px rgb(20 32 51 / 0.18), 0 2px 8px rgb(20 32 51 / 0.08);
+
+  /* ---------- Motion ---------- */
+  --duration-fast: 120ms;   /* hover, press feedback */
+  --duration-base: 200ms;   /* panels, dialogs */
+  --duration-slow: 320ms;   /* progress fill */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  /* ---------- Layout ---------- */
+  --header-height: 56px;
+  --sidebar-width: 232px;
+  --content-max: 1360px;
+  --control-height: 36px;
+  --control-height-sm: 30px;
+  --target-min: 24px;       /* WCAG 2.5.8 minimum target */
+  --focus-ring: 0 0 0 3px rgb(26 91 181 / 0.35);
+
+  /* ---------- Layers ---------- */
+  --z-header: 100;
+  --z-sticky: 110;
+  --z-drawer: 200;
+  --z-dialog: 300;
+  --z-toast: 400;
+
+  /* Breakpoints (reference only, CSS custom properties cannot be used inside @media):
+     --bp-md: 768px   tablet, single column forms
+     --bp-lg: 1024px  sidebar appears
+     --bp-xl: 1280px  primary demo viewport */
+}
+
+/* ---------- Base ---------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--color-text);
+  background: var(--color-page);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  line-height: var(--leading-tight);
+  font-weight: var(--weight-semibold);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--color-link);
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  color: var(--color-primary-hover);
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+img,
+svg {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

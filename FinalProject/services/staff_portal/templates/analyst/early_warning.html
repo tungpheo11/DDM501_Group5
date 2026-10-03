@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Cảnh báo sớm{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Danh sách cảnh báo sớm</h1>
+    <p>Chủ thẻ REVIEW / DECLINE trong lô rà soát gần nhất, xếp theo xác suất vỡ nợ giảm dần. Chỉ để theo dõi.</p>
+  </div>
+</div>
+<section class="card">
+  {% if review is none %}
+  <div class="empty">Chưa có lô rà soát nào. <a href="/analyst/batch">Chạy rà soát theo lô</a> để lập danh sách.</div>
+  {% elif not rows %}
+  <div class="empty">Lô #{{ review.id }} không có chủ thẻ nào cần theo dõi.</div>
+  {% else %}
+  <p class="small muted">Nguồn: lô #{{ review.id }} ({{ review.created_at|dt(False) }}) · {{ rows|length }} chủ thẻ cần theo dõi.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Chủ thẻ</th><th>Thẻ</th><th>Quyết định</th><th class="num">Xác suất vỡ nợ</th><th class="num">Hạn mức</th><th>Yếu tố chính</th></tr></thead>
+    <tbody>
+    {% for row in rows %}
+    <tr>
+      <td><strong>{{ row.full_name }}</strong><br><span class="muted small">{{ row.customer_id }}</span></td>
+      <td>{{ row.card_masked }}</td>
+      <td><span class="badge badge--{{ row.risk_decision }}">{{ row.risk_decision|decision_label }}</span></td>
+      <td class="num">{{ row.default_probability|percent }}</td>
+      <td class="num">{{ row.limit_bal_ntd|money }}</td>
+      <td class="small">{{ row.top_risk_factors[0] if row.top_risk_factors else "—" }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CA-2026-00128 · Chuyên viên rủi ro · Cổng nghiệp vụ hạn mức thẻ</title>
+  <link rel="stylesheet" href="../tokens.css">
+  <link rel="stylesheet" href="../components.css">
+  <link rel="stylesheet" href="assets/mockup.css">
+  <script src="assets/mockup.js" defer></script>
+  <style>
+    @media (min-width: 1101px) {
+      .sticky-aside { position: sticky; top: calc(var(--header-height) + var(--space-6)); }
+    }
+  </style>
+</head>
+<body data-states="data|Có giải thích;explain-loading|Đang tính SHAP;explain-error|SHAP lỗi;invalid|Thiếu thông tin;saved|Đã lưu">
+<div class="app">
+  <header class="app-header">
+    <a class="app-brand" href="#">
+      <span class="app-brand__mark">HM</span>
+      <span class="app-brand__text">
+        <span class="app-brand__name">Ngân hàng Demo</span>
+        <span class="app-brand__sub">Cổng nghiệp vụ hạn mức thẻ</span>
+      </span>
+    </a>
+    <span class="env-tag">DEMO</span>
+    <span class="app-header__spacer"></span>
+    <div class="app-user">
+      <div class="app-user__meta">
+        <span class="app-user__name">Thu Trang</span>
+        <span class="role-chip"><svg class="icon"><use href="#i-shield"/></svg>Chuyên viên rủi ro tín dụng</span>
+      </div>
+      <span class="avatar" aria-hidden="true">TT</span>
+      <form method="post" action="/logout">
+        <button class="btn-logout" type="submit"><svg class="icon"><use href="#i-logout"/></svg>Đăng xuất</button>
+      </form>
+    </div>
+  </header>
+  <div class="demo-banner"><svg class="icon"><use href="#i-info"/></svg>Môi trường demo — tên, mã khách hàng và số thẻ đều là dữ liệu giả lập.</div>
+
+  <div class="app-body">
+    <nav class="app-nav" aria-label="Điều hướng chính">
+      <div class="app-nav__group">
+        <span class="app-nav__label">Xem xét</span>
+        <a class="app-nav__link" href="03-analyst-queue.html" aria-current="page"><svg class="icon"><use href="#i-inbox"/></svg>Hàng đợi REVIEW<span class="app-nav__count" data-hide="saved">12</span><span class="app-nav__count" data-show="saved">11</span></a>
+        <a class="app-nav__link" href="05-analyst-batch.html"><svg class="icon"><use href="#i-layers"/></svg>Rà soát theo lô</a>
+        <a class="app-nav__link" href="06-analyst-watchlist.html"><svg class="icon"><use href="#i-bell"/></svg>Cảnh báo sớm</a>
+      </div>
+      <div class="app-nav__foot">Model đang phục vụ: <strong>v1</strong> · ngưỡng 0,30 / 0,60</div>
+    </nav>
+
+    <main class="app-main">
+      <div class="app-main__inner">
+        <div>
+          <nav class="breadcrumb" aria-label="Breadcrumb"><a href="03-analyst-queue.html">Hàng đợi REVIEW</a><span aria-hidden="true">/</span><span aria-current="page">CA-2026-00128</span></nav>
+          <div class="page-header">
+            <div>
+              <h1 class="page-header__title">Nguyễn Thị Minh Anh <span class="badge badge--review" style="vertical-align: middle">REVIEW</span></h1>
+              <p class="page-header__desc">CA-2026-00128 · Yêu cầu realtime: <strong>tăng hạn mức vĩnh viễn lên NT$ 300.000</strong> · tiếp nhận qua Mobile app lúc 08:41, 03/10/2026</p>
+            </div>
+            <div class="page-header__actions">
+              <span class="subtle">KH-004217 · Thẻ **** 4821</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert--success" role="status" data-show="saved">
+          <svg class="icon icon--lg"><use href="#i-check-circle"/></svg>
+          <div class="alert__body">
+            <span class="alert__title">Đã lưu quyết định: hạ hạn mức xuống NT$ 100.000</span>
+            <p>Thông báo adverse action <strong>AA-2026-00343</strong> đã được tạo kèm 2 lý do. Còn 11 ca trong hàng đợi.</p>
+            <div class="alert__actions">
+              <a class="btn btn--primary btn--sm" href="#">Ca tiếp theo: CA-2026-00129<svg class="icon"><use href="#i-arrow-right"/></svg></a>
+              <a class="btn btn--ghost btn--sm" href="03-analyst-queue.html">Về hàng đợi</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid--main-aside">
+          <!-- ============ Left: evidence ============ -->
+          <div class="stack stack--lg">
+            <section class="card" aria-labelledby="score-title">
+              <div class="card__header">
+                <h2 class="card__title" id="score-title">Kết quả chấm điểm</h2>
+                <span class="subtle mono">req_19d7938051 · model v1</span>
+              </div>
+              <div class="card__body stack">
+                <div class="metrics">
+                  <div><div class="metric__label">Xác suất vỡ nợ</div><div class="metric__value num">46,3&nbsp;%</div><div class="metric__meta">Trong vùng REVIEW</div></div>
+                  <div><div class="metric__label">Điểm tín dụng</div><div class="metric__value num">595</div><div class="metric__meta">SUBPRIME</div></div>
+                  <div><div class="metric__label">Hạn mức hiện tại</div><div class="metric__value num">NT$ 200.000</div><div class="metric__meta">Đã dùng 25,0&nbsp;%</div></div>
+                  <div><div class="metric__label">Hạn mức tham chiếu</div><div class="metric__value num">NT$ 100.000</div><div class="metric__meta">min(hạn mức × 0,5; 100.000)</div></div>
+                </div>
+                <div class="gauge" aria-label="Xác suất vỡ nợ 46,3 phần trăm, vùng REVIEW">
+                  <span class="gauge__marker" style="left: 46.3%">46,3&nbsp;%</span>
+                  <div class="gauge__track"><span class="gauge__zone--approve"></span><span class="gauge__zone--review"></span><span class="gauge__zone--decline"></span></div>
+                  <div class="gauge__scale"><span style="left:0">0&nbsp;%</span><span style="left:30%">30&nbsp;% · REVIEW</span><span style="left:60%">60&nbsp;% · DECLINE</span><span style="left:100%">100&nbsp;%</span></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="card" aria-labelledby="shap-title">
+              <div class="card__header">
+                <div>
+                  <h2 class="card__title" id="shap-title">Vì sao model cho kết quả này</h2>
+                  <p class="card__sub">Top 5 yếu tố theo SHAP, so với chủ thẻ tham chiếu (trung vị tập train)</p>
+                </div>
+                <span class="tag mono" data-hide="explain-loading explain-error">shap_permutation</span>
+              </div>
+              <div class="card__body stack">
+                <!-- loaded -->
+                <div class="stack" data-hide="explain-loading explain-error">
+                  <p>Xác suất tham chiếu <strong class="num">43,8&nbsp;%</strong> → chủ thẻ này <strong class="num">46,3&nbsp;%</strong> <span class="badge badge--decline"><svg class="icon"><use href="#i-arrow-up"/></svg>+2,5 điểm %</span></p>
+                  <div class="row subtle" style="justify-content: space-between">
+                    <span><svg class="icon" style="color:var(--approve-fg)"><use href="#i-arrow-down"/></svg> Giảm rủi ro</span>
+                    <span>Tăng rủi ro <svg class="icon" style="color:var(--decline-fg)"><use href="#i-arrow-up"/></svg></span>
+                  </div>
+                  <div class="shap" role="list">
+                    <div class="shap__row" role="listitem">
+                      <div class="shap__feature"><span class="shap__name">Hạn mức hiện tại</span><span class="shap__value">LIMIT_BAL = 200.000 · tham chiếu 100.000</span></div>
+                      <div class="shap__track"><span class="shap__bar shap__bar--down" style="width: 50%"></span></div>
+                      <span class="shap__num shap__num--down">−6,1</span>
+                    </div>
+                    <div class="shap__row" role="listitem">
+                      <div class="shap__feature"><span class="shap__name">Số tiền thanh toán kỳ 09/2026</span><span class="shap__value">PAY_AMT1 = 5.000 · tham chiếu 10.823</span></div>
+                      <div class="shap__track"><span class="shap__bar shap__bar--up" style="width: 30.4%"></span></div>
+                      <span class="shap__num shap__num--up">+3,7</span>
+                    </div>
+                    <div class="shap__row" role="listitem">
+                      <div class="shap__feature"><span class="shap__name">Dư nợ sao kê kỳ 05/2026</span><span class="shap__value">BILL_AMT5 = 42.000 · tham chiếu 25.581</span></div>
+                      <div class="shap__track"><span class="shap__bar shap__bar--up" style="width: 18.4%"></span></div>
+                      <span class="shap__num shap__num--up">+2,2</span>
+                    </div>
+                    <div class="shap__row" role="listitem">
+                      <div class="shap__feature"><span class="shap__name">Số tiền thanh toán kỳ 08/2026</span><span class="shap__value">PAY_AMT2 = 5.000 · tham chiếu 10.000</span></div>
+                      <div class="shap__track"><span class="shap__bar shap__bar--up" style="width: 15.3%"></span></div>
+                      <span class="shap__num shap__num--up">+1,9</span>
+                    </div>
+                    <div class="shap__row" role="listitem">
+                      <div class="shap__feature"><span class="shap__name">Tuổi <span class="tag" style="color:var(--warning-fg);background:var(--warning-bg)"><svg class="icon"><use href="#i-shield"/></svg>nhạy cảm</span></span><span class="shap__value">AGE = 35 · tham chiếu 34</span></div>
+                      <div class="shap__track"><span class="shap__bar shap__bar--up" style="width: 6.7%"></span></div>
+                      <span class="shap__num shap__num--up">+0,8</span>
+                    </div>
+                  </div>
+                  <p class="subtle">Đơn vị: điểm phần trăm xác suất vỡ nợ. Tổng đóng góp ≈ chênh lệch so với tham chiếu. <strong>Tuổi, giới tính, tình trạng hôn nhân</strong> chỉ hiển thị để minh bạch, không được chọn làm lý do gửi chủ thẻ.</p>
+                </div>
+
+                <!-- loading -->
+                <div class="stack" aria-busy="true" data-show="explain-loading">
+                  <div class="loading-line"><span class="spinner"></span>Đang tính giải thích SHAP… lần đầu sau khi nạp model có thể mất khoảng 1 giây.</div>
+                  <span class="skeleton" style="width: 60%"></span>
+                  <span class="skeleton skeleton--lg"></span>
+                  <span class="skeleton skeleton--lg" style="width: 80%"></span>
+                  <span class="skeleton skeleton--lg" style="width: 70%"></span>
+                  <span class="skeleton skeleton--lg" style="width: 55%"></span>
+                </div>
+
+                <!-- error -->
+                <div class="alert alert--warning" role="alert" data-show="explain-error">
+                  <svg class="icon"><use href="#i-alert"/></svg>
+                  <div class="alert__body">
+                    <span class="alert__title">Chưa lấy được giải thích SHAP</span>
+                    <p>API <code>/explain</code> trả lỗi <code>503</code>. Bạn vẫn có thể ra quyết định dựa trên kết quả chấm điểm và lịch sử 6 kỳ bên dưới; khi hạ hoặc tạm khoá hạn mức, hãy chọn lý do thủ công.</p>
+                    <div class="alert__actions"><button class="btn btn--secondary btn--sm" type="button"><svg class="icon"><use href="#i-refresh"/></svg>Thử lại</button></div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="card" aria-labelledby="hist-title">
+              <div class="card__header">
+                <h2 class="card__title" id="hist-title">Lịch sử 6 kỳ sao kê</h2>
+                <span class="subtle">Mới nhất bên trái · đơn vị NT$</span>
+              </div>
+              <div class="table-wrap">
+                <table class="table table--compact">
+                  <thead><tr><th>Chỉ số</th><th class="num">09/26</th><th class="num">08/26</th><th class="num">07/26</th><th class="num">06/26</th><th class="num">05/26</th><th class="num">04/26</th></tr></thead>
+                  <tbody>
+                    <tr><td class="table__primary">Thanh toán</td><td class="num">Tối thiểu</td><td class="num">Tối thiểu</td><td class="num">Tối thiểu</td><td class="num">Tối thiểu</td><td class="num">Tối thiểu</td><td class="num">Tối thiểu</td></tr>
+                    <tr><td class="table__primary">Dư nợ sao kê</td><td class="num">50.000</td><td class="num">48.000</td><td class="num">46.000</td><td class="num">44.000</td><td class="num">42.000</td><td class="num">40.000</td></tr>
+                    <tr><td class="table__primary">Đã thanh toán</td><td class="num">5.000</td><td class="num">5.000</td><td class="num">5.000</td><td class="num">5.000</td><td class="num">5.000</td><td class="num">5.000</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="table-foot"><span>“Tối thiểu”: chủ thẻ trả khoản tối thiểu, phần còn lại chuyển sang kỳ sau.</span></div>
+            </section>
+          </div>
+
+          <!-- ============ Right: decision ============ -->
+          <aside class="sticky-aside">
+            <form class="card" method="post" action="/analyst/cases/CA-2026-00128/decision" aria-labelledby="decide-title">
+              <input type="hidden" name="csrf_token" value="•••">
+              <div class="card__header">
+                <h2 class="card__title" id="decide-title">Quyết định cuối</h2>
+                <span class="subtle" data-hide="saved">Bắt buộc</span>
+                <span class="badge badge--approve" data-show="saved"><svg class="icon"><use href="#i-check"/></svg>Đã lưu</span>
+              </div>
+              <div class="card__body stack">
+                <fieldset class="choice-list" style="border:0;padding:0;margin:0">
+                  <legend class="sr-only">Chọn quyết định</legend>
+                  <label class="choice">
+                    <input type="radio" name="decision" value="keep">
+                    <span><span class="choice__title">Giữ hạn mức</span><br><span class="choice__desc">Giữ NT$ 200.000. Yêu cầu tăng không được chấp thuận — chủ thẻ nhận thông báo kèm lý do.</span></span>
+                  </label>
+                  <label class="choice choice--warn">
+                    <input type="radio" name="decision" value="lower" checked>
+                    <span style="flex:1"><span class="choice__title">Hạ hạn mức</span><br><span class="choice__desc">Áp dụng hạn mức mới thấp hơn hiện tại.</span>
+                      <span class="field" style="margin-top: var(--space-3)">
+                        <span class="label">Hạn mức mới</span>
+                        <span class="input-affix"><span class="input-affix__addon">NT$</span><input class="input num" name="new_limit" value="100.000" inputmode="numeric" aria-label="Hạn mức mới"></span>
+                        <span class="hint">Gợi ý theo chính sách: NT$ 100.000</span>
+                      </span>
+                    </span>
+                  </label>
+                  <label class="choice choice--danger">
+                    <input type="radio" name="decision" value="suspend">
+                    <span><span class="choice__title">Tạm khoá hạn mức khả dụng</span><br><span class="choice__desc">Không cho chi tiêu thêm; dư nợ hiện tại vẫn phải trả.</span></span>
+                  </label>
+                </fieldset>
+
+                <fieldset class="field" style="border:0;padding:0;margin:0">
+                  <legend class="label" style="margin-bottom: var(--space-2)">Lý do gửi chủ thẻ <span class="req">*</span></legend>
+                  <div class="stack stack--sm">
+                    <label class="checkbox"><input type="checkbox" name="reasons" value="low_payment" data-hide="invalid explain-error" checked><input type="checkbox" name="reasons" value="low_payment" data-show="invalid explain-error">Số tiền thanh toán các kỳ gần đây thấp so với dư nợ</label>
+                    <label class="checkbox"><input type="checkbox" name="reasons" value="rising_balance" data-hide="invalid explain-error" checked><input type="checkbox" name="reasons" value="rising_balance" data-show="invalid explain-error">Dư nợ sao kê tăng liên tục trong 6 kỳ</label>
+                    <label class="checkbox"><input type="checkbox" name="reasons" value="other">Lý do khác (ghi rõ trong ghi chú)</label>
+                  </div>
+                  <span class="hint" data-hide="invalid explain-error">Đã chọn sẵn từ các yếu tố tăng rủi ro không nhạy cảm. Bỏ chọn nếu không phù hợp.</span>
+                  <span class="hint" data-show="explain-error">Chưa có gợi ý vì thiếu giải thích SHAP — chọn thủ công.</span>
+                  <span class="error-text" data-show="invalid"><svg class="icon"><use href="#i-alert"/></svg>Chọn ít nhất một lý do — hạ hạn mức là adverse action.</span>
+                </fieldset>
+
+                <div class="field">
+                  <label class="label" for="note">Ghi chú của chuyên viên <span class="req">*</span></label>
+                  <textarea class="textarea" id="note" name="note" data-hide="invalid">Thanh toán đều nhưng chỉ ~10&nbsp;% dư nợ; dư nợ tăng 25&nbsp;% trong 6 kỳ. Hạ về mức tham chiếu, rà soát lại sau 2 kỳ.</textarea>
+                  <textarea class="textarea" aria-invalid="true" aria-label="Ghi chú của chuyên viên" data-show="invalid"></textarea>
+                  <span class="hint" data-hide="invalid">Lưu cùng quyết định để kiểm toán. Không ghi thông tin không liên quan tới tín dụng.</span>
+                  <span class="error-text" data-show="invalid"><svg class="icon"><use href="#i-alert"/></svg>Nhập ghi chú cho quyết định này.</span>
+                </div>
+
+                <div class="alert alert--info">
+                  <svg class="icon"><use href="#i-file"/></svg>
+                  <div class="alert__body"><p>Giữ (khi khách xin tăng), hạ và tạm khoá đều là <strong>adverse action</strong>: hệ thống tạo thông báo kèm lý do gửi chủ thẻ.</p></div>
+                </div>
+              </div>
+              <div class="card__footer">
+                <a class="btn btn--ghost" href="03-analyst-queue.html">Để sau</a>
+                <button class="btn btn--primary" type="submit" data-hide="saved">Lưu quyết định</button>
+                <button class="btn btn--primary" type="button" disabled data-show="saved"><svg class="icon"><use href="#i-check"/></svg>Đã lưu</button>
+              </div>
+            </form>
+          </aside>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+</body>
+</html>

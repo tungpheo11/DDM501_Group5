@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rà soát theo lô · Chuyên viên rủi ro · Cổng nghiệp vụ hạn mức thẻ</title>
+  <link rel="stylesheet" href="../tokens.css">
+  <link rel="stylesheet" href="../components.css">
+  <link rel="stylesheet" href="assets/mockup.css">
+  <script src="assets/mockup.js" defer></script>
+</head>
+<body data-states="idle|Chưa chạy;invalid|Lô quá lớn;loading|Đang chấm;result|Có kết quả;error|Lỗi API">
+<div class="app">
+  <header class="app-header">
+    <a class="app-brand" href="#">
+      <span class="app-brand__mark">HM</span>
+      <span class="app-brand__text">
+        <span class="app-brand__name">Ngân hàng Demo</span>
+        <span class="app-brand__sub">Cổng nghiệp vụ hạn mức thẻ</span>
+      </span>
+    </a>
+    <span class="env-tag">DEMO</span>
+    <span class="app-header__spacer"></span>
+    <div class="app-user">
+      <div class="app-user__meta">
+        <span class="app-user__name">Thu Trang</span>
+        <span class="role-chip"><svg class="icon"><use href="#i-shield"/></svg>Chuyên viên rủi ro tín dụng</span>
+      </div>
+      <span class="avatar" aria-hidden="true">TT</span>
+      <form method="post" action="/logout">
+        <button class="btn-logout" type="submit"><svg class="icon"><use href="#i-logout"/></svg>Đăng xuất</button>
+      </form>
+    </div>
+  </header>
+  <div class="demo-banner"><svg class="icon"><use href="#i-info"/></svg>Môi trường demo — tên, mã khách hàng và số thẻ đều là dữ liệu giả lập.</div>
+
+  <div class="app-body">
+    <nav class="app-nav" aria-label="Điều hướng chính">
+      <div class="app-nav__group">
+        <span class="app-nav__label">Xem xét</span>
+        <a class="app-nav__link" href="03-analyst-queue.html"><svg class="icon"><use href="#i-inbox"/></svg>Hàng đợi REVIEW<span class="app-nav__count">12</span></a>
+        <a class="app-nav__link" href="#" aria-current="page"><svg class="icon"><use href="#i-layers"/></svg>Rà soát theo lô</a>
+        <a class="app-nav__link" href="06-analyst-watchlist.html"><svg class="icon"><use href="#i-bell"/></svg>Cảnh báo sớm</a>
+      </div>
+      <div class="app-nav__foot">Model đang phục vụ: <strong>v1</strong> · ngưỡng 0,30 / 0,60</div>
+    </nav>
+
+    <main class="app-main">
+      <div class="app-main__inner">
+        <div class="page-header">
+          <div>
+            <h1 class="page-header__title">Rà soát hạn mức theo lô</h1>
+            <p class="page-header__desc">Chấm điểm một lô chủ thẻ sau kỳ sao kê (tối đa 500 chủ thẻ mỗi lô), xem phân bố quyết định và tải kết quả dạng CSV.</p>
+          </div>
+        </div>
+
+        <section class="card" aria-labelledby="batch-form-title">
+          <div class="card__header">
+            <h2 class="card__title" id="batch-form-title">Chọn lô</h2>
+          </div>
+          <form class="card__body" method="post" action="/analyst/batch">
+            <input type="hidden" name="csrf_token" value="•••">
+            <div class="row" style="align-items: flex-end; gap: var(--space-4)">
+              <div class="field" style="min-width: 180px">
+                <label class="label" for="cycle">Kỳ sao kê</label>
+                <select class="select" id="cycle" name="cycle"><option>09/2026</option><option>08/2026</option></select>
+              </div>
+              <div class="field" style="min-width: 240px">
+                <label class="label" for="lot">Lô</label>
+                <select class="select" id="lot" name="lot"><option>Lô 1 · chủ thẻ 1–500</option><option>Lô 2 · chủ thẻ 501–1.000</option><option>Lô 3 · chủ thẻ 1.001–1.500</option></select>
+              </div>
+              <div class="field" style="width: 180px">
+                <label class="label" for="size">Số chủ thẻ</label>
+                <input class="input num" id="size" name="size" type="number" min="1" max="500" value="500" data-hide="invalid">
+                <input class="input num" type="number" min="1" max="500" value="600" aria-invalid="true" aria-describedby="size-err" aria-label="Số chủ thẻ" data-show="invalid">
+              </div>
+              <button class="btn btn--primary" type="submit" data-hide="loading invalid"><svg class="icon"><use href="#i-play"/></svg>Chạy rà soát</button>
+              <button class="btn btn--primary" type="button" disabled data-show="invalid"><svg class="icon"><use href="#i-play"/></svg>Chạy rà soát</button>
+              <button class="btn btn--primary" type="button" disabled data-show="loading"><span class="spinner"></span>Đang chấm điểm…</button>
+            </div>
+            <p class="hint" style="margin-top: var(--space-2)" data-hide="invalid">Tối đa 500 chủ thẻ mỗi lô — giới hạn của API chấm điểm theo lô.</p>
+            <p class="error-text" id="size-err" style="margin-top: var(--space-2)" data-show="invalid"><svg class="icon"><use href="#i-alert"/></svg>Tối đa 500 chủ thẻ mỗi lô. Chia thành nhiều lô nhỏ hơn.</p>
+          </form>
+        </section>
+
+        <!-- idle -->
+        <section class="card" data-show="idle invalid">
+          <div class="empty-state">
+            <span class="empty-state__icon"><svg class="icon icon--xl"><use href="#i-layers"/></svg></span>
+            <p class="empty-state__title">Chưa có lô nào được chạy trong phiên này</p>
+            <p class="empty-state__desc">Chọn kỳ sao kê và lô ở trên rồi bấm “Chạy rà soát”. Một lô 500 chủ thẻ thường có kết quả trong dưới 1 giây.</p>
+          </div>
+        </section>
+
+        <!-- loading -->
+        <section class="card" aria-busy="true" data-show="loading">
+          <div class="card__body stack">
+            <div class="loading-line"><span class="spinner"></span>Đang chấm điểm 500 chủ thẻ của lô 1, kỳ 09/2026…</div>
+            <span class="skeleton skeleton--xl"></span>
+            <div class="grid grid--3"><span class="skeleton skeleton--xl"></span><span class="skeleton skeleton--xl"></span><span class="skeleton skeleton--xl"></span></div>
+          </div>
+        </section>
+
+        <!-- error -->
+        <section class="alert alert--danger" role="alert" data-show="error">
+          <svg class="icon icon--lg"><use href="#i-alert-octagon"/></svg>
+          <div class="alert__body">
+            <span class="alert__title">Không chấm được lô này</span>
+            <p>API chấm điểm theo lô trả lỗi <code>503 SERVICE_UNAVAILABLE</code>. Không có kết quả nào được ghi; chạy lại an toàn.</p>
+            <p class="subtle">Mã tham chiếu <code>req_e5d10c9b27</code> · 09:02:44</p>
+            <div class="alert__actions"><button class="btn btn--secondary btn--sm" type="button"><svg class="icon"><use href="#i-refresh"/></svg>Chạy lại</button></div>
+          </div>
+        </section>
+
+        <!-- result -->
+        <section class="card" aria-labelledby="result-title" data-show="result">
+          <div class="card__header">
+            <div>
+              <h2 class="card__title" id="result-title">Kết quả · Lô 1 · kỳ 09/2026</h2>
+              <p class="card__sub">500 chủ thẻ · 412 ms · model v1 · <span class="mono">batch_0b77e1</span></p>
+            </div>
+            <div class="row">
+              <button class="btn btn--secondary" type="button"><svg class="icon"><use href="#i-inbox"/></svg>Đưa 262 ca REVIEW vào hàng đợi</button>
+              <a class="btn btn--primary" href="#"><svg class="icon"><use href="#i-download"/></svg>Tải CSV (500 dòng)</a>
+            </div>
+          </div>
+          <div class="card__body stack stack--lg">
+            <div>
+              <div class="dist" role="img" aria-label="APPROVE 193, REVIEW 262, DECLINE 45 trên 500 chủ thẻ">
+                <span class="dist__seg dist__seg--approve" style="width: 38.6%">APPROVE 38,6&nbsp;%</span>
+                <span class="dist__seg dist__seg--review" style="width: 52.4%">REVIEW 52,4&nbsp;%</span>
+                <span class="dist__seg dist__seg--decline" style="width: 9%">9&nbsp;%</span>
+              </div>
+            </div>
+            <div class="grid grid--3">
+              <div class="card stat" style="border-left: 4px solid var(--approve-solid)">
+                <span class="stat__label"><span class="badge badge--approve"><svg class="icon"><use href="#i-check"/></svg>APPROVE</span></span>
+                <span class="stat__value">193</span>
+                <span class="stat__meta">Giữ hoặc đề xuất tăng hạn mức</span>
+              </div>
+              <div class="card stat" style="border-left: 4px solid var(--review-solid)">
+                <span class="stat__label"><span class="badge badge--review"><svg class="icon"><use href="#i-clock"/></svg>REVIEW</span></span>
+                <span class="stat__value">262</span>
+                <span class="stat__meta">Đề xuất hạ hạn mức, chuyên viên quyết định</span>
+              </div>
+              <div class="card stat" style="border-left: 4px solid var(--decline-solid)">
+                <span class="stat__label"><span class="badge badge--decline"><svg class="icon"><use href="#i-x"/></svg>DECLINE</span></span>
+                <span class="stat__value">45</span>
+                <span class="stat__meta">Tạm khoá hạn mức khả dụng, gửi thông báo kèm lý do</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="filters" style="border-top: 1px solid var(--color-border)">
+            <fieldset class="field" style="border:0;padding:0;margin:0">
+              <legend class="label" style="margin-bottom:var(--space-1)">Xem trước theo quyết định</legend>
+              <div class="row" style="gap: var(--space-2)">
+                <label class="chip"><input type="radio" name="preview" checked>Tất cả</label>
+                <label class="chip"><input type="radio" name="preview">APPROVE</label>
+                <label class="chip"><input type="radio" name="preview">REVIEW</label>
+                <label class="chip"><input type="radio" name="preview">DECLINE</label>
+              </div>
+            </fieldset>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th class="num">#</th><th>Chủ thẻ</th><th class="num col-optional">Hạn mức hiện tại</th><th class="num">Xác suất vỡ nợ</th><th>Quyết định</th><th class="num">Hạn mức đề xuất</th></tr></thead>
+              <tbody>
+                <tr><td class="num">1</td><td><span class="table__primary">Trần Quốc Bảo</span><span class="table__secondary">KH-001536 · **** 7302</span></td><td class="num col-optional">NT$ 150.000</td><td class="num">12,4&nbsp;%</td><td><span class="badge badge--approve">APPROVE</span></td><td class="num">NT$ 187.500</td></tr>
+                <tr><td class="num">2</td><td><span class="table__primary">Lê Hoàng Yến</span><span class="table__secondary">KH-002984 · **** 1167</span></td><td class="num col-optional">NT$ 120.000</td><td class="num">52,1&nbsp;%</td><td><span class="badge badge--review">REVIEW</span></td><td class="num">NT$ 60.000</td></tr>
+                <tr><td class="num">3</td><td><span class="table__primary">Phạm Đức Long</span><span class="table__secondary">KH-007781 · **** 0954</span></td><td class="num col-optional">NT$ 50.000</td><td class="num">71,8&nbsp;%</td><td><span class="badge badge--decline">DECLINE</span></td><td class="num">NT$ 0</td></tr>
+                <tr><td class="num">4</td><td><span class="table__primary">Võ Thanh Hương</span><span class="table__secondary">KH-005530 · **** 3398</span></td><td class="num col-optional">NT$ 230.000</td><td class="num">8,9&nbsp;%</td><td><span class="badge badge--approve">APPROVE</span></td><td class="num">NT$ 287.500</td></tr>
+                <tr><td class="num">5</td><td><span class="table__primary">Hồ Thị Kim Ngân</span><span class="table__secondary">KH-008815 · **** 7716</span></td><td class="num col-optional">NT$ 50.000</td><td class="num">31,4&nbsp;%</td><td><span class="badge badge--review">REVIEW</span></td><td class="num">NT$ 25.000</td></tr>
+                <tr><td class="num">6</td><td><span class="table__primary">Đặng Gia Huy</span><span class="table__secondary">KH-006102 · **** 5540</span></td><td class="num col-optional">NT$ 80.000</td><td class="num">38,7&nbsp;%</td><td><span class="badge badge--review">REVIEW</span></td><td class="num">NT$ 40.000</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-foot">
+            <span>Xem trước 6 / 500 dòng. Tải CSV để xem đầy đủ, kèm mã yêu cầu từng dòng.</span>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+</body>
+</html>

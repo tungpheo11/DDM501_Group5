@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tình trạng hệ thống · System admin · Cổng nghiệp vụ hạn mức thẻ</title>
+  <link rel="stylesheet" href="../tokens.css">
+  <link rel="stylesheet" href="../components.css">
+  <link rel="stylesheet" href="assets/mockup.css">
+  <script src="assets/mockup.js" defer></script>
+</head>
+<body data-states="ready|ready;degraded|degraded;not-ready|not_ready;loading|Đang tải">
+<div class="app">
+  <header class="app-header">
+    <a class="app-brand" href="#">
+      <span class="app-brand__mark">HM</span>
+      <span class="app-brand__text">
+        <span class="app-brand__name">Ngân hàng Demo</span>
+        <span class="app-brand__sub">Cổng nghiệp vụ hạn mức thẻ</span>
+      </span>
+    </a>
+    <span class="env-tag">DEMO</span>
+    <span class="app-header__spacer"></span>
+    <div class="app-user">
+      <div class="app-user__meta">
+        <span class="app-user__name">Minh Khoa</span>
+        <span class="role-chip"><svg class="icon"><use href="#i-server"/></svg>System admin</span>
+      </div>
+      <span class="avatar" aria-hidden="true">MK</span>
+      <form method="post" action="/logout">
+        <button class="btn-logout" type="submit"><svg class="icon"><use href="#i-logout"/></svg>Đăng xuất</button>
+      </form>
+    </div>
+  </header>
+  <div class="demo-banner"><svg class="icon"><use href="#i-info"/></svg>Chế độ demo đang bật (<code>PORTAL_DEMO_MODE=true</code>) — cho phép mô phỏng lưu lượng và xoá dữ liệu nhật ký.</div>
+
+  <div class="app-body">
+    <nav class="app-nav" aria-label="Điều hướng chính">
+      <div class="app-nav__group">
+        <span class="app-nav__label">Vận hành</span>
+        <a class="app-nav__link" href="07-admin-logs.html"><svg class="icon"><use href="#i-database"/></svg>Nhật ký suy luận</a>
+        <a class="app-nav__link" href="#" aria-current="page"><svg class="icon"><use href="#i-activity"/></svg>Tình trạng hệ thống</a>
+      </div>
+      <div class="app-nav__group">
+        <span class="app-nav__label">Công cụ</span>
+        <a class="app-nav__link" href="#" target="_blank" rel="noopener"><svg class="icon"><use href="#i-bar-chart"/></svg>Grafana<svg class="icon" style="margin-left:auto"><use href="#i-external"/></svg></a>
+        <a class="app-nav__link" href="#" target="_blank" rel="noopener"><svg class="icon"><use href="#i-layers"/></svg>MLflow<svg class="icon" style="margin-left:auto"><use href="#i-external"/></svg></a>
+        <a class="app-nav__link" href="#" target="_blank" rel="noopener"><svg class="icon"><use href="#i-refresh"/></svg>Airflow<svg class="icon" style="margin-left:auto"><use href="#i-external"/></svg></a>
+        <a class="app-nav__link" href="#" target="_blank" rel="noopener"><svg class="icon"><use href="#i-bell"/></svg>Alertmanager<svg class="icon" style="margin-left:auto"><use href="#i-external"/></svg></a>
+      </div>
+      <div class="app-nav__foot" data-show="ready"><span class="status-dot status-dot--ok"></span> API sẵn sàng · model <strong>v1</strong></div>
+      <div class="app-nav__foot" data-show="degraded"><span class="status-dot status-dot--warn"></span> API degraded · model <strong>v1</strong> (local)</div>
+      <div class="app-nav__foot" data-show="not-ready"><span class="status-dot status-dot--down"></span> API không sẵn sàng</div>
+    </nav>
+
+    <main class="app-main">
+      <div class="app-main__inner">
+        <div class="page-header">
+          <div>
+            <h1 class="page-header__title">Tình trạng hệ thống</h1>
+            <p class="page-header__desc">Trạng thái API chấm điểm, model đang phục vụ và lối tắt sang các công cụ vận hành.</p>
+          </div>
+          <div class="page-header__actions">
+            <span class="subtle" data-hide="loading">Kiểm tra lúc 08:41:30 · cache 10 giây</span>
+            <button class="btn btn--secondary" type="button"><svg class="icon"><use href="#i-refresh"/></svg>Làm mới</button>
+          </div>
+        </div>
+
+        <!-- Overall status -->
+        <section class="decision decision--approve" data-show="ready">
+          <div class="decision__head">
+            <span class="decision__icon"><svg class="icon"><use href="#i-check"/></svg></span>
+            <div>
+              <div class="decision__code">/health/ready · ready</div>
+              <h2 class="decision__title">API chấm điểm sẵn sàng</h2>
+              <p class="decision__summary">Đang phục vụ model champion từ MLflow registry. MLflow và PostgreSQL đều hoạt động.</p>
+            </div>
+          </div>
+        </section>
+        <section class="decision decision--review" data-show="degraded">
+          <div class="decision__head">
+            <span class="decision__icon"><svg class="icon"><use href="#i-pause"/></svg></span>
+            <div>
+              <div class="decision__code">/health/ready · degraded</div>
+              <h2 class="decision__title">Vẫn chấm điểm được, nhưng đang chạy chế độ dự phòng</h2>
+              <p class="decision__summary">MLflow không phản hồi nên API phục vụ model fallback từ artifact local. Alert <code>ModelServedFromFallback</code> đang firing.</p>
+            </div>
+          </div>
+        </section>
+        <section class="decision decision--decline" data-show="not-ready">
+          <div class="decision__head">
+            <span class="decision__icon"><svg class="icon"><use href="#i-x"/></svg></span>
+            <div>
+              <div class="decision__code">/health/ready · not_ready (503)</div>
+              <h2 class="decision__title">API chấm điểm không sẵn sàng</h2>
+              <p class="decision__summary">Không có model nào được nạp. CSKH và chuyên viên sẽ nhận lỗi khi gửi yêu cầu; mô phỏng lưu lượng bị chặn cho tới khi API sẵn sàng.</p>
+            </div>
+          </div>
+        </section>
+        <section class="card" data-show="loading">
+          <div class="card__body stack">
+            <div class="loading-line"><span class="spinner"></span>Đang kiểm tra /health/ready…</div>
+            <span class="skeleton skeleton--xl" style="width: 45%"></span>
+            <span class="skeleton" style="width: 70%"></span>
+          </div>
+        </section>
+
+        <div class="grid grid--2">
+          <!-- Dependency checks -->
+          <section class="card">
+            <div class="card__header">
+              <h2 class="card__title">Kiểm tra thành phần</h2>
+              <span class="subtle" data-hide="loading">liveness: <code>alive</code> · API 1.1.0</span>
+            </div>
+            <div class="card__body--flush">
+              <table class="table">
+                <thead><tr><th>Thành phần</th><th>Trạng thái</th><th>Chi tiết</th></tr></thead>
+                <tbody data-show="loading">
+                  <tr><td colspan="3"><span class="skeleton"></span></td></tr>
+                  <tr><td colspan="3"><span class="skeleton"></span></td></tr>
+                  <tr><td colspan="3"><span class="skeleton"></span></td></tr>
+                </tbody>
+                <tbody data-show="ready">
+                  <tr><td class="table__primary">Model</td><td><span class="badge badge--approve"><svg class="icon"><use href="#i-check"/></svg>ok</span></td><td class="mono">mlflow_registry version 1</td></tr>
+                  <tr><td class="table__primary">MLflow</td><td><span class="badge badge--approve"><svg class="icon"><use href="#i-check"/></svg>ok</span></td><td class="subtle">—</td></tr>
+                  <tr><td class="table__primary">PostgreSQL</td><td><span class="badge badge--approve"><svg class="icon"><use href="#i-check"/></svg>ok</span></td><td class="subtle">—</td></tr>
+                </tbody>
+                <tbody data-show="degraded">
+                  <tr><td class="table__primary">Model</td><td><span class="badge badge--review"><svg class="icon"><use href="#i-clock"/></svg>fallback</span></td><td class="mono">local_artifact version 1</td></tr>
+                  <tr><td class="table__primary">MLflow</td><td><span class="badge badge--decline"><svg class="icon"><use href="#i-x"/></svg>down</span></td><td class="mono">connection refused</td></tr>
+                  <tr><td class="table__primary">PostgreSQL</td><td><span class="badge badge--approve"><svg class="icon"><use href="#i-check"/></svg>ok</span></td><td class="subtle">—</td></tr>
+                </tbody>
+                <tbody data-show="not-ready">
+                  <tr><td class="table__primary">Model</td><td><span class="badge badge--decline"><svg class="icon"><use href="#i-x"/></svg>missing</span></td><td class="mono">no model loaded</td></tr>
+                  <tr><td class="table__primary">MLflow</td><td><span class="badge badge--decline"><svg class="icon"><use href="#i-x"/></svg>down</span></td><td class="mono">timeout after 3 s</td></tr>
+                  <tr><td class="table__primary">PostgreSQL</td><td><span class="badge badge--approve"><svg class="icon"><use href="#i-check"/></svg>ok</span></td><td class="subtle">—</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Model info -->
+          <section class="card">
+            <div class="card__header">
+              <h2 class="card__title">Model đang phục vụ</h2>
+              <span class="badge badge--info" data-show="ready">@champion</span>
+              <span class="badge badge--review" data-show="degraded">fallback local</span>
+            </div>
+            <div class="card__body">
+              <dl class="kv" data-show="ready degraded">
+                <dt>Tên model</dt><dd class="mono">credit-risk-model</dd>
+                <dt>Version</dt><dd>1</dd>
+                <dt>Nguồn</dt><dd class="mono" data-show="ready">mlflow_registry</dd><dd class="mono" data-show="degraded">local_artifact</dd>
+                <dt>Thuật toán</dt><dd>LogisticRegression</dd>
+                <dt>Nạp lúc</dt><dd class="num">28/09/2026 13:21:07</dd>
+                <dt>Ngưỡng</dt><dd>REVIEW 0,30 · DECLINE 0,60</dd>
+                <dt>run_id</dt><dd class="mono">8e1790ed7fd649dc9c8b5d87297652df</dd>
+              </dl>
+              <div class="empty-state empty-state--error" style="padding: var(--space-6)" data-show="not-ready">
+                <span class="empty-state__icon"><svg class="icon icon--xl"><use href="#i-alert-octagon"/></svg></span>
+                <p class="empty-state__title">Chưa có model nào được nạp</p>
+                <p class="empty-state__desc">Kiểm tra MLflow registry hoặc artifact local, rồi gọi reload model. Xem runbook <code>APIDown</code>.</p>
+              </div>
+              <div class="stack stack--sm" data-show="loading">
+                <span class="skeleton"></span><span class="skeleton" style="width: 80%"></span><span class="skeleton" style="width: 60%"></span><span class="skeleton" style="width: 70%"></span>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Tool links -->
+        <section aria-labelledby="tools-title">
+          <div class="section-head">
+            <h2 class="section-title" id="tools-title">Công cụ vận hành</h2>
+            <span class="subtle">Mở trong tab mới</span>
+          </div>
+          <div class="grid grid--4">
+            <a class="link-tile" href="#" target="_blank" rel="noopener">
+              <span class="link-tile__icon"><svg class="icon icon--lg"><use href="#i-bar-chart"/></svg></span>
+              <span>
+                <span class="link-tile__title">Grafana <svg class="icon"><use href="#i-external"/></svg></span>
+                <span class="link-tile__desc">Dashboard Business, ML model, Drift, Infra &amp; SLA</span><br>
+                <span class="subtle mono">:13000</span>
+              </span>
+            </a>
+            <a class="link-tile" href="#" target="_blank" rel="noopener">
+              <span class="link-tile__icon"><svg class="icon icon--lg"><use href="#i-layers"/></svg></span>
+              <span>
+                <span class="link-tile__title">MLflow <svg class="icon"><use href="#i-external"/></svg></span>
+                <span class="link-tile__desc">Experiment, model registry, alias @champion</span><br>
+                <span class="subtle mono">:15040</span>
+              </span>
+            </a>
+            <a class="link-tile" href="#" target="_blank" rel="noopener">
+              <span class="link-tile__icon"><svg class="icon icon--lg"><use href="#i-refresh"/></svg></span>
+              <span>
+                <span class="link-tile__title">Airflow <svg class="icon"><use href="#i-external"/></svg></span>
+                <span class="link-tile__desc">DAG drift_monitoring, model_retrain</span><br>
+                <span class="subtle mono">:18080</span>
+              </span>
+            </a>
+            <a class="link-tile" href="#" target="_blank" rel="noopener">
+              <span class="link-tile__icon"><svg class="icon icon--lg"><use href="#i-bell"/></svg></span>
+              <span>
+                <span class="link-tile__title">Alertmanager <svg class="icon"><use href="#i-external"/></svg></span>
+                <span class="link-tile__desc">Alert đang firing, silence</span><br>
+                <span class="subtle mono">:19093</span>
+              </span>
+            </a>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+</body>
+</html>

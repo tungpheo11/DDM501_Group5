@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Bảng điều khiển hệ thống{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Bảng điều khiển hệ thống</h1>
+    <p>Trạng thái API, bảng <code>inference_logs</code>, chạy simulate và đặt lại dữ liệu demo.</p>
+  </div>
+</div>
+
+<div class="grid grid--sidebar">
+  <section class="card" aria-labelledby="status-title">
+    <div class="card__title"><h2 id="status-title">Trạng thái hệ thống</h2></div>
+    <div id="system-status" hx-get="/admin/status" hx-trigger="load, every 15s" hx-swap="innerHTML">
+      <p class="row muted"><span class="spinner" aria-hidden="true"></span> Đang kiểm tra API, model và drift monitor…</p>
+    </div>
+  </section>
+  <aside class="card" aria-labelledby="links-title">
+    <div class="card__title"><h2 id="links-title">Công cụ vận hành</h2></div>
+    <ul class="result-list">
+      <li><a href="{{ links.grafana }}" target="_blank" rel="noopener noreferrer"><span><strong>Grafana</strong><br><span class="muted small">Dashboard API, model, drift</span></span><span aria-hidden="true">↗</span></a></li>
+      <li><a href="{{ links.mlflow }}" target="_blank" rel="noopener noreferrer"><span><strong>MLflow</strong><br><span class="muted small">Experiment, model registry</span></span><span aria-hidden="true">↗</span></a></li>
+      <li><a href="{{ links.airflow }}" target="_blank" rel="noopener noreferrer"><span><strong>Airflow</strong><br><span class="muted small">DAG drift_monitoring, model_retrain</span></span><span aria-hidden="true">↗</span></a></li>
+      <li><a href="{{ links.alertmanager }}" target="_blank" rel="noopener noreferrer"><span><strong>Alertmanager</strong><br><span class="muted small">Cảnh báo đang bắn</span></span><span aria-hidden="true">↗</span></a></li>
+      <li><a href="{{ links.drift_monitor }}/drift/latest" target="_blank" rel="noopener noreferrer"><span><strong>Drift monitor</strong><br><span class="muted small">Kết quả phân tích gần nhất</span></span><span aria-hidden="true">↗</span></a></li>
+    </ul>
+  </aside>
+</div>
+
+<section class="card" aria-labelledby="sim-title">
+  <div class="card__title"><h2 id="sim-title">Simulate lưu lượng</h2></div>
+  <div id="simulation">
+    {% include "admin/_simulation.html" %}
+  </div>
+</section>
+
+<section class="card" aria-labelledby="logs-title">
+  <div class="card__title"><h2 id="logs-title">Bảng <code>inference_logs</code></h2></div>
+  <form id="log-filters" method="get" action="/admin" hx-get="/admin/logs" hx-target="#logs" hx-swap="innerHTML">
+    <div class="inline-fields">
+      <div class="field">
+        <label for="f-decision">Quyết định</label>
+        <select id="f-decision" name="decision">
+          <option value="">Tất cả</option>
+          {% for d in decisions %}<option value="{{ d }}" {% if query.decision == d %}selected{% endif %}>{{ d }} · {{ d|decision_label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-version">Model version</label>
+        <select id="f-version" name="model_version">
+          <option value="">Tất cả</option>
+          {% for v in versions %}<option value="{{ v }}" {% if query.model_version == v %}selected{% endif %}>{{ v }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-start">Từ (UTC+{{ utc_offset }})</label>
+        <input id="f-start" name="start" type="datetime-local" value="{{ query.start }}" step="1">
+      </div>
+      <div class="field">
+        <label for="f-end">Đến (UTC+{{ utc_offset }})</label>
+        <input id="f-end" name="end" type="datetime-local" value="{{ query.end }}" step="1">
+      </div>
+      <div class="field row">
+        <button class="btn" type="submit">Lọc</button>
+        <a class="btn btn--secondary" href="/admin">Bỏ lọc</a>
+      </div>
+    </div>
+  </form>
+  <div class="grid grid--sidebar">
+    <div id="logs" hx-get="/admin/logs" hx-trigger="logs-changed from:body" hx-include="#log-filters" hx-swap="innerHTML" aria-live="polite">
+      {% include "admin/_logs.html" %}
+    </div>
+    <aside id="log-detail" class="stack">
+      <div class="empty">Bấm “Xem” ở một dòng để xem <code>features_json</code>.</div>
+    </aside>
+  </div>
+</section>
+
+<div class="grid grid--2">
+  <section class="card card--danger" aria-labelledby="delete-title">
+    <div class="card__title"><h2 id="delete-title">Xoá dữ liệu log</h2></div>
+    <p>Xoá <strong>toàn bộ dòng</strong> trong <code>inference_logs</code> (hiện có {{ log_count|number }} dòng). Bảng giữ nguyên;
+      MLflow, Prometheus và dữ liệu train không bị đụng tới. Metric đếm trong Prometheus không reset.</p>
+    {% if demo_mode %}
+    <form method="post" action="/admin/logs/delete" hx-post="/admin/logs/delete" hx-target="#delete-result" hx-swap="innerHTML">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="field">
+        <label for="confirmation">Gõ <code>{{ confirmation_word }}</code> để xác nhận</label>
+        <input id="confirmation" name="confirmation" type="text" autocomplete="off" maxlength="16" data-confirm-word="{{ confirmation_word }}">
+      </div>
+      <button class="btn btn--danger" type="submit" data-confirm-target>Xoá toàn bộ log</button>
+    </form>
+    {% else %}
+    <div class="alert alert--warn"><p>Đã tắt: <code>PORTAL_DEMO_MODE=false</code>. Xoá log suy luận trên hệ thống thật vi phạm yêu cầu lưu vết.</p></div>
+    <button class="btn btn--danger" type="button" disabled aria-disabled="true">Xoá toàn bộ log</button>
+    {% endif %}
+    <div id="delete-result" aria-live="polite"></div>
+  </section>
+  <section class="card" aria-labelledby="audit-title">
+    <div class="card__title"><h2 id="audit-title">Nhật ký thao tác quản trị</h2></div>
+    <div id="audit">{% include "admin/_audit.html" %}</div>
+  </section>
+</div>
+{% endblock %}

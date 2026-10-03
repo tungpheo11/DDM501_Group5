@@ -1,0 +1,13 @@
+{% if results %}
+<ul class="result-list">
+  {% for c in results %}
+  <li><a href="/cskh/customers/{{ c.customer_id }}">
+    <span><strong>{{ c.full_name }}</strong> · {{ c.customer_id }}<br>
+      <span class="muted small">Thẻ {{ c.card_masked }} · {{ c.gender_label }}, {{ c.age }} tuổi · Sao kê ngày {{ "%02d"|format(c.statement_day) }}</span></span>
+    <span class="small right">Hạn mức<br><strong>{{ c.limit_bal|money }}</strong></span>
+  </a></li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="empty">Không tìm thấy chủ thẻ phù hợp với “{{ q }}”.</div>
+{% endif %}

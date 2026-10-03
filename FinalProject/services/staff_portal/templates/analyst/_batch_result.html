@@ -1,0 +1,35 @@
+{% if review %}
+<div class="card__title">
+  <h2>Lô #{{ review.id }} · {{ cohort_label }}</h2>
+  <a class="btn btn--secondary" href="/analyst/batch/{{ review.id }}/csv" download>Tải CSV</a>
+</div>
+<p class="small muted">{{ review.count }} chủ thẻ · {{ review.created_at|dt }} · {{ review.created_by }} · API {{ review.latency_ms|number(1) }} ms · model version {{ review.model_version }}</p>
+<div class="dist" aria-label="Phân bố quyết định">
+  {% for decision, count, share in summary %}
+  <div class="dist__row">
+    <span class="badge badge--{{ decision }}">{{ decision|decision_label }}</span>
+    <meter min="0" max="100" value="{{ share }}" aria-label="{{ decision|decision_label }}"></meter>
+    <span class="right">{{ count }} ({{ share }}%)</span>
+  </div>
+  {% endfor %}
+</div>
+<h3>Chi tiết từng chủ thẻ</h3>
+<div class="table-wrap"><table>
+  <thead><tr><th>Chủ thẻ</th><th>Thẻ</th><th class="num">Hạn mức</th><th>Quyết định</th><th class="num">Xác suất</th><th class="num">Điểm</th><th class="num">Hạn mức đề xuất</th></tr></thead>
+  <tbody>
+  {% for row in rows %}
+  <tr>
+    <td><strong>{{ row.full_name }}</strong><br><span class="muted small">{{ row.customer_id }}</span></td>
+    <td>{{ row.card_masked }}</td>
+    <td class="num">{{ row.limit_bal_ntd|money }}</td>
+    <td><span class="badge badge--{{ row.risk_decision }}">{{ row.risk_decision|decision_label }}</span></td>
+    <td class="num">{{ row.default_probability|percent }}</td>
+    <td class="num">{{ row.credit_score }}</td>
+    <td class="num">{{ row.recommended_limit_ntd|money }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<div class="empty">Chọn một lô và bấm “Chấm điểm cả lô” để xem phân bố quyết định.</div>
+{% endif %}

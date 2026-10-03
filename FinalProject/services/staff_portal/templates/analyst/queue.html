@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Hàng đợi xem xét{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Hàng đợi xem xét</h1>
+    <p>Các yêu cầu API trả về REVIEW, chờ chuyên viên quyết định cuối (giữ / hạ / tạm khoá hạn mức).</p>
+  </div>
+</div>
+<div class="grid grid--sidebar">
+  <section class="card" aria-labelledby="queue-title">
+    <div class="card__title"><h2 id="queue-title">Đang chờ ({{ cases|length }})</h2></div>
+    {% if cases %}
+    <div class="table-wrap"><table>
+      <thead><tr><th>#</th><th>Chủ thẻ</th><th>Yêu cầu</th><th class="num">Hạn mức</th><th class="num">Xác suất vỡ nợ</th><th>Tiếp nhận</th><th></th></tr></thead>
+      <tbody>
+      {% for record, c in cases %}
+      <tr>
+        <td>{{ record.id }}</td>
+        <td><strong>{{ c.full_name if c else record.customer_id }}</strong><br><span class="muted small">{{ record.customer_id }}{% if c %} · {{ c.card_masked }}{% endif %}</span></td>
+        <td>{{ record.request_type|request_type_label }}</td>
+        <td class="num">{{ (c.limit_bal if c else 0)|money }}</td>
+        <td class="num">{{ record.default_probability|percent }}</td>
+        <td class="small">{{ record.created_at|dt(False) }}<br><span class="muted">{{ record.created_by }}</span></td>
+        <td><a class="btn btn--sm" href="/analyst/cases/{{ record.id }}">Xem xét</a></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}
+    <div class="empty">Không có ca nào đang chờ. Ca REVIEW mới xuất hiện ở đây khi CSKH gửi yêu cầu.</div>
+    {% endif %}
+  </section>
+  <aside class="card" aria-labelledby="done-title">
+    <div class="card__title"><h2 id="done-title">Đã quyết định gần đây</h2></div>
+    {% if decided %}
+    <ul class="result-list">
+      {% for decision, record in decided %}
+      <li><a href="/analyst/cases/{{ record.id }}"><span>#{{ record.id }} · {{ record.customer_id }}<br>
+        <span class="muted small">{{ decision.decided_at|dt(False) }} · {{ decision.analyst }}</span></span>
+        <span class="badge">{{ actions[decision.action] }}</span></a></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="empty">Chưa có quyết định nào.</div>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

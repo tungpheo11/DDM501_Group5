@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ cardholder.full_name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <p><a href="/cskh">← Tra cứu chủ thẻ</a></p>
+    <h1>{{ cardholder.full_name }}</h1>
+    <p>{{ cardholder.customer_id }} · Thẻ {{ cardholder.card_masked }}</p>
+  </div>
+</div>
+<div class="grid grid--sidebar">
+  <div class="stack">
+    <section class="card" aria-labelledby="request-title">
+      <div class="card__title"><h2 id="request-title">Tạo yêu cầu của chủ thẻ</h2></div>
+      <form method="post" action="/cskh/customers/{{ cardholder.customer_id }}/requests"
+            hx-post="/cskh/customers/{{ cardholder.customer_id }}/requests" hx-target="#decision" hx-swap="innerHTML"
+            hx-indicator="#decision-indicator" hx-disabled-elt="find button">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="field">
+          <span class="visually-hidden" id="type-label">Loại yêu cầu</span>
+          <div class="radio-list" role="radiogroup" aria-labelledby="type-label">
+            {% for key, label in request_types.items() %}
+            <label><input type="radio" name="request_type" value="{{ key }}" {% if loop.first %}checked{% endif %}> {{ label }}</label>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="inline-fields">
+          <div class="field">
+            <label for="requested_amount">Số tiền khách đề nghị (NT$, không bắt buộc)</label>
+            <input id="requested_amount" name="requested_amount" type="text" inputmode="numeric" maxlength="16" placeholder="VD: 300.000">
+          </div>
+        </div>
+        <div class="field">
+          <label for="note">Ghi chú</label>
+          <textarea id="note" name="note" maxlength="500" placeholder="Kênh tiếp nhận, nội dung khách trình bày…"></textarea>
+        </div>
+        <div class="row">
+          <button class="btn" type="submit">Gửi chấm điểm</button>
+          <span id="decision-indicator" class="htmx-indicator row muted small"><span class="spinner" aria-hidden="true"></span> Đang gọi API chấm điểm…</span>
+        </div>
+      </form>
+    </section>
+    <section id="decision" aria-live="polite">
+      <div class="empty">Kết quả quyết định sẽ hiện ở đây ngay sau khi gửi.</div>
+    </section>
+  </div>
+  <aside class="stack">
+    <section class="card" aria-labelledby="profile-title">
+      <div class="card__title"><h2 id="profile-title">Thông tin thẻ</h2></div>
+      <dl class="facts">
+        <dt>Hạn mức hiện tại</dt><dd>{{ cardholder.limit_bal|money }}</dd>
+        <dt>Dư nợ sao kê gần nhất</dt><dd>{{ cardholder.balance|money }}</dd>
+        <dt>Tỷ lệ sử dụng</dt><dd>{{ cardholder.utilization|percent }}</dd>
+        <dt>Ngày sao kê</dt><dd>{{ "%02d"|format(cardholder.statement_day) }} hằng tháng</dd>
+        <dt>Giới tính, tuổi</dt><dd>{{ cardholder.gender_label }}, {{ cardholder.age }}</dd>
+        <dt>Trả nợ kỳ gần nhất</dt><dd>{{ cardholder.features["PAY_0"] }}</dd>
+      </dl>
+      <p class="field__hint">Trả nợ: -2 không phát sinh, -1 trả đủ, 0 trả tối thiểu, 1–9 số tháng trễ.</p>
+    </section>
+    <section class="card" aria-labelledby="history-title">
+      <div class="card__title"><h2 id="history-title">Yêu cầu gần đây</h2></div>
+      {% if history %}
+      <ul class="result-list">
+        {% for item in history %}
+        <li><a href="/cskh/requests/{{ item.id }}"><span>{{ item.request_type|request_type_label }}<br><span class="muted small">{{ item.created_at|dt }}</span></span>
+          <span class="badge badge--{{ item.risk_decision }}">{{ item.risk_decision|decision_label }}</span></a></li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="empty">Chưa có yêu cầu nào.</div>
+      {% endif %}
+    </section>
+  </aside>
+</div>
+{% endblock %}

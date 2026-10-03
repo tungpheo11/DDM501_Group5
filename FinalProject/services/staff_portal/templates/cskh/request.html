@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Kết quả yêu cầu #{{ record.id }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <p><a href="/cskh">← Tra cứu chủ thẻ</a>{% if cardholder %} · <a href="/cskh/customers/{{ cardholder.customer_id }}">{{ cardholder.full_name }}</a>{% endif %}</p>
+    <h1>Yêu cầu #{{ record.id }}</h1>
+    {% if cardholder %}<p>{{ cardholder.full_name }} · {{ cardholder.customer_id }} · Thẻ {{ cardholder.card_masked }}</p>{% endif %}
+  </div>
+</div>
+{% include "cskh/_decision.html" %}
+{% endblock %}

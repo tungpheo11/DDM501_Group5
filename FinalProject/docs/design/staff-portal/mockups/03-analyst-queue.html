@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hàng đợi REVIEW · Chuyên viên rủi ro · Cổng nghiệp vụ hạn mức thẻ</title>
+  <link rel="stylesheet" href="../tokens.css">
+  <link rel="stylesheet" href="../components.css">
+  <link rel="stylesheet" href="assets/mockup.css">
+  <script src="assets/mockup.js" defer></script>
+</head>
+<body data-states="data|Có ca;loading|Đang tải;empty|Hết ca;error|Lỗi">
+<div class="app">
+  <header class="app-header">
+    <a class="app-brand" href="#">
+      <span class="app-brand__mark">HM</span>
+      <span class="app-brand__text">
+        <span class="app-brand__name">Ngân hàng Demo</span>
+        <span class="app-brand__sub">Cổng nghiệp vụ hạn mức thẻ</span>
+      </span>
+    </a>
+    <span class="env-tag">DEMO</span>
+    <span class="app-header__spacer"></span>
+    <div class="app-user">
+      <div class="app-user__meta">
+        <span class="app-user__name">Thu Trang</span>
+        <span class="role-chip"><svg class="icon"><use href="#i-shield"/></svg>Chuyên viên rủi ro tín dụng</span>
+      </div>
+      <span class="avatar" aria-hidden="true">TT</span>
+      <form method="post" action="/logout">
+        <button class="btn-logout" type="submit"><svg class="icon"><use href="#i-logout"/></svg>Đăng xuất</button>
+      </form>
+    </div>
+  </header>
+  <div class="demo-banner"><svg class="icon"><use href="#i-info"/></svg>Môi trường demo — tên, mã khách hàng và số thẻ đều là dữ liệu giả lập.</div>
+
+  <div class="app-body">
+    <nav class="app-nav" aria-label="Điều hướng chính">
+      <div class="app-nav__group">
+        <span class="app-nav__label">Xem xét</span>
+        <a class="app-nav__link" href="#" aria-current="page"><svg class="icon"><use href="#i-inbox"/></svg>Hàng đợi REVIEW<span class="app-nav__count" data-hide="empty">12</span></a>
+        <a class="app-nav__link" href="05-analyst-batch.html"><svg class="icon"><use href="#i-layers"/></svg>Rà soát theo lô</a>
+        <a class="app-nav__link" href="06-analyst-watchlist.html"><svg class="icon"><use href="#i-bell"/></svg>Cảnh báo sớm</a>
+      </div>
+      <div class="app-nav__foot">Model đang phục vụ: <strong>v1</strong> · ngưỡng 0,30 / 0,60</div>
+    </nav>
+
+    <main class="app-main">
+      <div class="app-main__inner">
+        <div class="page-header">
+          <div>
+            <h1 class="page-header__title">Hàng đợi REVIEW</h1>
+            <p class="page-header__desc">Các ca có xác suất vỡ nợ 30–60&nbsp;% cần chuyên viên quyết định cuối: giữ, hạ hay tạm khoá hạn mức.</p>
+          </div>
+        </div>
+
+        <section class="grid grid--3" aria-label="Tóm tắt">
+          <div class="card stat">
+            <span class="stat__label">Ca đang chờ</span>
+            <span class="stat__value" data-show="data">12</span>
+            <span class="stat__value" data-show="empty">0</span>
+            <span class="stat__value" data-show="error">—</span>
+            <span class="skeleton skeleton--xl" style="width: 40%" data-show="loading"></span>
+            <span class="stat__meta" data-show="data">8 từ yêu cầu realtime · 4 từ rà soát lô</span>
+          </div>
+          <div class="card stat">
+            <span class="stat__label">Ca chờ lâu nhất</span>
+            <span class="stat__value" data-show="data">5 giờ 12 phút</span>
+            <span class="stat__value" data-show="empty error">—</span>
+            <span class="skeleton skeleton--xl" style="width: 60%" data-show="loading"></span>
+            <span class="stat__meta" data-show="data">Cam kết phản hồi chủ thẻ: 1 ngày làm việc</span>
+          </div>
+          <div class="card stat">
+            <span class="stat__label">Bạn đã quyết định hôm nay</span>
+            <span class="stat__value" data-hide="loading error">5</span>
+            <span class="stat__value" data-show="error">—</span>
+            <span class="skeleton skeleton--xl" style="width: 30%" data-show="loading"></span>
+            <span class="stat__meta" data-hide="loading error">Giữ 2 · Hạ 2 · Tạm khoá 1</span>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="queue-title">
+          <h2 class="sr-only" id="queue-title">Danh sách ca</h2>
+          <form class="filters" method="get" action="/analyst/queue">
+            <div class="field">
+              <label class="label" for="src">Nguồn</label>
+              <select class="select" id="src" name="source"><option>Tất cả</option><option>Yêu cầu realtime</option><option>Rà soát theo lô</option></select>
+            </div>
+            <div class="field">
+              <label class="label" for="type">Loại yêu cầu</label>
+              <select class="select" id="type" name="request_type"><option>Tất cả</option><option>Tăng hạn mức</option><option>Rút tiền mặt</option><option>Chuyển trả góp</option><option>Rà soát định kỳ</option></select>
+            </div>
+            <div class="field">
+              <label class="label" for="sort">Sắp xếp</label>
+              <select class="select" id="sort" name="sort"><option>Chờ lâu nhất trước</option><option>Xác suất vỡ nợ cao nhất trước</option></select>
+            </div>
+            <div class="filters__actions">
+              <button class="btn btn--secondary" type="submit"><svg class="icon"><use href="#i-filter"/></svg>Áp dụng</button>
+            </div>
+          </form>
+
+          <div class="table-wrap" data-show="data loading">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Mã ca</th>
+                  <th>Chủ thẻ</th>
+                  <th>Nguồn · loại</th>
+                  <th class="num">Xác suất</th>
+                  <th class="num col-optional">Hạn mức → tham chiếu</th>
+                  <th>Đã chờ</th>
+                  <th><span class="sr-only">Thao tác</span></th>
+                </tr>
+              </thead>
+              <tbody data-show="loading">
+                <tr><td colspan="7"><span class="skeleton"></span></td></tr>
+                <tr><td colspan="7"><span class="skeleton" style="width: 90%"></span></td></tr>
+                <tr><td colspan="7"><span class="skeleton" style="width: 95%"></span></td></tr>
+                <tr><td colspan="7"><span class="skeleton" style="width: 85%"></span></td></tr>
+              </tbody>
+              <tbody data-show="data">
+                <tr>
+                  <td class="mono">CA-2026-00117</td>
+                  <td><span class="table__primary">Lê Hoàng Yến</span><span class="table__secondary">KH-002984 · **** 1167</span></td>
+                  <td class="nowrap">Rà soát lô 09/2026<span class="table__secondary">Rà soát định kỳ</span></td>
+                  <td class="num"><span class="badge badge--review">52,1&nbsp;%</span></td>
+                  <td class="num col-optional">120.000 → 60.000</td>
+                  <td class="nowrap"><svg class="icon" style="color:var(--review-fg)"><use href="#i-clock"/></svg> 5 giờ 12 phút</td>
+                  <td><a class="btn btn--secondary btn--sm" href="04-analyst-case.html">Mở ca</a></td>
+                </tr>
+                <tr>
+                  <td class="mono">CA-2026-00121</td>
+                  <td><span class="table__primary">Đặng Gia Huy</span><span class="table__secondary">KH-006102 · **** 5540</span></td>
+                  <td class="nowrap">Yêu cầu realtime<span class="table__secondary">Rút tiền mặt</span></td>
+                  <td class="num"><span class="badge badge--review">38,7&nbsp;%</span></td>
+                  <td class="num col-optional">80.000 → 40.000</td>
+                  <td class="nowrap">3 giờ 40 phút</td>
+                  <td><a class="btn btn--secondary btn--sm" href="04-analyst-case.html">Mở ca</a></td>
+                </tr>
+                <tr>
+                  <td class="mono">CA-2026-00124</td>
+                  <td><span class="table__primary">Bùi Ngọc Hân</span><span class="table__secondary">KH-003377 · **** 2093</span></td>
+                  <td class="nowrap">Yêu cầu realtime<span class="table__secondary">Chuyển trả góp</span></td>
+                  <td class="num"><span class="badge badge--review">57,9&nbsp;%</span></td>
+                  <td class="num col-optional">360.000 → 100.000</td>
+                  <td class="nowrap">2 giờ 05 phút</td>
+                  <td><a class="btn btn--secondary btn--sm" href="04-analyst-case.html">Mở ca</a></td>
+                </tr>
+                <tr aria-selected="true">
+                  <td class="mono">CA-2026-00128</td>
+                  <td><span class="table__primary">Nguyễn Thị Minh Anh</span><span class="table__secondary">KH-004217 · **** 4821</span></td>
+                  <td class="nowrap">Yêu cầu realtime<span class="table__secondary">Tăng hạn mức</span></td>
+                  <td class="num"><span class="badge badge--review">46,3&nbsp;%</span></td>
+                  <td class="num col-optional">200.000 → 100.000</td>
+                  <td class="nowrap">12 phút <span class="tag">Mới</span></td>
+                  <td><a class="btn btn--primary btn--sm" href="04-analyst-case.html">Mở ca</a></td>
+                </tr>
+                <tr>
+                  <td class="mono">CA-2026-00129</td>
+                  <td><span class="table__primary">Hồ Thị Kim Ngân</span><span class="table__secondary">KH-008815 · **** 7716</span></td>
+                  <td class="nowrap">Rà soát lô 09/2026<span class="table__secondary">Rà soát định kỳ</span></td>
+                  <td class="num"><span class="badge badge--review">31,4&nbsp;%</span></td>
+                  <td class="num col-optional">50.000 → 25.000</td>
+                  <td class="nowrap">8 phút <span class="tag">Mới</span></td>
+                  <td><a class="btn btn--secondary btn--sm" href="04-analyst-case.html">Mở ca</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-foot" data-show="data">
+            <span>Hiển thị <strong class="num">1–5</strong> / 12 ca</span>
+            <nav class="pagination" aria-label="Phân trang">
+              <span aria-disabled="true"><svg class="icon"><use href="#i-chevron-left"/></svg><span class="sr-only">Trang trước</span></span>
+              <a href="#" aria-current="page">1</a><a href="#">2</a><a href="#">3</a>
+              <a href="#"><svg class="icon"><use href="#i-chevron-right"/></svg><span class="sr-only">Trang sau</span></a>
+            </nav>
+          </div>
+
+          <div class="empty-state" data-show="empty">
+            <span class="empty-state__icon" style="background:var(--success-bg);color:var(--success-fg)"><svg class="icon icon--xl"><use href="#i-check-circle"/></svg></span>
+            <p class="empty-state__title">Đã xử lý hết ca REVIEW</p>
+            <p class="empty-state__desc">Ca mới sẽ xuất hiện khi CSKH gửi yêu cầu rơi vào vùng REVIEW hoặc khi bạn chạy rà soát theo lô. Trang tự cập nhật mỗi 30 giây.</p>
+            <div class="empty-state__actions">
+              <a class="btn btn--secondary" href="05-analyst-batch.html"><svg class="icon"><use href="#i-layers"/></svg>Rà soát theo lô</a>
+              <a class="btn btn--ghost" href="06-analyst-watchlist.html">Xem cảnh báo sớm</a>
+            </div>
+          </div>
+
+          <div class="empty-state empty-state--error" role="alert" data-show="error">
+            <span class="empty-state__icon"><svg class="icon icon--xl"><use href="#i-alert-octagon"/></svg></span>
+            <p class="empty-state__title">Không tải được hàng đợi</p>
+            <p class="empty-state__desc">Cơ sở dữ liệu của cổng không phản hồi. Chưa có quyết định nào bị mất — các quyết định đã lưu vẫn còn nguyên.</p>
+            <div class="empty-state__actions">
+              <button class="btn btn--secondary" type="button"><svg class="icon"><use href="#i-refresh"/></svg>Thử lại</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+</body>
+</html>

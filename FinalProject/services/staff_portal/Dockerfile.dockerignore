@@ -1,0 +1,15 @@
+# Build context is FinalProject/. Allow-list: requirements, package, configs,
+# the portal code and the two stream CSVs used for demo cardholders and simulate.
+*
+!requirements.txt
+!src/
+!configs/
+!services/staff_portal/
+!data/processed/stream_normal.csv
+!data/processed/stream_drifted.csv
+**/__pycache__
+**/*.py[cod]
+**/*.egg-info
+**/.DS_Store
+services/staff_portal/Dockerfile*
+services/staff_portal/README.md

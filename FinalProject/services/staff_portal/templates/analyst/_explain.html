@@ -1,0 +1,23 @@
+<p class="small muted">
+  Phương pháp <code>{{ explain.method }}</code> · xác suất chủ thẻ {{ explain.default_probability|percent }}
+  so với chủ thẻ tham chiếu {{ explain.reference_probability|percent }} · {{ roundtrip_ms|number(0) }} ms
+</p>
+{% if explain.method != "shap_permutation" %}
+<div class="alert alert--warn"><p>SHAP không khả dụng, API dùng phương án dự phòng (thay từng feature bằng giá trị tham chiếu).</p></div>
+{% endif %}
+{% if contributions %}
+<ul class="shap-list">
+  {% for item in contributions %}
+  <li class="shap-row">
+    <span><strong>{{ item.feature|feature_label }}</strong><br><span class="muted small"><code>{{ item.feature }}</code> = {{ item.value|number(0) }} (tham chiếu {{ item.reference_value|number(0) }})</span></span>
+    <progress class="shap-bar shap-bar--{{ item.direction }}" max="100" value="{{ item.magnitude }}" aria-label="Độ lớn đóng góp"></progress>
+    <span class="badge {% if item.direction == 'increases_risk' %}badge--bad{% elif item.direction == 'decreases_risk' %}badge--ok{% endif %}">
+      {% if item.contribution >= 0 %}+{% endif %}{{ (item.contribution * 100)|number(1) }} điểm %
+    </span>
+  </li>
+  {% endfor %}
+</ul>
+<p class="field__hint">Đỏ: làm tăng rủi ro vỡ nợ · Xanh: làm giảm rủi ro. Giá trị là thay đổi xác suất vỡ nợ (điểm phần trăm).</p>
+{% else %}
+<div class="empty">API không trả về đóng góp feature nào.</div>
+{% endif %}

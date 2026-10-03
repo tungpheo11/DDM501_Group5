@@ -1,0 +1,51 @@
+/* Mockup-only helpers (state switcher). Not part of the portal stylesheet. */
+.mock-switcher {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  max-width: calc(100vw - 32px);
+  padding: 6px;
+  border-radius: 999px;
+  background: #142033;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.3);
+  font-size: 12px;
+}
+
+.mock-switcher__label {
+  padding: 0 8px 0 10px;
+  color: #b9c7da;
+  font-weight: 600;
+}
+
+.mock-switcher a {
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: #e3e8ef;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.mock-switcher a:hover {
+  background: rgb(255 255 255 / 0.1);
+  color: #fff;
+}
+
+.mock-switcher a[aria-current="true"] {
+  background: #f5b800;
+  color: #2b1d00;
+  font-weight: 700;
+}
+
+.mock-switcher .mock-switcher__home {
+  color: #9dbbe6;
+}
+
+html[data-clean] .mock-switcher {
+  display: none;
+}

@@ -34,6 +34,10 @@ dependencies = [
     "lightgbm>=4.7.0",
     "matplotlib>=3.11.2",
     "shap>=0.51.0",
+    # Staff portal (services/staff_portal): server-rendered pages, login forms, password hashes.
+    "jinja2>=3.1.6",
+    "python-multipart>=0.0.20",
+    "bcrypt>=4.2.0",
 ]
 
 [dependency-groups]
@@ -101,9 +105,10 @@ convention = "google"
 "orchestration/airflow/dags/*.py" = ["D103"]  # task callables are described by the DAG doc_md
 "src/credit_risk/serving/app.py" = ["D103"]
 "src/credit_risk/serving/routers/*.py" = ["D103"]  # route handlers are documented via OpenAPI summary/description
+"services/staff_portal/routes/*.py" = ["D103"]  # page handlers; each module docstring describes its screens
 
 [tool.ruff.lint.isort]
-known-first-party = ["credit_risk", "drift_monitor"]
+known-first-party = ["credit_risk", "drift_monitor", "staff_portal"]
 
 # ---------------------------------------------------------------------------
 # Type checking
@@ -147,7 +152,7 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
-source = ["credit_risk"]
+source = ["credit_risk", "staff_portal"]
 branch = true
 
 [tool.coverage.report]

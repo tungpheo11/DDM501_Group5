@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Lô rà soát #{{ review.id }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <p><a href="/analyst/batch">← Rà soát theo lô</a></p>
+    <h1>Kết quả lô rà soát #{{ review.id }}</h1>
+  </div>
+</div>
+<section class="card">
+  {% include "analyst/_batch_result.html" %}
+</section>
+{% endblock %}

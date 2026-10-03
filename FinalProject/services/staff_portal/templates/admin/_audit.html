@@ -1,0 +1,18 @@
+{% if audit %}
+<div class="table-wrap"><table>
+  <thead><tr><th>Thời điểm</th><th>Người thực hiện</th><th>Thao tác</th><th class="num">Số dòng</th><th>Chi tiết</th></tr></thead>
+  <tbody>
+  {% for entry in audit %}
+  <tr>
+    <td class="small">{{ entry.at|dt }}</td>
+    <td>{{ entry.actor }}</td>
+    <td><code>{{ entry.action }}</code></td>
+    <td class="num">{{ entry.rows_affected if entry.rows_affected is not none else "—" }}</td>
+    <td class="small">{{ entry.detail or "" }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<div class="empty">Chưa có thao tác quản trị nào.</div>
+{% endif %}

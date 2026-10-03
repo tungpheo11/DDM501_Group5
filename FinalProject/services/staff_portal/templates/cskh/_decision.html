@@ -1,0 +1,49 @@
+<article class="decision decision--{{ record.risk_decision }}" aria-label="Kết quả chấm điểm">
+  <div class="row">
+    <span class="badge badge--{{ record.risk_decision }}">{{ record.risk_decision }}</span>
+    <span class="muted small">{{ record.request_type|request_type_label }} · {{ record.created_at|dt }}</span>
+  </div>
+  <p class="decision__label">{{ record.risk_decision|decision_label }}</p>
+  {% if record.risk_decision == "APPROVE" %}
+    <p>Có thể đáp ứng yêu cầu. Hạn mức đề xuất tối đa {{ record.recommended_limit_ntd|money }}.</p>
+  {% elif record.risk_decision == "REVIEW" %}
+    <p>Yêu cầu được chuyển cho chuyên viên rủi ro xem xét. Báo khách sẽ có phản hồi sau khi thẩm định.</p>
+  {% else %}
+    <p>Không đáp ứng được yêu cầu lúc này. Giải thích cho khách theo các lý do dưới đây.</p>
+  {% endif %}
+  <dl class="metrics">
+    <div class="metric"><dt>Hạn mức đề xuất</dt><dd>{{ record.recommended_limit_ntd|money }}</dd></div>
+    <div class="metric"><dt>Xác suất vỡ nợ</dt><dd>{{ record.default_probability|percent }}</dd></div>
+    <div class="metric"><dt>Điểm tín dụng</dt><dd>{{ record.credit_score }} <span class="small muted">{{ record.credit_tier|tier_label }}</span></dd></div>
+    <div class="metric"><dt>Thời gian phản hồi</dt><dd>{{ record.roundtrip_ms|number(0) }} ms <span class="small muted">(API {{ record.api_latency_ms|number(1) }} ms)</span></dd></div>
+  </dl>
+  {% if record.requested_amount %}
+  <p class="small">Khách đề nghị {{ record.requested_amount|money }}{% if record.risk_decision == "APPROVE" and record.requested_amount > record.recommended_limit_ntd %} — cao hơn mức đề xuất, chỉ duyệt tối đa {{ record.recommended_limit_ntd|money }}{% endif %}.</p>
+  {% endif %}
+  {% if record.risk_decision == "DECLINE" %}
+  <h3>Mã lý do từ chối</h3>
+  <ul class="reason-list">
+    {% for reason in reasons if reason.adverse %}
+    <li><span class="reason-code">{{ reason.code }}</span><span>{{ reason.text }}</span></li>
+    {% else %}
+    <li class="muted">Không có lý do bất lợi cụ thể; quyết định dựa trên xác suất vỡ nợ.</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <h3>Yếu tố chính</h3>
+  <ul class="reason-list">
+    {% for reason in reasons %}
+    <li><span class="reason-code">{{ reason.code }}</span><span>{{ reason.text }}</span></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if guardrails %}
+  <h3>Kiểm tra chính sách</h3>
+  <div class="row">
+    {% for check in guardrails %}
+    <span class="badge {% if check.ok %}badge--ok{% else %}badge--bad{% endif %}">{{ check.name }}: {{ check.value }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <p class="small muted">Mã yêu cầu API <code>{{ record.api_request_id }}</code> · model version {{ record.model_version }}</p>
+</article>

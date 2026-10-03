@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tạo yêu cầu · CSKH · Cổng nghiệp vụ hạn mức thẻ</title>
+  <link rel="stylesheet" href="../tokens.css">
+  <link rel="stylesheet" href="../components.css">
+  <link rel="stylesheet" href="assets/mockup.css">
+  <script src="assets/mockup.js" defer></script>
+  <style>
+    /* Mockup-only: highlight the cardholder that belongs to the current state. */
+    html[data-state="form"] [data-holder="minh-anh"],
+    html[data-state="loading"] [data-holder="minh-anh"],
+    html[data-state="review"] [data-holder="minh-anh"],
+    html[data-state="error"] [data-holder="minh-anh"],
+    html[data-state="approve"] [data-holder="bao"],
+    html[data-state="decline"] [data-holder="long"] {
+      background: var(--brand-50);
+      box-shadow: inset 3px 0 0 var(--color-primary);
+    }
+    /* Narrow layouts: once a cardholder is selected the result list collapses (server returns an empty partial). */
+    @media (max-width: 1100px) {
+      html:not([data-state="empty"]):not([data-state="search-empty"]) .holder-results {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body data-states="empty|Chưa chọn chủ thẻ;search-empty|Không tìm thấy;form|Nhập yêu cầu;loading|Đang chấm điểm;approve|APPROVE;review|REVIEW;decline|DECLINE;error|Lỗi API">
+<div class="app">
+  <header class="app-header">
+    <a class="app-brand" href="#">
+      <span class="app-brand__mark">HM</span>
+      <span class="app-brand__text">
+        <span class="app-brand__name">Ngân hàng Demo</span>
+        <span class="app-brand__sub">Cổng nghiệp vụ hạn mức thẻ</span>
+      </span>
+    </a>
+    <span class="env-tag">DEMO</span>
+    <span class="app-header__spacer"></span>
+    <div class="app-user">
+      <div class="app-user__meta">
+        <span class="app-user__name">Lan Vy</span>
+        <span class="role-chip"><svg class="icon"><use href="#i-card"/></svg>CSKH / Card Ops</span>
+      </div>
+      <span class="avatar" aria-hidden="true">LV</span>
+      <form method="post" action="/logout">
+        <button class="btn-logout" type="submit"><svg class="icon"><use href="#i-logout"/></svg>Đăng xuất</button>
+      </form>
+    </div>
+  </header>
+  <div class="demo-banner"><svg class="icon"><use href="#i-info"/></svg>Môi trường demo — tên, mã khách hàng và số thẻ đều là dữ liệu giả lập.</div>
+
+  <div class="app-body">
+    <nav class="app-nav" aria-label="Điều hướng chính">
+      <div class="app-nav__group">
+        <span class="app-nav__label">Tiếp nhận yêu cầu</span>
+        <a class="app-nav__link" href="#" aria-current="page"><svg class="icon"><use href="#i-plus"/></svg>Tạo yêu cầu</a>
+      </div>
+      <div class="app-nav__foot">Model đang phục vụ: <strong>v1</strong> · API sẵn sàng</div>
+    </nav>
+
+    <main class="app-main">
+      <div class="app-main__inner">
+        <div class="page-header">
+          <div>
+            <h1 class="page-header__title">Tạo yêu cầu của chủ thẻ</h1>
+            <p class="page-header__desc">Tìm chủ thẻ, chọn loại yêu cầu và gửi chấm điểm. Kết quả trả về ngay trên màn hình này.</p>
+          </div>
+        </div>
+
+        <div class="grid grid--aside-main">
+          <!-- ============ Search ============ -->
+          <section class="card" aria-labelledby="search-title">
+            <div class="card__header">
+              <h2 class="card__title" id="search-title">1. Tìm chủ thẻ</h2>
+            </div>
+            <div class="card__body stack stack--sm">
+              <label class="sr-only" for="q">Tìm theo tên, mã khách hàng hoặc 4 số cuối thẻ</label>
+              <div class="input-group">
+                <svg class="icon"><use href="#i-search"/></svg>
+                <input class="input" id="q" name="q" type="search" placeholder="Tên, mã KH hoặc 4 số cuối thẻ" data-hide="search-empty">
+                <input class="input" type="search" value="9999" data-show="search-empty" aria-label="Từ khoá tìm kiếm">
+              </div>
+              <p class="hint">Ví dụ: <code>Minh Anh</code>, <code>KH-004217</code>, <code>4821</code>. Kết quả cập nhật khi gõ.</p>
+            </div>
+
+            <div class="holder-results" data-hide="search-empty">
+              <div class="row row--between" style="padding: 0 var(--space-5) var(--space-2)">
+                <span class="subtle">Chủ thẻ gần đây</span>
+                <span class="subtle">5 kết quả</span>
+              </div>
+              <ul class="result-list" role="listbox" aria-label="Kết quả tìm kiếm">
+                <li class="result-list__item" role="option" data-holder="minh-anh">
+                  <div class="holder">
+                    <span class="holder__avatar">MA</span>
+                    <div>
+                      <div class="holder__name">Nguyễn Thị Minh Anh</div>
+                      <div class="holder__meta"><span>KH-004217</span><span class="num">**** 4821</span></div>
+                    </div>
+                  </div>
+                  <svg class="icon"><use href="#i-chevron-right"/></svg>
+                </li>
+                <li class="result-list__item" role="option" data-holder="bao">
+                  <div class="holder">
+                    <span class="holder__avatar">QB</span>
+                    <div>
+                      <div class="holder__name">Trần Quốc Bảo</div>
+                      <div class="holder__meta"><span>KH-001536</span><span class="num">**** 7302</span></div>
+                    </div>
+                  </div>
+                  <svg class="icon"><use href="#i-chevron-right"/></svg>
+                </li>
+                <li class="result-list__item" role="option" data-holder="long">
+                  <div class="holder">
+                    <span class="holder__avatar">ĐL</span>
+                    <div>
+                      <div class="holder__name">Phạm Đức Long</div>
+                      <div class="holder__meta"><span>KH-007781</span><span class="num">**** 0954</span></div>
+                    </div>
+                  </div>
+                  <svg class="icon"><use href="#i-chevron-right"/></svg>
+                </li>
+                <li class="result-list__item" role="option">
+                  <div class="holder">
+                    <span class="holder__avatar">HY</span>
+                    <div>
+                      <div class="holder__name">Lê Hoàng Yến</div>
+                      <div class="holder__meta"><span>KH-002984</span><span class="num">**** 1167</span></div>
+                    </div>
+                  </div>
+                  <svg class="icon"><use href="#i-chevron-right"/></svg>
+                </li>
+                <li class="result-list__item" role="option">
+                  <div class="holder">
+                    <span class="holder__avatar">TH</span>
+                    <div>
+                      <div class="holder__name">Võ Thanh Hương</div>
+                      <div class="holder__meta"><span>KH-005530</span><span class="num">**** 3398</span></div>
+                    </div>
+                  </div>
+                  <svg class="icon"><use href="#i-chevron-right"/></svg>
+                </li>
+              </ul>
+            </div>
+
+            <div class="empty-state" data-show="search-empty">
+              <span class="empty-state__icon"><svg class="icon icon--xl"><use href="#i-search"/></svg></span>
+              <p class="empty-state__title">Không tìm thấy chủ thẻ khớp “9999”</p>
+              <p class="empty-state__desc">Kiểm tra lại 4 số cuối thẻ hoặc thử tìm bằng mã khách hàng. Cổng chỉ chứa chủ thẻ đang lưu hành trong danh mục demo.</p>
+            </div>
+          </section>
+
+          <!-- ============ Right column ============ -->
+          <div class="stack stack--lg">
+
+            <!-- Empty: nothing selected -->
+            <section class="card" data-show="empty search-empty">
+              <div class="empty-state">
+                <span class="empty-state__icon"><svg class="icon icon--xl"><use href="#i-user"/></svg></span>
+                <p class="empty-state__title">Chọn một chủ thẻ để bắt đầu</p>
+                <p class="empty-state__desc">Sau khi chọn, bạn sẽ thấy hạn mức hiện tại và form tạo yêu cầu. Không cần nhập thêm thông tin tài chính — hệ thống dùng 6 kỳ sao kê gần nhất của chủ thẻ.</p>
+              </div>
+            </section>
+
+            <!-- Selected cardholder summary -->
+            <section class="card" aria-labelledby="holder-title" data-hide="empty search-empty">
+              <div class="card__header">
+                <h2 class="card__title" id="holder-title">Chủ thẻ đã chọn</h2>
+                <span class="subtle">Kỳ sao kê gần nhất: 09/2026</span>
+              </div>
+              <div class="card__body stack">
+                <div class="holder" data-show="form loading review error">
+                  <span class="holder__avatar">MA</span>
+                  <div>
+                    <div class="holder__name">Nguyễn Thị Minh Anh</div>
+                    <div class="holder__meta"><span>KH-004217</span><span class="num">Thẻ **** 4821</span><span>Mở thẻ 03/2021</span></div>
+                  </div>
+                </div>
+                <div class="holder" data-show="approve">
+                  <span class="holder__avatar">QB</span>
+                  <div>
+                    <div class="holder__name">Trần Quốc Bảo</div>
+                    <div class="holder__meta"><span>KH-001536</span><span class="num">Thẻ **** 7302</span><span>Mở thẻ 08/2018</span></div>
+                  </div>
+                </div>
+                <div class="holder" data-show="decline">
+                  <span class="holder__avatar">ĐL</span>
+                  <div>
+                    <div class="holder__name">Phạm Đức Long</div>
+                    <div class="holder__meta"><span>KH-007781</span><span class="num">Thẻ **** 0954</span><span>Mở thẻ 11/2022</span></div>
+                  </div>
+                </div>
+                <div class="metrics">
+                  <div>
+                    <div class="metric__label">Hạn mức hiện tại</div>
+                    <div class="metric__value num" data-show="form loading review error">NT$ 200.000</div>
+                    <div class="metric__value num" data-show="approve">NT$ 150.000</div>
+                    <div class="metric__value num" data-show="decline">NT$ 50.000</div>
+                  </div>
+                  <div>
+                    <div class="metric__label">Dư nợ sao kê</div>
+                    <div class="metric__value num" data-show="form loading review error">NT$ 50.000</div>
+                    <div class="metric__value num" data-show="approve">NT$ 21.400</div>
+                    <div class="metric__value num" data-show="decline">NT$ 48.750</div>
+                  </div>
+                  <div>
+                    <div class="metric__label">Đã dùng hạn mức</div>
+                    <div class="metric__value num" data-show="form loading review error">25,0&nbsp;%</div>
+                    <div class="metric__value num" data-show="approve">14,3&nbsp;%</div>
+                    <div class="metric__value num" data-show="decline">97,5&nbsp;%</div>
+                  </div>
+                  <div>
+                    <div class="metric__label">Thanh toán kỳ gần nhất</div>
+                    <div class="metric__value" data-show="form loading review error approve"><span class="badge badge--neutral">Đúng hạn</span></div>
+                    <div class="metric__value" data-show="decline"><span class="badge badge--decline">Trễ 2 tháng</span></div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Request summary (form collapses after a result so the decision stays above the fold) -->
+            <section class="card" data-show="approve review decline">
+              <div class="card__body row row--between">
+                <div class="row">
+                  <span class="tag"><svg class="icon"><use href="#i-arrow-up"/></svg>Tăng hạn mức vĩnh viễn</span>
+                  <span>Khách đề nghị
+                    <strong class="num" data-show="review">NT$ 300.000</strong><strong class="num" data-show="approve">NT$ 180.000</strong><strong class="num" data-show="decline">NT$ 80.000</strong>
+                  </span>
+                  <span class="subtle">· Mobile app · gửi lúc 08:41:12</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- Request form -->
+            <section class="card" aria-labelledby="form-title" data-hide="empty search-empty approve review decline">
+              <div class="card__header">
+                <h2 class="card__title" id="form-title">2. Thông tin yêu cầu</h2>
+              </div>
+              <form class="card__body stack" method="post" action="/cskh/requests">
+                <input type="hidden" name="csrf_token" value="•••">
+                <fieldset class="field" style="border:0;padding:0;margin:0">
+                  <legend class="label" style="margin-bottom:var(--space-1)">Loại yêu cầu</legend>
+                  <div class="segmented">
+                    <label><input type="radio" name="request_type" value="limit_increase" checked><span><svg class="icon"><use href="#i-arrow-up"/></svg>Tăng hạn mức</span></label>
+                    <label><input type="radio" name="request_type" value="cash_advance"><span><svg class="icon"><use href="#i-card"/></svg>Rút tiền mặt</span></label>
+                    <label><input type="radio" name="request_type" value="installment"><span><svg class="icon"><use href="#i-layers"/></svg>Chuyển trả góp</span></label>
+                  </div>
+                </fieldset>
+                <div class="form-grid">
+                  <div class="field">
+                    <label class="label" for="increase_kind">Hình thức</label>
+                    <select class="select" id="increase_kind" name="increase_kind">
+                      <option>Vĩnh viễn</option>
+                      <option>Tạm thời (30 ngày)</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label class="label" for="requested_limit">Hạn mức khách đề nghị <span class="req">*</span></label>
+                    <div class="input-affix">
+                      <span class="input-affix__addon">NT$</span>
+                      <input class="input num" id="requested_limit" name="requested_limit" inputmode="numeric" value="300.000" data-show="form loading review error">
+                      <input class="input num" inputmode="numeric" value="180.000" data-show="approve" aria-label="Hạn mức khách đề nghị">
+                      <input class="input num" inputmode="numeric" value="80.000" data-show="decline" aria-label="Hạn mức khách đề nghị">
+                    </div>
+                    <span class="hint">Phải lớn hơn hạn mức hiện tại.</span>
+                  </div>
+                  <div class="field">
+                    <label class="label" for="channel">Kênh tiếp nhận</label>
+                    <select class="select" id="channel" name="channel">
+                      <option>Mobile app</option>
+                      <option>Tổng đài</option>
+                      <option>Quầy giao dịch</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label class="label" for="note">Ghi chú nội bộ <span class="subtle">(không bắt buộc)</span></label>
+                    <input class="input" id="note" name="note" placeholder="VD: khách cần cho chuyến công tác">
+                  </div>
+                </div>
+                <div class="row row--between">
+                  <span class="subtle"><svg class="icon"><use href="#i-info"/></svg> Quyết định dựa trên 6 kỳ sao kê gần nhất. Số tiền đề nghị chỉ dùng để so với hạn mức đề xuất.</span>
+                  <button class="btn btn--primary" type="submit" data-hide="loading"><svg class="icon"><use href="#i-zap"/></svg>Gửi chấm điểm</button>
+                  <button class="btn btn--primary" type="button" disabled data-show="loading"><span class="spinner"></span>Đang chấm điểm…</button>
+                </div>
+              </form>
+            </section>
+
+            <!-- ============ Result: loading ============ -->
+            <section class="card" aria-live="polite" aria-busy="true" data-show="loading">
+              <div class="card__body stack">
+                <div class="loading-line"><span class="spinner"></span><span>Đang chấm điểm… thường mất dưới 1 giây.</span></div>
+                <span class="skeleton skeleton--xl" style="width: 55%"></span>
+                <div class="metrics">
+                  <span class="skeleton skeleton--lg"></span><span class="skeleton skeleton--lg"></span><span class="skeleton skeleton--lg"></span><span class="skeleton skeleton--lg"></span>
+                </div>
+                <span class="skeleton" style="width: 100%"></span>
+              </div>
+            </section>
+
+            <!-- ============ Result: error ============ -->
+            <section class="alert alert--danger" role="alert" data-show="error">
+              <svg class="icon icon--lg"><use href="#i-wifi-off"/></svg>
+              <div class="alert__body">
+                <span class="alert__title">Chưa chấm điểm được — dịch vụ chấm điểm không phản hồi</span>
+                <p>Yêu cầu <strong>chưa được ghi nhận</strong>. Đừng báo kết quả cho khách; hẹn khách thử lại sau ít phút hoặc chuyển yêu cầu sang quy trình thủ công.</p>
+                <p class="subtle">Mã lỗi <code>503 SERVICE_UNAVAILABLE</code> · Mã tham chiếu <code>req_7c41a0e2f9b84d1a</code> · 08:41:12</p>
+                <div class="alert__actions">
+                  <button class="btn btn--secondary btn--sm" type="button"><svg class="icon"><use href="#i-refresh"/></svg>Thử lại</button>
+                  <button class="btn btn--ghost btn--sm" type="button">Sao chép mã tham chiếu</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- ============ Result: APPROVE ============ -->
+            <section class="decision decision--approve" aria-live="polite" data-show="approve">
+              <div class="decision__head">
+                <span class="decision__icon"><svg class="icon"><use href="#i-check"/></svg></span>
+                <div>
+                  <div class="decision__code">APPROVE · CHẤP THUẬN</div>
+                  <h2 class="decision__title">Chấp thuận tăng hạn mức</h2>
+                  <p class="decision__summary">Có thể nâng hạn mức lên tối đa <strong class="num">NT$ 187.500</strong>. Đề nghị của khách (<span class="num">NT$ 180.000</span>) nằm trong mức cho phép.</p>
+                </div>
+              </div>
+              <div class="decision__body">
+                <div class="metrics">
+                  <div><div class="metric__label">Hạn mức đề xuất</div><div class="metric__value num">NT$ 187.500</div><div class="metric__meta">Hiện tại NT$ 150.000</div></div>
+                  <div><div class="metric__label">Xác suất vỡ nợ</div><div class="metric__value num">12,4&nbsp;%</div><div class="metric__meta">Dưới ngưỡng REVIEW 30&nbsp;%</div></div>
+                  <div><div class="metric__label">Điểm tín dụng</div><div class="metric__value num">782</div><div class="metric__meta">Hạng PRIME</div></div>
+                  <div><div class="metric__label">Độ trễ</div><div class="metric__value num">18 ms</div><div class="metric__meta">Mục tiêu ≤ 100 ms</div></div>
+                </div>
+                <div class="gauge" aria-label="Xác suất vỡ nợ 12,4 phần trăm, vùng APPROVE">
+                  <span class="gauge__marker" style="left: 12.4%">12,4&nbsp;%</span>
+                  <div class="gauge__track"><span class="gauge__zone--approve"></span><span class="gauge__zone--review"></span><span class="gauge__zone--decline"></span></div>
+                  <div class="gauge__scale"><span style="left:0">0&nbsp;%</span><span style="left:30%">30&nbsp;% · REVIEW</span><span style="left:60%">60&nbsp;% · DECLINE</span><span style="left:100%">100&nbsp;%</span></div>
+                </div>
+                <div class="script-box">
+                  <div class="script-box__label">Gợi ý trả lời khách</div>
+                  “Yêu cầu tăng hạn mức của Quý khách đã được chấp thuận. Hạn mức mới NT$ 180.000 có hiệu lực ngay sau khi xác nhận.”
+                </div>
+                <div class="row row--between">
+                  <span class="subtle mono">req_3f9a21c0d6 · model v1 · 08:41:12</span>
+                  <div class="row">
+                    <button class="btn btn--secondary" type="button">Tạo yêu cầu mới</button>
+                    <button class="btn btn--primary" type="button"><svg class="icon"><use href="#i-check"/></svg>Xác nhận với khách</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- ============ Result: REVIEW ============ -->
+            <section class="decision decision--review" aria-live="polite" data-show="review">
+              <div class="decision__head">
+                <span class="decision__icon"><svg class="icon"><use href="#i-pause"/></svg></span>
+                <div>
+                  <div class="decision__code">REVIEW · CẦN CHUYÊN VIÊN XEM XÉT</div>
+                  <h2 class="decision__title">Chuyển chuyên viên rủi ro tín dụng</h2>
+                  <p class="decision__summary">Đã tạo ca <strong>CA-2026-00128</strong> trong hàng đợi xem xét. Phản hồi dự kiến trong 1 ngày làm việc.</p>
+                </div>
+              </div>
+              <div class="decision__body">
+                <div class="metrics">
+                  <div><div class="metric__label">Hạn mức tham chiếu</div><div class="metric__value num">NT$ 100.000</div><div class="metric__meta">Gợi ý cho chuyên viên, chưa áp dụng</div></div>
+                  <div><div class="metric__label">Xác suất vỡ nợ</div><div class="metric__value num">46,3&nbsp;%</div><div class="metric__meta">Trong vùng 30–60&nbsp;%</div></div>
+                  <div><div class="metric__label">Điểm tín dụng</div><div class="metric__value num">595</div><div class="metric__meta">Hạng SUBPRIME</div></div>
+                  <div><div class="metric__label">Độ trễ</div><div class="metric__value num">29 ms</div><div class="metric__meta">Mục tiêu ≤ 100 ms</div></div>
+                </div>
+                <div class="gauge" aria-label="Xác suất vỡ nợ 46,3 phần trăm, vùng REVIEW">
+                  <span class="gauge__marker" style="left: 46.3%">46,3&nbsp;%</span>
+                  <div class="gauge__track"><span class="gauge__zone--approve"></span><span class="gauge__zone--review"></span><span class="gauge__zone--decline"></span></div>
+                  <div class="gauge__scale"><span style="left:0">0&nbsp;%</span><span style="left:30%">30&nbsp;% · REVIEW</span><span style="left:60%">60&nbsp;% · DECLINE</span><span style="left:100%">100&nbsp;%</span></div>
+                </div>
+                <div class="script-box">
+                  <div class="script-box__label">Gợi ý trả lời khách</div>
+                  “Yêu cầu của Quý khách cần thêm một bước thẩm định. Ngân hàng sẽ phản hồi qua app trong vòng 1 ngày làm việc.” — Không hứa trước kết quả.
+                </div>
+                <div class="row row--between">
+                  <span class="subtle mono">req_19d7938051 · model v1 · 08:41:12</span>
+                  <button class="btn btn--primary" type="button">Tạo yêu cầu mới</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- ============ Result: DECLINE ============ -->
+            <section class="decision decision--decline" aria-live="polite" data-show="decline">
+              <div class="decision__head">
+                <span class="decision__icon"><svg class="icon"><use href="#i-x"/></svg></span>
+                <div>
+                  <div class="decision__code">DECLINE · TỪ CHỐI</div>
+                  <h2 class="decision__title">Từ chối yêu cầu tăng hạn mức</h2>
+                  <p class="decision__summary">Đây là <strong>adverse action</strong>: chủ thẻ sẽ nhận thông báo kèm lý do bên dưới.</p>
+                </div>
+              </div>
+              <div class="decision__body">
+                <div class="metrics">
+                  <div><div class="metric__label">Hạn mức đề xuất</div><div class="metric__value num">NT$ 0</div><div class="metric__meta">Không cấp thêm hạn mức</div></div>
+                  <div><div class="metric__label">Xác suất vỡ nợ</div><div class="metric__value num">71,8&nbsp;%</div><div class="metric__meta">Trên ngưỡng DECLINE 60&nbsp;%</div></div>
+                  <div><div class="metric__label">Điểm tín dụng</div><div class="metric__value num">455</div><div class="metric__meta">Hạng HIGH_RISK</div></div>
+                  <div><div class="metric__label">Độ trễ</div><div class="metric__value num">21 ms</div><div class="metric__meta">Mục tiêu ≤ 100 ms</div></div>
+                </div>
+                <div class="gauge" aria-label="Xác suất vỡ nợ 71,8 phần trăm, vùng DECLINE">
+                  <span class="gauge__marker" style="left: 71.8%">71,8&nbsp;%</span>
+                  <div class="gauge__track"><span class="gauge__zone--approve"></span><span class="gauge__zone--review"></span><span class="gauge__zone--decline"></span></div>
+                  <div class="gauge__scale"><span style="left:0">0&nbsp;%</span><span style="left:30%">30&nbsp;% · REVIEW</span><span style="left:60%">60&nbsp;% · DECLINE</span><span style="left:100%">100&nbsp;%</span></div>
+                </div>
+
+                <div class="stack stack--sm">
+                  <h3 class="card__title">Lý do từ chối (reason codes)</h3>
+                  <ol class="reason-list">
+                    <li class="reason"><span class="reason__code">R01</span><span class="reason__text">Có khoản thanh toán trễ hạn 2 tháng ở kỳ sao kê gần nhất</span><span class="reason__detail">Tình trạng thanh toán tháng 09/2026: trễ 2 kỳ.</span></li>
+                    <li class="reason"><span class="reason__code">R02</span><span class="reason__text">Dư nợ đang sử dụng 97,5&nbsp;% hạn mức</span><span class="reason__detail">NT$ 48.750 / NT$ 50.000.</span></li>
+                    <li class="reason"><span class="reason__code">R03</span><span class="reason__text">Số tiền thanh toán các kỳ gần đây thấp so với dư nợ sao kê</span><span class="reason__detail">Trung bình 6 kỳ: NT$ 1.200 / kỳ.</span></li>
+                  </ol>
+                  <p class="subtle"><svg class="icon"><use href="#i-shield"/></svg> Tuổi, giới tính và tình trạng hôn nhân không bao giờ được dùng làm lý do từ chối.</p>
+                </div>
+
+                <div class="script-box">
+                  <div class="script-box__label">Gợi ý trả lời khách</div>
+                  “Hiện ngân hàng chưa thể đáp ứng yêu cầu tăng hạn mức của Quý khách vì: (1) có khoản thanh toán trễ hạn ở kỳ gần nhất, (2) dư nợ đang gần chạm hạn mức. Quý khách có thể gửi lại yêu cầu sau khi thanh toán khoản quá hạn.”
+                </div>
+
+                <div class="alert alert--info">
+                  <svg class="icon"><use href="#i-file"/></svg>
+                  <div class="alert__body">
+                    <span class="alert__title">Thông báo adverse action AA-2026-00342 đã sẵn sàng</span>
+                    <p>Gửi tới chủ thẻ qua app kèm 3 lý do trên. Bạn có thể xem trước nội dung trước khi gửi.</p>
+                  </div>
+                </div>
+
+                <div class="row row--between">
+                  <span class="subtle mono">req_b80e5512aa · model v1 · 08:41:12</span>
+                  <div class="row">
+                    <button class="btn btn--secondary" type="button"><svg class="icon"><use href="#i-eye"/></svg>Xem thông báo</button>
+                    <button class="btn btn--primary" type="button">Tạo yêu cầu mới</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+</body>
+</html>

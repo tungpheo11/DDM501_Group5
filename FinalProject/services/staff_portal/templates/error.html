@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Lỗi {{ status_code }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>{% if status_code == 403 %}Không có quyền truy cập{% elif status_code == 404 %}Không tìm thấy{% else %}Có lỗi xảy ra{% endif %}</h1>
+  <p class="muted">Mã lỗi {{ status_code }}</p>
+  {% include "partials/error.html" %}
+  <p><a class="btn btn--secondary" href="{{ home_url }}">Về trang chính</a></p>
+</div>
+{% endblock %}
