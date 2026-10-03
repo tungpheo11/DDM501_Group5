@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -126,6 +127,15 @@ def format_percent(value: Any, digits: int = 1) -> str:
     return format_number(float(value) * 100, digits) + "%"
 
 
+def static_fingerprint(directory: Path = STATIC_DIR) -> str:
+    """Content hash of the bundled assets, appended to their URLs so a new build bypasses the 1 h browser cache."""
+    digest = hashlib.sha256()
+    for path in sorted(p for p in directory.rglob("*") if p.is_file()):
+        digest.update(path.relative_to(directory).as_posix().encode())
+        digest.update(path.read_bytes())
+    return digest.hexdigest()[:12]
+
+
 def build_templates(settings: PortalSettings) -> Jinja2Templates:
     """Jinja2 environment (autoescape on) with the portal filters and globals."""
     templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
@@ -150,6 +160,7 @@ def build_templates(settings: PortalSettings) -> Jinja2Templates:
     )
     env.globals.update(
         portal_version=__version__,
+        static_version=static_fingerprint(),
         role_labels=ROLE_LABELS,
         decision_labels=DECISION_LABELS,
         request_types=REQUEST_TYPES,

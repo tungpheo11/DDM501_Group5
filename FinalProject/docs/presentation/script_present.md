@@ -1,17 +1,17 @@
 
-# DDM501 GROUP 5 — SCRIPT THUYẾT TRÌNH 15 PHÚT
+# DDM501 GROUP 5 — SCRIPT THUYẾT TRÌNH ~16 PHÚT
 
 **Chủ đề:** Credit Default Risk Scoring — Từ bài toán nghiệp vụ đến Production MLOps
 
 ### Phân chia
 
 - **Thịnh:** Slide 1–4 — Problem → ML Setup → Ops Foundation — ~2 phút
-- **Tùng:** Slide 5–8 — Requirements → Lifecycle → Architecture → CI/CD — ~3 phút 40 giây
-- **Hoa:** Slide 9–13 — Serving → Monitoring → Incident → Drift → Retraining — ~4 phút
-- **Hòa:** Slide 14–17 — Failure → RAI → Demo → Lessons — ~4 phút
-- **Slide 18:** Q&A
+- **Tùng:** Slide 5–9 — Requirements → Lifecycle → Architecture → Staff Portal → CI/CD — ~4 phút 15 giây
+- **Hoa:** Slide 10–14 — Serving → Monitoring → Incident → Drift → Retraining — ~4 phút
+- **Hòa:** Slide 15–20 — Failure → RAI → Staff Portal (3 vai trò, drift) → Demo → Lessons — ~4 phút 30 giây
+- **Slide 21:** Q&A
 
-Mục tiêu hoàn thành khoảng **13:45–14:00**, để dành thời gian cho phần demo trực tiếp và trả lời câu hỏi của hội đồng.
+Mục tiêu hoàn thành khoảng **15:00–15:45**, để dành thời gian cho phần demo trực tiếp và trả lời câu hỏi của hội đồng. Nếu cần rút về 15 phút, cắt theo mục *Nếu bị quá giờ* ở cuối.
 
 ---
 
@@ -88,8 +88,8 @@ Tiếp theo, bạn Tùng sẽ trình bày cách nhóm chuyển đổi các ràng
 ---
 
 # NGƯỜI 2 — TÙNG
-## Slide 5–8
-### ~3:00 → 6:40
+## Slide 5–9
+### ~3:00 → 7:15
 
 ## SLIDE 5 — BUSINESS REQUIREMENT → SLO
 ### ~50 giây
@@ -152,9 +152,9 @@ Challenger lại phải đi qua quality gate trước khi được promote hoặ
 ## SLIDE 7 — PRODUCTION ARCHITECTURE
 ### ~55 giây
 
-“Về architecture, toàn bộ hệ thống có khoảng 15 service, nhưng được chia thành ba operational profile.
+“Về architecture, toàn bộ hệ thống có 16 service, nhưng được chia thành ba operational profile.
 
-**Core profile** gồm FastAPI, MLflow, PostgreSQL và MinIO.
+**Core profile** gồm FastAPI, Staff Portal, MLflow, PostgreSQL và MinIO.
 
 Đây là phần tối thiểu để serving và model registry hoạt động.
 
@@ -174,7 +174,24 @@ Nếu hệ thống cần mở rộng sau này, đây sẽ là một trong nhữn
 
 ---
 
-## SLIDE 8 — RELEASE SAFETY / CI-CD
+## SLIDE 8 — STAFF PORTAL TRONG KIẾN TRÚC
+### ~35 giây
+
+“Model chỉ có giá trị khi người làm nghiệp vụ dùng được nó, nên nhóm thêm service thứ 16: **Staff Portal**, cổng nghiệp vụ cho nhân viên ngân hàng.
+
+Portal có ba vai trò: CSKH tiếp nhận yêu cầu, chuyên viên rủi ro tín dụng và quản trị hệ thống. Mỗi tài khoản chỉ vào được màn hình của vai trò mình.
+
+Portal gọi đúng ba endpoint đã có — `/predict`, `/predict/batch` và `/explain` — nên **API contract không đổi**. API key nằm ở server portal, trình duyệt chỉ giữ cookie phiên.
+
+Mỗi lần chấm điểm vẫn ghi một dòng vào `inference_logs`, nên mọi thao tác trên portal đi thẳng vào vòng monitoring, drift và retrain mà các phần sau sẽ trình bày.
+
+Portal cũng có `/health/live` và `/health/ready` như API, để Docker và smoke test biết khi nào nó thật sự phục vụ được.”
+
+**[Slide 9]**
+
+---
+
+## SLIDE 9 — RELEASE SAFETY / CI-CD
 ### ~1 phút
 
 “Tiếp theo là release process.
@@ -212,10 +229,10 @@ Sau deployment, câu hỏi tiếp theo là làm sao service biết khi nào mìn
 ---
 
 # NGƯỜI 3 — HOA
-## Slide 9–13
-### ~6:40 → 10:40
+## Slide 10–14
+### ~7:15 → 11:15
 
-## SLIDE 9 — SERVING RELIABILITY
+## SLIDE 10 — SERVING RELIABILITY
 ### ~50 giây
 
 “Ở serving layer, nhóm thiết kế ba trạng thái rõ ràng.
@@ -244,11 +261,11 @@ Nhóm cũng tách `/live` và `/ready`.
 
 Đây cũng là endpoint được dùng cho Docker healthcheck và deployment smoke test.”
 
-**[Slide 10]**
+**[Slide 11]**
 
 ---
 
-## SLIDE 10 — OBSERVABILITY
+## SLIDE 11 — OBSERVABILITY
 ### ~45 giây
 
 “Sau khi service chạy, chúng em chia observability thành **4 dashboard tương ứng với 4 câu hỏi**.
@@ -267,11 +284,11 @@ Nguyên tắc của nhóm là:
 
 **không để một failure quan trọng chỉ tồn tại trong log mà operator không nhìn thấy.**”
 
-**[Slide 11]**
+**[Slide 12]**
 
 ---
 
-## SLIDE 11 — INCIDENT RESPONSE
+## SLIDE 12 — INCIDENT RESPONSE
 ### ~50 giây
 
 “Tuy nhiên dashboard mới chỉ là quan sát.
@@ -298,11 +315,11 @@ Ngoài ra nhóm có chaos target như `api-down`, `model-unloaded`, `latency` v�
 
 Mục đích là chứng minh alert thực sự fire và resolve, chứ không chỉ tồn tại dưới dạng YAML.”
 
-**[Slide 12]**
+**[Slide 13]**
 
 ---
 
-## SLIDE 12 — DRIFT KHÔNG ĐỒNG NGHĨA RETRAIN NGAY
+## SLIDE 13 — DRIFT KHÔNG ĐỒNG NGHĨA RETRAIN NGAY
 ### ~50 giây
 
 “Với ML system, một failure có thể xảy ra ngay cả khi API vẫn trả HTTP 200.
@@ -325,11 +342,11 @@ Nếu dataset drift thực sự vượt threshold, pipeline còn kiểm tra samp
 
 Việc tách ba cadence giúp tránh một feedback loop mà chỉ cần dữ liệu dao động nhẹ cũng liên tục tạo model mới.”
 
-**[Slide 13]**
+**[Slide 14]**
 
 ---
 
-## SLIDE 13 — CHAMPION / CHALLENGER
+## SLIDE 14 — CHAMPION / CHALLENGER
 ### ~55 giây
 
 “Khi retraining được trigger, model mới được gọi là **challenger** và model production hiện tại là **champion**.
@@ -365,10 +382,10 @@ Và bạn Hòa sẽ nói tiếp về cách hệ thống xử lý failure, govern
 ---
 
 # NGƯỜI 4 — HÒA
-## Slide 14–17
-### ~10:40 → 14:40
+## Slide 15–20
+### ~11:15 → 15:45
 
-## SLIDE 14 — DESIGN FOR FAILURE
+## SLIDE 15 — DESIGN FOR FAILURE
 ### ~45 giây
 
 “Cảm ơn Hoa.
@@ -389,11 +406,11 @@ Nếu challenger fail quality gate, champion vẫn tiếp tục serving và pipe
 
 **Failure là một phần của system design.**”
 
-**[Slide 15]**
+**[Slide 16]**
 
 ---
 
-## SLIDE 15 — RESPONSIBLE AI
+## SLIDE 16 — RESPONSIBLE AI
 ### ~45 giây
 
 “Ngoài reliability, model còn cần governance guardrail.
@@ -414,14 +431,44 @@ Nhóm cũng thử mitigation như reweighing.
 
 Tuy nhiên quyết định có áp dụng mitigation hay không phải là quyết định của business và compliance, chứ không nên để pipeline tự động lựa chọn.”
 
-**[Slide 16]**
+**[Slide 17]**
 
 ---
 
-# SLIDE 16 — LIVE DEMO
-### ~1 phút 40 giây
+## SLIDE 17 — STAFF PORTAL · LUỒNG 3 VAI TRÒ
+### ~30 giây
 
-> **Khuyến nghị:** Hòa nói, Tùng thao tác terminal/Grafana.  
+“Human-in-the-loop vừa nói ở trên giờ có giao diện thật. Ảnh trên slide chụp từ portal đang chạy.
+
+Đầu tiên, nhân viên **CSKH** tìm chủ thẻ, chọn *Tăng hạn mức* và bấm *Gửi chấm điểm*. Model trả REVIEW, xác suất vỡ nợ 41%, nên CSKH không tự quyết.
+
+Ca đó tự vào **Hàng đợi xem xét** của **chuyên viên rủi ro**. Chuyên viên đọc giải thích SHAP rồi chọn giữ nguyên, hạ hay tạm khoá hạn mức — ở đây là hạ xuống 45.000.
+
+Cuối cùng, **quản trị hệ thống** chỉ nhìn sức khoẻ: API, model `@champion`, drift monitor và bảng `inference_logs`.”
+
+**[Slide 18]**
+
+---
+
+## SLIDE 18 — STAFF PORTAL · SIMULATE → DRIFT → ALERT → RETRAIN
+### ~30 giây
+
+“Quản trị cũng là người kích hoạt kịch bản drift, chỉ bằng một cú bấm *Chạy simulate* với nguồn *Chủ thẻ dưới 30 tuổi*.
+
+600 yêu cầu thật đi qua API. Trong khoảng một phút, drift monitor báo **DRIFT**, PSI của tuổi vượt xa ngưỡng 0.25, vì model chỉ được train với chủ thẻ từ 30 tuổi.
+
+Hai phút sau, Alertmanager gửi `DataDriftDetected` tới **Telegram**, và Airflow chạy `model_retrain`: train challenger, qua quality gate, rồi promote hoặc giữ champion.
+
+Giờ chúng em làm đúng vòng này trên hệ thống thật.”
+
+**[Slide 19]**
+
+---
+
+# SLIDE 19 — LIVE DEMO
+### ~1 phút 10 giây
+
+> **Khuyến nghị:** Hòa nói, Tùng thao tác Staff Portal/terminal/Grafana theo [demo-script.md](demo-script.md).  
 > Đừng giải thích command. Chỉ kể production story.
 
 ### Bước 1 — Healthy
@@ -442,9 +489,7 @@ Chúng em demo theo câu chuyện:
 
 “Tiếp theo chúng em chủ động đưa vào một data distribution bị lệch.”
 
-**[Tùng chạy:]**
-
-`make simulate SCENARIO=drift`
+**[Tùng, cửa sổ portal `admin`: Simulate lưu lượng → *Chủ thẻ dưới 30 tuổi (chiến dịch Gen-Z)* → 600 → *Chạy simulate*. Dự phòng: `make simulate SCENARIO=drift`.]**
 
 “Service vẫn sống.
 
@@ -496,11 +541,11 @@ Nếu không, champion vẫn giữ nguyên.”
 
 Đây là phần quan trọng nhất của project dưới góc nhìn MLOps.”
 
-**[Slide 17]**
+**[Slide 20]**
 
 ---
 
-## SLIDE 17 — LESSONS LEARNED
+## SLIDE 20 — LESSONS LEARNED
 ### ~45 giây
 
 “Sau khi thực sự vận hành stack này, nhóm rút ra bốn bài học.
@@ -523,11 +568,11 @@ Chúng ta cần cooldown, champion/challenger, quality gate và rollback verific
 
 Nếu phát triển tiếp, nhóm muốn bổ sung shadow deployment, high availability cho serving và scheduled fairness/privacy checks.”
 
-**[Slide 18]**
+**[Slide 21]**
 
 ---
 
-# SLIDE 18 — KẾT LUẬN / Q&A
+# SLIDE 21 — KẾT LUẬN / Q&A
 ### ~15–20 giây
 
 “Nhóm xin kết thúc bằng một ý chính:
@@ -547,20 +592,22 @@ Nhóm xin nhận câu hỏi.”
 | Người | Slide | Mốc nên chuyển |
 |---|---|---:|
 | Thịnh | 1–4 | **03:00** |
-| Tùng | 5–8 | **06:40** |
-| Hoa | 9–13 | **10:40** |
-| Hòa | 14–17 | **14:40** |
-| Kết | 18 | **≤15:00** |
+| Tùng | 5–9 | **07:15** |
+| Hoa | 10–14 | **11:15** |
+| Hòa | 15–20 | **15:45** |
+| Kết | 21 | **≤16:00** |
 
 # NẾU BỊ QUÁ GIỜ
 
 Ưu tiên cắt ở những chỗ này, **không cắt demo và closed-loop retraining**:
 
 1. Slide 7 Architecture: bỏ mô tả từng component, chỉ nói 3 profile + Compose vs K8s.
-2. Slide 10 Monitoring: nói 4 dashboard trong một câu.
-3. Slide 14 Failure modes: chỉ lấy 2 case `503` và `DEGRADED`.
-4. Slide 15 RAI: chỉ giữ fairness warning + human-in-the-loop + SHAP.
-5. Slide 17 Lessons: chỉ nói lesson 2 và lesson 3.
+2. Slide 8 Staff Portal: chỉ nói "service thứ 16, gọi đúng API cũ, API key ở server".
+3. Slide 11 Monitoring: nói 4 dashboard trong một câu.
+4. Slide 15 Failure modes: chỉ lấy 2 case `503` và `DEGRADED`.
+5. Slide 16 RAI: chỉ giữ fairness warning + human-in-the-loop + SHAP.
+6. Slide 17–18 Staff Portal: nếu sắp demo trực tiếp, chỉ lướt 10 giây mỗi slide.
+7. Slide 20 Lessons: chỉ nói lesson 2 và lesson 3.
 
 # 4 CÂU CHUYỂN NGƯỜI NÊN HỌC THUỘC
 

@@ -42,12 +42,12 @@
       </div>
       <div class="field">
         <label for="sim-count">Số request (1–{{ max_count }})</label>
-        <input id="sim-count" name="count" type="number" min="1" max="{{ max_count }}" value="{{ default_count }}" required>
-        <div class="field__hint">Gửi tuần tự tới <code>/api/v1/predict</code>, tối đa {{ rate|number(0) }} request/giây.</div>
+        <input id="sim-count" name="count" type="number" min="1" max="{{ max_count }}" value="{{ default_count }}" required aria-describedby="sim-hint">
       </div>
       <div class="field"><button class="btn" type="submit">Chạy simulate</button></div>
     </div>
-    <p class="small muted">“Chủ thẻ dưới 30 tuổi” lấy từ <code>stream_drifted.csv</code> (5.000 chủ thẻ AGE &lt; 30): khi đủ cửa sổ drift
+    <p class="small muted" id="sim-hint">Gửi tuần tự tới <code>/api/v1/predict</code>, tối đa {{ rate|number(0) }} request/giây.
+      “Chủ thẻ dưới 30 tuổi” lấy từ <code>stream_drifted.csv</code> (5.000 chủ thẻ AGE &lt; 30): khi đủ cửa sổ drift
       (mặc định 500 dòng mới nhất), drift monitor báo drift, Alertmanager gửi cảnh báo và Airflow có thể retrain.</p>
   </form>
 {% endif %}

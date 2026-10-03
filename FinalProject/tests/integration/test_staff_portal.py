@@ -220,6 +220,7 @@ def test_health_and_login_page(stack: Stack) -> None:
     assert page.status_code == 200
     assert csrf_of(page.text)
     assert "chuyenvien" in page.text
+    assert re.search(r'href="/static/css/portal\.css\?v=[0-9a-f]{12}"', page.text)
     assert "script-src 'self'" in page.headers["content-security-policy"]
     assert page.headers["x-frame-options"] == "DENY"
     assert page.headers["cache-control"] == "no-store"

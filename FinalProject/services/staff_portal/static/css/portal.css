@@ -65,13 +65,16 @@ pre {
 
 /* --- layout --- */
 .page { max-width: var(--layout-max-width); margin: 0 auto; padding: var(--space-5); }
+.page > * + * { margin-top: var(--space-5); }
 .page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-5); }
 .page-header p { color: var(--color-text-muted); margin: 0; }
 .grid { display: grid; gap: var(--space-5); }
 .grid--2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
 .grid--3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 .grid--sidebar { grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); }
+.grid--sidebar-start { grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr); }
 @media (max-width: 900px) { .grid--sidebar { grid-template-columns: 1fr; } }
+@media (max-width: 1100px) { .grid--sidebar-start { grid-template-columns: 1fr; } }
 .stack > * + * { margin-top: var(--space-4); }
 .row { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
 .muted { color: var(--color-text-muted); }
@@ -94,9 +97,11 @@ input[type="text"], input[type="password"], input[type="number"], input[type="se
 input[type="datetime-local"], select, textarea {
   width: 100%; font: inherit; color: var(--color-text); background: var(--color-surface);
   border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); padding: var(--space-2) var(--space-3);
+  min-height: var(--control-height);
 }
 textarea { min-height: 5rem; resize: vertical; }
 .inline-fields { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); align-items: end; }
+.inline-fields .btn { min-height: var(--control-height); }
 .radio-list { display: grid; gap: var(--space-2); }
 .radio-list label { font-weight: var(--font-weight-regular); display: flex; gap: var(--space-2); align-items: center; }
 
@@ -173,6 +178,10 @@ th { background: var(--color-surface-muted); font-weight: var(--font-weight-bold
 tbody tr:hover { background: var(--color-brand-soft); }
 tbody tr:last-child td { border-bottom: 0; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.nowrap { white-space: nowrap; }
+@media (max-width: 1100px) { td.nowrap { white-space: normal; } }
+.log-detail { margin-top: var(--space-4); scroll-margin-top: var(--space-4); }
+.split { display: grid; gap: var(--space-5); grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: start; }
 .pagination { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-3); font-size: var(--font-size-sm); }
 
 /* --- progress, meters & SHAP bars --- */

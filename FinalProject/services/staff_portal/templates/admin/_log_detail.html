@@ -1,13 +1,17 @@
 <div class="card">
   <div class="card__title"><h3>Dòng #{{ row.id }}</h3><span class="badge badge--{{ row.risk_decision }}">{{ row.risk_decision }}</span></div>
-  <dl class="facts small">
-    <dt>request_id</dt><dd><code>{{ row.request_id }}</code></dd>
-    <dt>timestamp</dt><dd>{{ row.timestamp|dt }}</dd>
-    <dt>prediction</dt><dd>{{ row.prediction }}</dd>
-    <dt>probability</dt><dd>{{ "%.4f"|format(row.probability) }}</dd>
-    <dt>latency_ms</dt><dd>{{ row.latency_ms|number(2) }}</dd>
-    <dt>model_version</dt><dd>{{ row.model_version }}</dd>
-  </dl>
-  <h3>features_json</h3>
-  <pre>{{ features }}</pre>
+  <div class="split">
+    <dl class="facts small">
+      <dt>request_id</dt><dd><code>{{ row.request_id }}</code></dd>
+      <dt>timestamp</dt><dd>{{ row.timestamp|dt }}</dd>
+      <dt>prediction</dt><dd>{{ row.prediction }}</dd>
+      <dt>probability</dt><dd>{{ "%.4f"|format(row.probability) }}</dd>
+      <dt>latency_ms</dt><dd>{{ row.latency_ms|number(2) }}</dd>
+      <dt>model_version</dt><dd>{{ row.model_version }}</dd>
+    </dl>
+    <div>
+      <h3>features_json</h3>
+      <pre>{{ features }}</pre>
+    </div>
+  </div>
 </div>
