@@ -135,11 +135,11 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
     </div>
     <div class="cost-stack">
       <div><div class="tag">UCI Credit Default</div><div class="row space mt16"><h3 class="h3">30.000 chủ thẻ</h3><span class="tag info">default ≈ 22%</span></div></div>
-      <div class="cost-card fn"><div class="row space"><div><div class="tag bad">FALSE NEGATIVE</div><h3 class="h3 mt16">Bỏ sót người sắp default</h3></div><div class="ratio red">10×</div></div><p class="mt16">Vẫn giữ hoặc tăng hạn mức cho khách rủi ro → tổn thất tín dụng lớn hơn.</p></div>
-      <div class="cost-card fp"><div class="row space"><div><div class="tag warn">FALSE POSITIVE</div><h3 class="h3 mt16">Hạ nhầm người trả tốt</h3></div><div class="ratio amber">1×</div></div><p class="mt16">Mất doanh thu và trải nghiệm khách hàng, nhưng chi phí thấp hơn FN trong giả định bài toán.</p></div>
+      <div class="cost-card fn"><div class="row space"><div><div class="tag bad">FALSE NEGATIVE</div><h3 class="h3 mt16">Bỏ sót chủ thẻ vỡ nợ (FN)</h3></div><div class="ratio red">10×</div></div><p class="mt16">Cấp/tăng hạn mức cho chủ thẻ mất khả năng thanh toán → rủi ro nợ xấu trực tiếp.</p></div>
+      <div class="cost-card fp"><div class="row space"><div><div class="tag warn">FALSE POSITIVE</div><h3 class="h3 mt16">Từ chối nhầm chủ thẻ tốt (FP)</h3></div><div class="ratio amber">1×</div></div><p class="mt16">Ảnh hưởng trải nghiệm khách hàng, nhưng chi phí thấp hơn nhiều so với rủi ro nợ xấu.</p></div>
     </div>
   </div>
-  <aside class="notes">Đây là behavioral scoring, không phải application scoring cho khách mới. Input là lịch sử 6 tháng của chủ thẻ đang tồn tại; output cần dự báo default kỳ tiếp theo. Nhấn cost bất đối xứng FN:FP = 10:1 để giải thích vì sao không chỉ tối ưu accuracy.</aside>
+  <aside class="notes">Đây là behavioral scoring quản lý hạn mức 30.000 chủ thẻ hiện hữu. Nhấn mạnh ma trận chi phí bất đối xứng FN:FP = 10:1 — bỏ sót nợ xấu nguy hiểm gấp 10 lần từ chối nhầm, vì vậy hệ thống không tối ưu accuracy đơn thuần mà cần ngưỡng quyết định phục vụ serving và policy gate.</aside>
 </section>
 
 <!-- 03 ML SOLUTION -->
@@ -174,7 +174,7 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
       </div>
     </div>
   </div>
-  <aside class="notes">Chỉ nói khoảng 45–60 giây. Nhóm thử 4 model; Logistic Regression được chọn vì đủ quality, expected loss tốt và dễ giải thích. Quan trọng nhất là câu chốt: ML giải quyết prediction problem, nhưng chưa giải quyết production problem. Đây là cầu nối sang MLOps.</aside>
+  <aside class="notes">Nói khoảng 40 giây: Benchmark 4 thuật toán, chọn Logistic Regression (ROC-AUC 0.770) vì 3 lợi thế cho Ops: inference cực nhẹ (p95 &lt; 25ms), dễ giải thích (SHAP/LIME), tối ưu cost matrix. Model output ánh xạ vào 3 vùng APPROVE/REVIEW/DECLINE và đăng ký MLflow alias @champion.</aside>
 </section>
 
 
@@ -186,7 +186,7 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
     <div class="card iceberg flat">
       <div class="ice-top"><span>MODEL<br><small style="color:var(--muted);font-weight:500">train · metrics</small></span></div>
       <div class="water"></div>
-      <div class="ice-bottom"><div style="width:100%"><div style="font-size:24px;font-weight:800;margin-bottom:18px">Phần lớn công việc nằm dưới mặt nước</div><div class="ops-cloud">
+      <div class="ice-bottom"><div style="width:100%"><div style="font-size:24px;font-weight:800;margin-bottom:18px">Trọng tâm 70%: Hạ tầng kỹ thuật &amp; vận hành MLOps</div><div class="ops-cloud">
         <div class="ops-pill">CI/CD</div><div class="ops-pill">Registry</div><div class="ops-pill">Serving</div>
         <div class="ops-pill">Monitoring</div><div class="ops-pill">Alerting</div><div class="ops-pill">Runbook</div>
         <div class="ops-pill">Drift</div><div class="ops-pill">Retrain</div><div class="ops-pill">Rollback</div>
@@ -200,7 +200,7 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
       <div class="card accent-red"><div class="metric red">↶</div><div class="metric-label">SAFE RECOVERY</div><p class="mt16">Fallback · keep champion · rollback</p></div>
     </div>
   </div>
-  <aside class="notes">Đây là điểm chuyển chính của bài. Phần ML vừa chứng minh artifact đủ dùng; từ slide này trở đi trọng tâm là Ops: release, serving, observability, drift, retraining và recovery.</aside>
+  <aside class="notes">Điểm chuyển giao sang MLOps (~25s): Model trong notebook mới là bước đầu. Production thực tế cần trả lời: version nào đang chạy, deploy zero-downtime thế nào, đo drift ra sao, retrain và rollback an toàn thế nào. Nhóm hiện thực hóa 4 dashboard, 11 alert, 3 workflow Airflow và CI/CD tự động.</aside>
 </section>
 
 <!-- 05 BUSINESS + SLO -->

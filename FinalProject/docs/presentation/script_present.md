@@ -5,121 +5,85 @@
 
 ### Phân chia
 
-- **Thịnh:** Slide 1–4 — Problem → ML → MLOps transition — ~3 phút
+- **Thịnh:** Slide 1–4 — Problem → ML Setup → Ops Foundation — ~2 phút
 - **Tùng:** Slide 5–8 — Requirements → Lifecycle → Architecture → CI/CD — ~3 phút 40 giây
 - **Hoa:** Slide 9–13 — Serving → Monitoring → Incident → Drift → Retraining — ~4 phút
 - **Hòa:** Slide 14–17 — Failure → RAI → Demo → Lessons — ~4 phút
 - **Slide 18:** Q&A
 
-Mục tiêu hoàn thành khoảng **14:30–14:45**, để còn buffer khi chuyển người hoặc demo phản hồi chậm.
+Mục tiêu hoàn thành khoảng **13:45–14:00**, để dành thời gian cho phần demo trực tiếp và trả lời câu hỏi của hội đồng.
 
 ---
 
 # NGƯỜI 1 — THỊNH
 ## Slide 1–4
-### 0:00 → ~3:00
+### 0:00 → ~2:00
 
 ## SLIDE 1 — MỞ ĐẦU
-### ~30 giây
+### ~20 giây
 
-“Em xin chào thầy/cô và các bạn.
+“Kính chào thầy cô và các bạn.
 
-Nhóm 5 xin trình bày đồ án cuối môn với đề tài **Credit Default Risk Scoring — từ bài toán nghiệp vụ đến Production MLOps**.
+Nhóm 5 xin báo cáo đồ án cuối môn với đề tài **Credit Default Risk Scoring — Từ bài toán nghiệp vụ đến Production MLOps**.
 
-Project bắt đầu từ một bài toán tín dụng cụ thể: làm thế nào sử dụng lịch sử hành vi thanh toán để đánh giá rủi ro của chủ thẻ.
+Bám sát định hướng của môn học: phần Machine Learning chiếm 30% để chuẩn bị scoring artifact, và **70% trọng tâm là toàn bộ kiến trúc vận hành MLOps**.
 
-Nhóm sử dụng Machine Learning để giải quyết phần dự báo đó.
+Mục tiêu cốt lõi của đồ án không phải chạy đua thuật toán phức tạp trong notebook, mà là:
 
-Tuy nhiên, vì đây là môn MLOps, trọng tâm lớn hơn của project không nằm ở việc tìm model phức tạp nhất, mà là:
-
-**sau khi có model, làm thế nào để release, serve, monitor, retrain và recover model đó an toàn trong production.**
-
-Đó cũng là flow của phần trình bày hôm nay.”
+**sau khi có model, làm thế nào để release, serve, monitor, bắt drift và tự động retrain/recover an toàn trên môi trường production.**”
 
 **[Slide 2]**
 
 ---
 
-## SLIDE 2 — BÀI TOÁN
-### ~55 giây
+## SLIDE 2 — BÀI TOÁN & RÀNG BUỘC NGHIỆP VỤ
+### ~35 giây
 
-“Đầu tiên là bài toán mà hệ thống cần giải quyết.
+“Về bài toán, hệ thống giải quyết bài toán **Behavioral Scoring** — quản lý hạn mức cho danh mục 30.000 chủ thẻ hiện hữu dựa trên 6 tháng lịch sử sao kê và thanh toán.
 
-Đây là **behavioral scoring**, tức là đánh giá những khách hàng đã có thẻ tín dụng, chứ không phải application scoring cho khách hàng mới.
+Hệ thống phục vụ hai use case chính: **Realtime** khi chủ thẻ yêu cầu tăng hạn mức trên app, và **Batch** khi ngân hàng rà soát toàn bộ danh mục sau mỗi kỳ sao kê.
 
-Với mỗi chủ thẻ, hệ thống có khoảng **6 tháng lịch sử hành vi** như hạn mức, số dư sao kê, số tiền đã thanh toán và lịch sử trễ hạn.
+Điểm then chốt định hình toàn bộ thiết kế Ops phía sau là **ma trận chi phí bất đối xứng: False Negative đắt gấp 10 lần False Positive**.
 
-Từ dữ liệu này, chúng em cần dự đoán:
+Cấp hạn mức cho một chủ thẻ mất khả năng thanh toán (FN) gây rủi ro nợ xấu lớn hơn nhiều so với việc thận trọng rà soát lại một chủ thẻ tốt (FP).
 
-**xác suất khách hàng default trong kỳ thanh toán tiếp theo là bao nhiêu?**
-
-Có hai use case.
-
-Một là realtime, khi khách hàng yêu cầu tăng hạn mức và cần kết quả ngay trong phiên.
-
-Hai là batch, khi ngân hàng rà soát toàn bộ portfolio sau mỗi kỳ sao kê.
-
-Dataset sử dụng là UCI Credit Default với khoảng **30 nghìn chủ thẻ** và default rate khoảng 22%.
-
-Một đặc điểm quan trọng là chi phí sai không đối xứng.
-
-Trong giả định của nhóm, **False Negative đắt gấp 10 lần False Positive**.
-
-Bỏ sót một người sắp default và tiếp tục tăng hạn mức có thể tạo tổn thất tín dụng lớn hơn nhiều so với việc thận trọng nhầm với một khách hàng tốt.
-
-Vì vậy, bài toán không thể chỉ tối ưu accuracy.”
+Vì vậy, bài toán không thể chỉ tối ưu accuracy, mà đòi hỏi thiết lập ngưỡng quyết định rõ ràng phục vụ cho tầng serving và policy gate.”
 
 **[Slide 3]**
 
 ---
 
-## SLIDE 3 — GIẢI BẰNG MACHINE LEARNING
-### ~55 giây
+## SLIDE 3 — THIẾT LẬP ML PHỤC VỤ TẦNG OPS
+### ~40 giây
 
-“Để giải phần dự báo, nhóm xây một ML pipeline tương đối tiêu chuẩn.
+“Để chuẩn bị artifact cho tầng vận hành, nhóm đóng gói ML pipeline chuẩn: validate schema bằng Pandera, trích xuất 12 features đặc trưng như tỷ lệ sử dụng hạn mức (utilization) và xu hướng trễ hạn.
 
-Input gồm các feature gốc như trạng thái trả nợ, số dư sao kê, số tiền thanh toán và hạn mức hiện tại.
+Sau khi benchmark 4 thuật toán qua cross-validation, nhóm chọn **Logistic Regression** với holdout ROC-AUC đạt **0.770**.
 
-Nhóm cũng tạo thêm các feature như utilization và delay trend.
+Mô hình này có hiệu năng tương đương các boosting model nhưng mang 3 lợi thế quyết định cho Ops: **inference cực nhẹ (p95 dưới 25ms), dễ giải thích qua SHAP/LIME, và tối ưu chi phí theo ma trận rủi ro**.
 
-Pipeline đi từ validate dữ liệu, feature engineering, train, evaluate và cuối cùng register model vào MLflow.
+Đầu ra xác suất được ánh xạ trực tiếp thành **Decision Engine 3 vùng**:
+- **APPROVE** (xác suất vỡ nợ dưới 0.30: duyệt tự động)
+- **REVIEW** (0.30 đến 0.60: chuyển thẩm định viên rủi ro kèm reason codes)
+- **DECLINE** (từ 0.60 trở lên: từ chối tự động).
 
-Nhóm thử bốn thuật toán.
-
-Sau đánh giá, **Logistic Regression** được chọn với holdout ROC-AUC khoảng **0.77**.
-
-Điểm đáng chú ý là hiệu năng của các model khá gần nhau. Logistic Regression đủ quality, có expected loss tốt trong benchmark hiện tại, dễ giải thích và nhẹ hơn cho serving.
-
-Output cuối cùng là xác suất default.
-
-Dựa vào xác suất này, hệ thống chia thành ba vùng:
-
-**APPROVE dưới 0.30, REVIEW từ 0.30 đến 0.60, và DECLINE từ 0.60 trở lên.**
-
-Đến đây, ML đã giải quyết được prediction problem.
-
-Nhưng nó vẫn chưa trả lời những câu hỏi như:
-
-model deploy thế nào, version nào đang chạy, dữ liệu drift thì sao, hoặc bản mới lỗi thì rollback bằng cách nào.”
+Toàn bộ tham số và model artifact được version hóa, đăng ký lên **MLflow Registry** với alias **`@champion`**.”
 
 **[Slide 4]**
 
 ---
 
 ## SLIDE 4 — TỪ ML SANG MLOPS
-### ~40 giây
+### ~25 giây
 
-“Đó chính là lý do chúng em chuyển từ ML sang MLOps.
+“Mô hình và metrics vừa rồi mới chỉ là bước chuẩn bị đầu tiên.
 
-Model và metrics thực tế chỉ là phần nổi.
+Khi đưa vào production thực tế, hệ thống phải trả lời hàng loạt bài toán kỹ thuật: Model version nào đang phục vụ? Deploy thế nào để không gián đoạn? Dữ liệu drift thì đo lường ra sao? Quy trình retrain tự động và rollback an toàn khi có sự cố được kiểm soát thế nào?
 
-Để model có thể tồn tại trong production, phía sau còn CI/CD, registry, serving, monitoring, alerting, runbook, drift detection, retraining, rollback, security và audit.
+Để giải quyết trọn vẹn chu trình này, nhóm đã hiện thực hóa hạ tầng gồm **4 dashboard Grafana, 11 alert rules Prometheus, 3 nhóm workflow Airflow**, cùng pipeline CI/CD kiểm thử và deploy tự động lên cloud VPS.
 
-Trong project hiện tại, nhóm xây **4 dashboard, 11 alert rules, 3 nhóm Airflow workflow**, cùng các cơ chế fallback và rollback.
+Tiếp theo, bạn Tùng sẽ trình bày cách nhóm chuyển đổi các ràng buộc nghiệp vụ này thành hệ sinh thái kiến trúc và quy trình release an toàn.”
 
-Từ slide này trở đi, trọng tâm của bài sẽ là phần dưới mặt nước này.
-
-Và bạn Tùng sẽ bắt đầu bằng cách chuyển yêu cầu nghiệp vụ thành các operational requirement cụ thể.”
 
 ---
 
