@@ -147,16 +147,13 @@ jobs:
     needs: publish
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    environment:
-      name: production
-      url: ${{ vars.PRODUCTION_URL }}
     permissions:
       contents: read
       packages: read
     env:
       RELEASE: ${{ github.ref_name }}
       IMAGE: ${{ needs.publish.outputs.image }}
-      DEPLOY_ROOT: ${{ vars.DEPLOY_ROOT || '/opt/credit-risk' }}
+      DEPLOY_ROOT: /opt/credit-risk
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
