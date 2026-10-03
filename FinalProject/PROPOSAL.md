@@ -1,13 +1,14 @@
 # 🚀 Đề Án Tốt Nghiệp MLOps: Hệ Thống Giám Sát, Phát Hiện Lệch Dữ Liệu (Drift) & Tự Động Tái Huấn Luyện Khép Kín
 > **Môn học**: DDM501 — AI in DevOps, DataOps, MLOps  
-> **Tỷ trọng đồ án**: **30% Machine Learning · 70% MLOps & Continuous Operations**  
+> **Định hướng đồ án**: **Nền tảng Machine Learning thực tế · Trọng tâm toàn diện vào Vận hành MLOps (Continuous Operations)**  
 > **Mục tiêu cốt lõi**: Xây dựng một chu trình MLOps hoàn chỉnh (Closed-Loop Continuous Training & Delivery) với bài toán Machine Learning dạng bảng (Tabular Data) thực tế, có bộ dữ liệu rõ ràng, kịch bản biến động dữ liệu (Drift) trực quan, cơ chế 3 ngưỡng đánh giá chuẩn công nghiệp, kích hoạt tự động Airflow Retraining và triển khai mô hình an toàn (Canary/Blue-Green Deployment).
 
 ---
 
 ## 🎯 1. Chiến Lược Chọn Chủ Đề & Dữ Liệu Thực Tế
 
-Thầy đã nhấn mạnh: **ML chỉ chiếm 30%** (không cần giải thuật quá phức tạp, quan trọng là có dữ liệu chuẩn, bài toán thực tế), **70% còn lại là toàn bộ tầng vận hành MLOps**.
+Định hướng cốt lõi: **Bài toán Machine Learning là nền tảng khởi đầu** (dữ liệu chuẩn, bài toán nghiệp vụ rõ ràng, không sa đà vào giải thuật phức tạp); **toàn bộ trọng tâm nằm ở hệ thống vận hành MLOps** (Serving, Monitoring, Drift Detection, Automated Retraining, CI/CD và Safe Deployment).
+
 
 ### Chủ đề chính thức:
 > **Hệ Thống Đánh Giá Rủi Ro Tín Dụng & Khả Năng Vỡ Nợ Thời Gian Thực (FinTech Real-time Credit Default Risk Engine)**  
@@ -101,13 +102,14 @@ Khi sử dụng thư viện **Evidently AI**, hệ thống thực hiện kiểm 
    * Phân loại (`EDUCATION`, `MARRIAGE`): Mã hóa bằng `OneHotEncoder(handle_unknown='ignore')`.
    * Thứ bậc (`PAY_0` đến `PAY_6`): Giữ nguyên thứ tự trễ hạn.
 
-### 🏋️ Giai đoạn 2: Huấn luyện, Gán nhãn Model V1.0 & Đăng ký MLflow
-1. **Huấn luyện**: Chạy LightGBM / XGBoost trên 15.000 dòng `train_baseline.csv`.
-2. **Đánh giá ban đầu**: Đạt $ROC\text{-}AUC = 0.82$, $F1 = 0.78$.
+### 🏋️ Giai đoạn 2: Huấn luyện, Tuyển chọn Model Zoo & Đăng ký MLflow
+1. **Thiết lập Model Zoo 4 thuật toán**: Pipeline tích hợp 4 thuật toán ứng viên (`LogisticRegression`, `RandomForest`, `LightGBM`, `XGBoost`). Chạy Optuna HPO kết hợp 5-fold Stratified Cross-Validation để so sánh đa tiêu chí: ROC-AUC, Recall, độ trễ và tổn thất tài chính kỳ vọng (Expected Financial Loss).
+2. **Tuyển chọn Champion**: Thuật toán tối ưu (trong đó **XGBoost** vượt trội với holdout $ROC\text{-}AUC = 0.768$, chi phí rủi ro thấp nhất) được chọn làm mô hình khởi đầu.
 3. **MLflow Registry**:
-   * Log hyperparameters, metrics, model signature.
-   * Lưu artifact `model.pkl` lên MinIO S3.
-   * Đăng ký vào Model Registry với alias: **`@champion` (Version 1)**.
+   * Log đầy đủ hyperparameters, metrics, model signature, input example.
+   * Lưu artifact mô hình lên MinIO S3.
+   * Đăng ký vào Model Registry với alias: **`@champion`**.
+   * *Đặc biệt*: Hệ thống không cố định cứng một thuật toán mà thông qua MLflow Registry và Airflow Retrain để liên tục đánh giá Champion vs Challenger, tự động thăng cấp mô hình tốt hơn khi có dữ liệu mới.
 
 ### 🚀 Giai đoạn 3: Triển khai Serving & Cơ Chế Ghi Nhận Logs (Cội nguồn của Monitoring)
 * **Vấn đề cốt lõi**: *"Không có log thì không thể đo drift!"*.
@@ -173,7 +175,7 @@ flowchart TD
         ChallengerAPI --> InferenceDB
     end
 
-    subgraph ObservabilityLayer ["2. Lớp Giám Sát Hệ Thống & Đo Lường Drift (70% Trọng Tâm)"]
+    subgraph ObservabilityLayer ["2. Lớp Giám Sát Hệ Thống & Đo Lường Drift (Trọng Tâm Vận Hành)"]
         ChampionAPI -.->|Expose /metrics| Prometheus["Prometheus Server"]
         ChallengerAPI -.->|Expose /metrics| Prometheus
         Prometheus --> Grafana["Grafana Unified Dashboard<br/>(RPS, Latency, Data Drift, Drift Alerts)"]

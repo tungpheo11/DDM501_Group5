@@ -163,10 +163,10 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
         <div class="ml-step"><b>Evaluate</b><span>ROC · recall · loss</span></div>
         <div class="ml-step"><b>Register</b><span>MLflow</span></div>
       </div>
-      <div class="card mt24"><div class="row space"><div><div class="tag ok">SELECTED MODEL</div><h3 class="h3 mt12">Logistic Regression</h3></div><div style="text-align:right"><div class="metric green" style="font-size:50px">0.770</div><div class="metric-label">HOLDOUT ROC-AUC</div></div></div><p class="mt16">Hiệu năng sát các boosting model, expected loss tốt trong benchmark hiện tại, dễ giải thích và nhẹ cho serving.</p></div>
+      <div class="card mt24"><div class="row space"><div><div class="tag ok">CHAMPION MODEL</div><h3 class="h3 mt12">XGBoost</h3></div><div style="text-align:right"><div class="metric green" style="font-size:50px">0.768</div><div class="metric-label">HOLDOUT ROC-AUC</div></div></div><p class="mt16">Tuyển chọn từ Model Zoo (LR, RF, LightGBM, XGBoost) qua Optuna HPO + 5-fold CV; tự động promote/retrain qua MLflow Registry.</p></div>
     </div>
     <div class="ml-decision-visual">
-      <div class="model-chip"><div class="model-dot">LR</div><div><div class="metric-label">MODEL OUTPUT</div><h3 class="h3" style="margin:5px 0 0">Default probability = <span class="amber">0.41</span></h3></div></div>
+      <div class="model-chip"><div class="model-dot">XGB</div><div><div class="metric-label">CHAMPION INFERENCE</div><h3 class="h3" style="margin:5px 0 0">Default probability = <span class="amber">0.41</span></h3></div></div>
       <div class="pd-gauge"><div class="gauge-bar"><div class="gauge-marker"></div></div><div class="gauge-labels"><span>0.00</span><span>0.30</span><span>0.60</span><span>1.00</span></div></div>
       <div>
         <div class="decision-result"><div class="result-box">APPROVE<br><small>P &lt; .30</small></div><div class="result-box active">REVIEW<br><small>.30–.60</small></div><div class="result-box">DECLINE<br><small>P ≥ .60</small></div></div>
@@ -174,7 +174,7 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
       </div>
     </div>
   </div>
-  <aside class="notes">Nói khoảng 40 giây: Benchmark 4 thuật toán, chọn Logistic Regression (ROC-AUC 0.770) vì 3 lợi thế cho Ops: inference cực nhẹ (p95 &lt; 25ms), dễ giải thích (SHAP/LIME), tối ưu cost matrix. Model output ánh xạ vào 3 vùng APPROVE/REVIEW/DECLINE và đăng ký MLflow alias @champion.</aside>
+  <aside class="notes">Nói khoảng 40 giây: Model Zoo 4 thuật toán, pipeline tự động chạy HPO Optuna và 5-fold CV. XGBoost hiện là Champion trên MLflow Registry (ROC-AUC 0.768, chi phí rủi ro thấp nhất, p95 &lt; 25ms). Hệ thống không cố định model mà tự động retrain/promote qua Champion-Challenger gate. Output ánh xạ 3 vùng APPROVE/REVIEW/DECLINE.</aside>
 </section>
 
 
@@ -186,7 +186,7 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
     <div class="card iceberg flat">
       <div class="ice-top"><span>MODEL<br><small style="color:var(--muted);font-weight:500">train · metrics</small></span></div>
       <div class="water"></div>
-      <div class="ice-bottom"><div style="width:100%"><div style="font-size:24px;font-weight:800;margin-bottom:18px">Trọng tâm 70%: Hạ tầng kỹ thuật &amp; vận hành MLOps</div><div class="ops-cloud">
+      <div class="ice-bottom"><div style="width:100%"><div style="font-size:24px;font-weight:800;margin-bottom:18px">Trọng tâm cốt lõi: Hạ tầng kỹ thuật &amp; vận hành MLOps</div><div class="ops-cloud">
         <div class="ops-pill">CI/CD</div><div class="ops-pill">Registry</div><div class="ops-pill">Serving</div>
         <div class="ops-pill">Monitoring</div><div class="ops-pill">Alerting</div><div class="ops-pill">Runbook</div>
         <div class="ops-pill">Drift</div><div class="ops-pill">Retrain</div><div class="ops-pill">Rollback</div>

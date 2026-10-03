@@ -26,7 +26,7 @@ Mục tiêu hoàn thành khoảng **13:45–14:00**, để dành thời gian cho
 
 Nhóm 5 xin báo cáo đồ án cuối môn với đề tài **Credit Default Risk Scoring — Từ bài toán nghiệp vụ đến Production MLOps**.
 
-Bám sát định hướng của môn học: phần Machine Learning chiếm 30% để chuẩn bị scoring artifact, và **70% trọng tâm là toàn bộ kiến trúc vận hành MLOps**.
+Bám sát định hướng của môn học: bài toán Machine Learning đóng vai trò là nền tảng khởi đầu, và **toàn bộ trọng tâm của đồ án là kiến trúc vận hành MLOps trong production**.
 
 Mục tiêu cốt lõi của đồ án không phải chạy đua thuật toán phức tạp trong notebook, mà là:
 
@@ -56,18 +56,19 @@ Vì vậy, bài toán không thể chỉ tối ưu accuracy, mà đòi hỏi thi
 ## SLIDE 3 — THIẾT LẬP ML PHỤC VỤ TẦNG OPS
 ### ~40 giây
 
-“Để chuẩn bị artifact cho tầng vận hành, nhóm đóng gói ML pipeline chuẩn: validate schema bằng Pandera, trích xuất 12 features đặc trưng như tỷ lệ sử dụng hạn mức (utilization) và xu hướng trễ hạn.
+“Để chuẩn bị artifact cho tầng vận hành, nhóm đóng gói ML pipeline chuẩn: validate schema bằng Pandera, trích xuất 12 features đặc trưng (như credit utilization và xu hướng trễ hạn).
 
-Sau khi benchmark 4 thuật toán qua cross-validation, nhóm chọn **Logistic Regression** với holdout ROC-AUC đạt **0.770**.
+Nhóm thiết lập **Model Zoo gồm 4 thuật toán ứng viên**: Logistic Regression, Random Forest, LightGBM và XGBoost. Pipeline tích hợp Optuna HPO và 5-fold Cross-Validation để so sánh đa tiêu chí: ROC-AUC, Recall, độ trễ và đặc biệt là tổn thất tài chính kỳ vọng (Expected Loss).
 
-Mô hình này có hiệu năng tương đương các boosting model nhưng mang 3 lợi thế quyết định cho Ops: **inference cực nhẹ (p95 dưới 25ms), dễ giải thích qua SHAP/LIME, và tối ưu chi phí theo ma trận rủi ro**.
+Qua đánh giá tự động trên MLflow, **XGBoost** là mô hình vượt trội và hiện đang giữ vị trí **`@champion`** trên Model Registry (ROC-AUC ~0.768, chi phí rủi ro thấp nhất và p95 latency dưới 25ms).
 
-Đầu ra xác suất được ánh xạ trực tiếp thành **Decision Engine 3 vùng**:
+Điểm mấu chốt là **hệ thống không cố định cứng một thuật toán**: thông qua MLflow Registry và Airflow Retrain, pipeline sẽ tự động so sánh Champion vs Challenger trên dữ liệu mới để quyết định thăng cấp mô hình tốt hơn mà không cần can thiệp thủ công.
+
+Đầu ra xác suất của mô hình được ánh xạ trực tiếp thành **Decision Engine 3 vùng**:
 - **APPROVE** (xác suất vỡ nợ dưới 0.30: duyệt tự động)
 - **REVIEW** (0.30 đến 0.60: chuyển thẩm định viên rủi ro kèm reason codes)
-- **DECLINE** (từ 0.60 trở lên: từ chối tự động).
+- **DECLINE** (từ 0.60 trở lên: từ chối tự động).”
 
-Toàn bộ tham số và model artifact được version hóa, đăng ký lên **MLflow Registry** với alias **`@champion`**.”
 
 **[Slide 4]**
 
