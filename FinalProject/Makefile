@@ -114,7 +114,7 @@ up: ## Build + start the stack (COMPOSE_PROFILES, default all) and wait until ev
 	$(COMPOSE) up -d --build --remove-orphans
 	@$(MAKE) --no-print-directory health
 
-up-core: ## Start only the core profile (postgres, minio, mlflow, api)
+up-core: ## Start only the core profile (postgres, minio, mlflow, api, staff-portal)
 	@$(MAKE) --no-print-directory up COMPOSE_PROFILES=core
 
 up-prod: ## Start the stack with the production overlay (127.0.0.1 ports, no source mounts)
@@ -240,6 +240,10 @@ alerts-send-test: ## Push a synthetic AlertmanagerTest alert to every receiver (
 
 # --- Serving API --------------------------------------------------------------
 API_IMAGE ?= credit-risk-api:dev
+PORTAL_IMAGE ?= credit-risk-staff-portal:dev
+# `make scan` scans API_IMAGE by default; scan-portal reuses it for PORTAL_IMAGE.
+SCAN_IMAGE ?= $(API_IMAGE)
+SCAN_REPORT ?= trivy-report.json
 # Pinned by digest: mutable Trivy tags were hijacked in the March 2026 supply-chain incident.
 TRIVY_IMAGE ?= aquasec/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969
 TRIVY_CACHE_DIR ?= $(HOME)/.cache/trivy
@@ -249,7 +253,7 @@ TRIVY := docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(TRIVY
 	-v $(TRIVY_TMP_DIR):/trivy-tmp -e TMPDIR=/trivy-tmp -v $(CURDIR)/reports/security:/reports $(TRIVY_IMAGE)
 BENCH_REQUESTS ?= 500
 
-.PHONY: openapi serve bench docker-build scan
+.PHONY: openapi serve serve-portal bench docker-build docker-build-portal scan scan-portal
 
 openapi: ## Regenerate docs/openapi.yaml from the FastAPI app
 	$(PY) scripts/export_openapi.py
@@ -261,14 +265,24 @@ bench: ## p95 latency of POST /api/v1/predict against API_URL (fails above 100 m
 	$(PY) scripts/benchmark_latency.py --api-url $(API_URL) --requests $(BENCH_REQUESTS) \
 	  --output reports/latency_benchmark.json
 
+serve-portal: ## Run the staff portal locally on http://localhost:$(or $(PORTAL_PORT),18030) against API_URL (auto-reload)
+	set -a; . "$(abspath $(ENV_FILE))"; set +a; PORTAL_API_URL=$(or $(API_URL),http://localhost:18020) \
+	  $(BIN)/uvicorn staff_portal.app:app --app-dir services --reload --port $(or $(PORTAL_PORT),18030) --no-access-log
+
 docker-build: ## Build the API image (API_IMAGE)
 	docker build -f deploy/docker/Dockerfile.api -t $(API_IMAGE) .
 
-scan: ## Trivy scan of API_IMAGE -> reports/security/trivy-report.json; fails on CRITICAL vulnerabilities
+docker-build-portal: ## Build the staff portal image (PORTAL_IMAGE)
+	docker build -f services/staff_portal/Dockerfile -t $(PORTAL_IMAGE) .
+
+scan: ## Trivy scan of SCAN_IMAGE (default API_IMAGE) -> reports/security/SCAN_REPORT; fails on CRITICAL vulnerabilities
 	@mkdir -p reports/security $(TRIVY_CACHE_DIR) $(TRIVY_TMP_DIR)
-	$(TRIVY) image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 0 $(API_IMAGE)
-	$(TRIVY) image --scanners vuln --skip-db-update --format json --output /reports/trivy-report.json $(API_IMAGE)
-	$(TRIVY) image --scanners vuln --skip-db-update --severity CRITICAL --exit-code 1 $(API_IMAGE)
+	$(TRIVY) image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 0 $(SCAN_IMAGE)
+	$(TRIVY) image --scanners vuln --skip-db-update --format json --output /reports/$(SCAN_REPORT) $(SCAN_IMAGE)
+	$(TRIVY) image --scanners vuln --skip-db-update --severity CRITICAL --exit-code 1 $(SCAN_IMAGE)
+
+scan-portal: ## Trivy scan of PORTAL_IMAGE -> reports/security/trivy-report-portal.json
+	@$(MAKE) --no-print-directory scan SCAN_IMAGE=$(PORTAL_IMAGE) SCAN_REPORT=trivy-report-portal.json
 
 # --- Responsible AI -----------------------------------------------------------
 RETENTION_DAYS ?= 90
@@ -293,14 +307,15 @@ TEST_SUITES ?= unit integration data_quality model_validation
 SMOKE_PROJECT ?= credit-risk-smoke
 SMOKE_TIMEOUT ?= 300
 ACTIONLINT_IMAGE ?= rhysd/actionlint:1.7.12
-IMAGE_COMPOSE = API_IMAGE=$(API_IMAGE) docker compose -p $(SMOKE_PROJECT) -f $(COMPOSE_FILE) \
-	-f deploy/compose/docker-compose.image.yml --env-file $(ENV_FILE)
+IMAGE_COMPOSE = API_IMAGE=$(API_IMAGE) PORTAL_IMAGE=$(PORTAL_IMAGE) docker compose -p $(SMOKE_PROJECT) \
+	-f $(COMPOSE_FILE) -f deploy/compose/docker-compose.image.yml --env-file $(ENV_FILE)
 SMOKE_API_KEY = $(shell sed -n 's/^API_KEYS=//p' $(ENV_FILE) | cut -d, -f1 | tr -d '[:space:]')
 SMOKE_API_URL = http://localhost:$(or $(shell sed -n 's/^API_PORT=//p' $(ENV_FILE) | tr -d '[:space:]'),18020)
+SMOKE_PORTAL_URL = http://localhost:$(or $(shell sed -n 's/^PORTAL_PORT=//p' $(ENV_FILE) | tr -d '[:space:]'),18030)
 
 .PHONY: ci test-ci smoke actionlint
 
-ci: lint test-ci docker-build scan smoke ## Whole CI pipeline locally, in the same order as GitHub Actions
+ci: lint test-ci docker-build docker-build-portal scan scan-portal smoke ## Whole CI pipeline locally, in the same order as GitHub Actions
 
 test-ci: ## unit + integration + data_quality + model_validation, combined coverage gate >= COV_MIN
 	@rm -f .coverage && mkdir -p reports/coverage
@@ -313,9 +328,11 @@ test-ci: ## unit + integration + data_quality + model_validation, combined cover
 	$(BIN)/coverage xml -o reports/coverage/coverage.xml
 	$(BIN)/coverage html -d reports/coverage/html
 
-smoke: ## Compose smoke test of the prebuilt API_IMAGE: up -> health -> predict -> down
-	@{ $(IMAGE_COMPOSE) up -d --no-build api \
-	  && API_URL=$(SMOKE_API_URL) API_KEY=$(SMOKE_API_KEY) SMOKE_TIMEOUT=$(SMOKE_TIMEOUT) deploy/scripts/smoke_test.sh; } \
+smoke: ## Compose smoke test of the prebuilt API_IMAGE + PORTAL_IMAGE: up -> health -> predict -> portal login/403/score -> down
+	@{ $(IMAGE_COMPOSE) up -d --no-build api staff-portal \
+	  && API_URL=$(SMOKE_API_URL) API_KEY=$(SMOKE_API_KEY) SMOKE_TIMEOUT=$(SMOKE_TIMEOUT) deploy/scripts/smoke_test.sh \
+	  && ( set -a; . "$(abspath $(ENV_FILE))"; set +a; PORTAL_URL=$(SMOKE_PORTAL_URL) API_KEY=$(SMOKE_API_KEY) \
+	       SMOKE_TIMEOUT=$(SMOKE_TIMEOUT) deploy/scripts/smoke_portal.sh ); } \
 	  || { $(IMAGE_COMPOSE) ps -a; $(IMAGE_COMPOSE) logs --no-color --tail=200; $(IMAGE_COMPOSE) down -v; exit 1; }
 	$(IMAGE_COMPOSE) down -v
 

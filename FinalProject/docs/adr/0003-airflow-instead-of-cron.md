@@ -7,7 +7,7 @@ Vòng lặp MLOps có nhiều bước phụ thuộc nhau: kiểm tra sức kho�
 - Nhánh điều kiện (drift / không drift, pass / fail gate) và retry có kiểm soát.
 - Lịch chạy định kỳ **và** trigger theo sự kiện (alert `DataDriftDetected`).
 - Quan sát được lịch sử chạy, log từng task, trạng thái thất bại → alert `RetrainFailed`.
-- Tham chiếu kỹ thuật của môn học (`course02-airflow`, `tutorial07`) dùng Airflow.
+- Self-hosted trong cùng Docker Compose với phần còn lại của stack, không phụ thuộc dịch vụ cloud bên ngoài.
 
 ## Decision
 
@@ -31,7 +31,7 @@ DAG chỉ là lớp điều phối mỏng; mọi logic nằm trong package `cred
 | Phương án | Ưu điểm | Nhược điểm | Lý do không chọn |
 |---|---|---|---|
 | cron + shell script | Nhẹ, có sẵn trên Ubuntu | Không có dependency/branching, retry, UI, lịch sử; lỗi im lặng | Không quan sát được, khó chứng minh vòng lặp khép kín |
-| Prefect | API Python hiện đại, nhẹ hơn Airflow | Không nằm trong tài liệu môn học; server/cloud tách biệt | Chi phí học + lệch tham chiếu tutorial07 |
-| Dagster | Asset-based lineage tốt | Mô hình mới cho team | Như trên |
+| Prefect | API Python hiện đại, nhẹ hơn Airflow | Self-hosted cần chạy Prefect server riêng, một số tính năng (automation, RBAC) gắn với Prefect Cloud; hệ sinh thái operator/provider nhỏ hơn | Airflow đã đáp ứng đủ branching/retry/lịch/UI và chạy hoàn toàn self-hosted; đổi sang Prefect không thêm năng lực cần thiết |
+| Dagster | Asset-based lineage tốt | Mô hình asset khác với luồng task tuần tự của pipeline | 3 DAG dạng task tuần tự không cần lineage theo asset; lợi ích không bù chi phí chuyển đổi |
 | Kubeflow Pipelines | Chuẩn ML trên K8s | Bắt buộc Kubernetes (xem ADR-0005) | Over-engineering |
 | APScheduler trong API | Không thêm service | Trộn orchestration vào serving, khó scale/observe | Vi phạm tách trách nhiệm |

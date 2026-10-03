@@ -135,7 +135,7 @@ Project Compose `credit-risk-mlops`: 15 service (12 long-running + 3 job one-sho
 | Tracking / registry | MLflow + PostgreSQL + MinIO | Alias registry cho hot reload; self-hosted; giống kiến trúc S3 thật | W&B (SaaS), DVC (không registry runtime) | [0002](adr/0002-mlflow-minio-postgres.md) |
 | Serving | FastAPI + Uvicorn, model in-process | OpenAPI tự sinh, Pydantic validate, p95 18.79 ms | Flask, BentoML, Triton | [0001](adr/0001-serving-with-fastapi.md) |
 | Drift | Evidently + PSI tự cài | PSI dễ giải thích cho tín dụng; Evidently cho test thống kê + HTML | Alibi Detect, NannyML, SaaS | [0004](adr/0004-evidently-for-drift.md) |
-| Orchestration | Apache Airflow 2.10 | Branching, retry, lịch + trigger, UI/lịch sử làm evidence; theo tutorial07 | cron, Prefect, Dagster, Kubeflow | [0003](adr/0003-airflow-instead-of-cron.md) |
+| Orchestration | Apache Airflow 2.10 | Branching, retry, lịch + trigger, UI/lịch sử làm evidence | cron, Prefect, Dagster, Kubeflow | [0003](adr/0003-airflow-instead-of-cron.md) |
 | Monitoring | Prometheus + Alertmanager + Grafana (provisioning as code), statsd-exporter | Chuẩn de facto, pull-based, rule có unit test (`promtool`) | ELK, Datadog (SaaS) | — |
 | Runtime | Docker Compose v2 + profiles; Ubuntu + Nginx + systemd | 1 lệnh dựng stack; giống nhau laptop ↔ VM; đủ cho 1 node | Kubernetes, Swarm | [0005](adr/0005-docker-compose-instead-of-kubernetes.md) |
 | Responsible AI | Fairlearn, SHAP, LIME | Metric fairness + mitigation chuẩn; 2 phương pháp XAI để đối chiếu | AIF360 (nặng hơn), chỉ feature importance | — |

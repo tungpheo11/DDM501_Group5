@@ -2,7 +2,7 @@
 # Paths are relative to this file (deploy/compose/). Start via `make up` from FinalProject/.
 #
 # Profiles (COMPOSE_PROFILES, default in the Makefile: core,monitoring,orchestration):
-#   core           postgres, minio, mlflow, model-bootstrap, api
+#   core           postgres, minio, mlflow, model-bootstrap, api, staff-portal
 #   monitoring     drift-monitor, prometheus, alertmanager, alert-webhook, grafana, statsd-exporter
 #   orchestration  airflow-init, airflow-webserver, airflow-scheduler
 # Cross-profile dependencies are `required: false` so each profile also starts on its own.
@@ -276,6 +276,63 @@ services:
       resources:
         # ~350 MB per worker plus headroom for a hot reload / SHAP explanations.
         limits: {cpus: "2.0", memory: 1536M}
+    logging: *default-logging
+
+  # Bank staff UI (customer service, risk analyst, system admin). Calls the API over
+  # HTTP like any client; the API key stays inside this container (ADR-0008).
+  staff-portal:
+    build:
+      context: ../..
+      dockerfile: services/staff_portal/Dockerfile
+    image: ${PORTAL_BUILD_IMAGE:-credit-risk-staff-portal:local}
+    profiles: ["core"]
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    environment:
+      APP_ENV: docker
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-mlops}:${POSTGRES_PASSWORD:-mlopspass}@postgres:5432/${POSTGRES_DB:-credit_mlops_db}
+      PORTAL_API_URL: http://api:8000
+      # PORTAL_API_KEY defaults to API_KEY, then to the first API_KEYS entry.
+      API_KEYS: ${API_KEYS:?set API_KEYS in .env (see .env.example)}
+      API_KEY: ${API_KEY:-}
+      PORTAL_API_KEY: ${PORTAL_API_KEY:-}
+      PORTAL_DEMO_MODE: ${PORTAL_DEMO_MODE:-true}
+      # Local-development defaults (same values as .env.example); the production overlay drops them.
+      PORTAL_SESSION_SECRET: ${PORTAL_SESSION_SECRET:-local-portal-session-secret-change-me}
+      PORTAL_COOKIE_SECURE: ${PORTAL_COOKIE_SECURE:-false}
+      PORTAL_CSKH_USERNAME: ${PORTAL_CSKH_USERNAME:-cskh}
+      PORTAL_CSKH_PASSWORD: ${PORTAL_CSKH_PASSWORD:-Cskh@2026}
+      PORTAL_CSKH_PASSWORD_HASH: ${PORTAL_CSKH_PASSWORD_HASH:-}
+      PORTAL_ANALYST_USERNAME: ${PORTAL_ANALYST_USERNAME:-chuyenvien}
+      PORTAL_ANALYST_PASSWORD: ${PORTAL_ANALYST_PASSWORD:-RuiRo@2026}
+      PORTAL_ANALYST_PASSWORD_HASH: ${PORTAL_ANALYST_PASSWORD_HASH:-}
+      PORTAL_ADMIN_USERNAME: ${PORTAL_ADMIN_USERNAME:-admin}
+      PORTAL_ADMIN_PASSWORD: ${PORTAL_ADMIN_PASSWORD:-QuanTri@2026}
+      PORTAL_ADMIN_PASSWORD_HASH: ${PORTAL_ADMIN_PASSWORD_HASH:-}
+      PORTAL_SIMULATE_RATE_PER_SECOND: ${PORTAL_SIMULATE_RATE_PER_SECOND:-20}
+      DRIFT_MONITOR_URL: http://drift-monitor:8085
+      # Links opened by the staff browser, not by the container.
+      PORTAL_GRAFANA_URL: ${PORTAL_GRAFANA_URL:-http://localhost:13000}
+      PORTAL_MLFLOW_URL: ${PORTAL_MLFLOW_URL:-http://localhost:15040}
+      PORTAL_AIRFLOW_URL: ${PORTAL_AIRFLOW_URL:-http://localhost:18080}
+      PORTAL_ALERTMANAGER_URL: ${PORTAL_ALERTMANAGER_URL:-http://localhost:19093}
+      PORTAL_DRIFT_MONITOR_PUBLIC_URL: ${PORTAL_DRIFT_MONITOR_PUBLIC_URL:-http://localhost:18085}
+    ports:
+      - "${PORTAL_PORT:-18030}:8030"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8030/health', timeout=4)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    deploy:
+      resources:
+        limits: {cpus: "1.0", memory: 512M}
     logging: *default-logging
 
   # ===========================================================================

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="htmx-config" content='{"includeIndicatorStyles": false, "allowEval": false, "allowScriptTags": false, "selfRequestsOnly": true, "responseHandling": [{"code": "204", "swap": false}, {"code": "[23]..", "swap": true}, {"code": "[45]..", "swap": true, "error": true}]}'>
+  <title>{% block title %}Cổng nghiệp vụ{% endblock %} · Quản lý hạn mức thẻ</title>
+  <link rel="stylesheet" href="/static/css/tokens.css">
+  <link rel="stylesheet" href="/static/css/portal.css">
+  <script src="/static/vendor/htmx-2.0.11.min.js" defer></script>
+  <script src="/static/js/portal.js" defer></script>
+</head>
+<body hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'>
+{% block body %}
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="{{ home_url }}">
+        <span class="brand__mark" aria-hidden="true">CL</span>
+        <span>Quản lý hạn mức thẻ <span class="brand__sub">· Cổng nghiệp vụ</span></span>
+      </a>
+      {% if user %}
+      <nav class="nav" aria-label="Điều hướng chính">
+        {% if user.role == "cskh" %}
+          <a href="/cskh" {% if path.startswith("/cskh") %}aria-current="page"{% endif %}>Tra cứu chủ thẻ</a>
+        {% elif user.role == "analyst" %}
+          <a href="/analyst" {% if path == "/analyst" or path.startswith("/analyst/cases") %}aria-current="page"{% endif %}>Hàng đợi xem xét</a>
+          <a href="/analyst/batch" {% if path.startswith("/analyst/batch") %}aria-current="page"{% endif %}>Rà soát theo lô</a>
+          <a href="/analyst/early-warning" {% if path.startswith("/analyst/early-warning") %}aria-current="page"{% endif %}>Cảnh báo sớm</a>
+        {% elif user.role == "admin" %}
+          <a href="/admin" {% if path.startswith("/admin") %}aria-current="page"{% endif %}>Bảng điều khiển hệ thống</a>
+        {% endif %}
+      </nav>
+      <div class="userbox">
+        <span><strong>{{ user.display_name }}</strong><br><span class="userbox__role">{{ role_labels[user.role] }}</span></span>
+        <form method="post" action="/logout">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="btn btn--ghost btn--sm" type="submit">Đăng xuất</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </header>
+  {% if demo_mode and user %}
+  <div class="demo-banner" role="note">Chế độ demo: dữ liệu chủ thẻ là giả lập, chức năng xoá log đang bật.</div>
+  {% endif %}
+  <main class="page" id="main">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">Credit Line Management · Staff Portal v{{ portal_version }} · Giờ hiển thị UTC+{{ utc_offset }}</footer>
+{% endblock %}
+</body>
+</html>

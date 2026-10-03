@@ -1,0 +1,54 @@
+{% set running = job and job.running %}
+<div {% if running %}hx-get="/admin/simulate/status" hx-trigger="every 2s" hx-target="#simulation" hx-swap="innerHTML"{% endif %}>
+{% if running %}
+  <div class="alert alert--info" role="status">
+    <p><strong>Đang chạy:</strong> {{ job.source_label }} · {{ job.attempted }} / {{ job.requested }} request · bắt đầu {{ job.started_at|dt }} bởi {{ job.started_by }}</p>
+  </div>
+{% endif %}
+{% if job %}
+  <progress max="{{ job.requested }}" value="{{ job.attempted }}" aria-label="Tiến độ simulate"></progress>
+  <dl class="metrics">
+    <div class="metric"><dt>Đã gửi</dt><dd>{{ job.attempted }} / {{ job.requested }}</dd></div>
+    <div class="metric"><dt>Thành công</dt><dd>{{ job.succeeded }}</dd></div>
+    <div class="metric"><dt>Lỗi</dt><dd>{{ job.errors }}</dd></div>
+    {% for d, n in job.decisions.items() %}
+    <div class="metric"><dt><span class="badge badge--{{ d }}">{{ d }}</span></dt><dd>{{ n }}</dd></div>
+    {% endfor %}
+  </dl>
+  {% if job.last_error %}<p class="small muted">Lỗi gần nhất: <code>{{ job.last_error }}</code></p>{% endif %}
+  {% if not running %}
+  <div class="alert {% if job.status == 'completed' %}alert--ok{% else %}alert--warn{% endif %}">
+    <p>Job #{{ job.job_id }} ({{ job.source_label }}) {% if job.status == "completed" %}đã hoàn tất{% elif job.status == "stopped" %}đã dừng bởi {{ job.stopped_by }}{% else %}thất bại{% endif %}
+      lúc {{ job.finished_at|dt }}: {{ job.succeeded }} request thành công → {{ job.succeeded }} dòng mới trong <code>inference_logs</code>.</p>
+  </div>
+  {% endif %}
+{% endif %}
+{% if running %}
+  <form method="post" action="/admin/simulate/stop" hx-post="/admin/simulate/stop" hx-target="#simulation" hx-swap="innerHTML">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn btn--danger" type="submit">Dừng job</button>
+  </form>
+{% else %}
+  <form method="post" action="/admin/simulate" hx-post="/admin/simulate" hx-target="#simulation" hx-swap="innerHTML" hx-disabled-elt="find button">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="inline-fields">
+      <div class="field">
+        <span class="visually-hidden" id="source-label">Nguồn dữ liệu</span>
+        <div class="radio-list" role="radiogroup" aria-labelledby="source-label">
+          {% for key, label in sources.items() %}
+          <label><input type="radio" name="source" value="{{ key }}" {% if loop.first %}checked{% endif %}> {{ label }}</label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="field">
+        <label for="sim-count">Số request (1–{{ max_count }})</label>
+        <input id="sim-count" name="count" type="number" min="1" max="{{ max_count }}" value="{{ default_count }}" required>
+        <div class="field__hint">Gửi tuần tự tới <code>/api/v1/predict</code>, tối đa {{ rate|number(0) }} request/giây.</div>
+      </div>
+      <div class="field"><button class="btn" type="submit">Chạy simulate</button></div>
+    </div>
+    <p class="small muted">“Chủ thẻ dưới 30 tuổi” lấy từ <code>stream_drifted.csv</code> (5.000 chủ thẻ AGE &lt; 30): khi đủ cửa sổ drift
+      (mặc định 500 dòng mới nhất), drift monitor báo drift, Alertmanager gửi cảnh báo và Airflow có thể retrain.</p>
+  </form>
+{% endif %}
+</div>

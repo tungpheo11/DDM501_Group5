@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cảnh báo sớm · Chuyên viên rủi ro · Cổng nghiệp vụ hạn mức thẻ</title>
+  <link rel="stylesheet" href="../tokens.css">
+  <link rel="stylesheet" href="../components.css">
+  <link rel="stylesheet" href="assets/mockup.css">
+  <script src="assets/mockup.js" defer></script>
+</head>
+<body data-states="data|Có dữ liệu;loading|Đang tải;empty|Rỗng;error|Lỗi">
+<div class="app">
+  <header class="app-header">
+    <a class="app-brand" href="#">
+      <span class="app-brand__mark">HM</span>
+      <span class="app-brand__text">
+        <span class="app-brand__name">Ngân hàng Demo</span>
+        <span class="app-brand__sub">Cổng nghiệp vụ hạn mức thẻ</span>
+      </span>
+    </a>
+    <span class="env-tag">DEMO</span>
+    <span class="app-header__spacer"></span>
+    <div class="app-user">
+      <div class="app-user__meta">
+        <span class="app-user__name">Thu Trang</span>
+        <span class="role-chip"><svg class="icon"><use href="#i-shield"/></svg>Chuyên viên rủi ro tín dụng</span>
+      </div>
+      <span class="avatar" aria-hidden="true">TT</span>
+      <form method="post" action="/logout">
+        <button class="btn-logout" type="submit"><svg class="icon"><use href="#i-logout"/></svg>Đăng xuất</button>
+      </form>
+    </div>
+  </header>
+  <div class="demo-banner"><svg class="icon"><use href="#i-info"/></svg>Môi trường demo — tên, mã khách hàng và số thẻ đều là dữ liệu giả lập.</div>
+
+  <div class="app-body">
+    <nav class="app-nav" aria-label="Điều hướng chính">
+      <div class="app-nav__group">
+        <span class="app-nav__label">Xem xét</span>
+        <a class="app-nav__link" href="03-analyst-queue.html"><svg class="icon"><use href="#i-inbox"/></svg>Hàng đợi REVIEW<span class="app-nav__count">12</span></a>
+        <a class="app-nav__link" href="05-analyst-batch.html"><svg class="icon"><use href="#i-layers"/></svg>Rà soát theo lô</a>
+        <a class="app-nav__link" href="#" aria-current="page"><svg class="icon"><use href="#i-bell"/></svg>Cảnh báo sớm</a>
+      </div>
+      <div class="app-nav__foot">Model đang phục vụ: <strong>v1</strong> · ngưỡng 0,30 / 0,60</div>
+    </nav>
+
+    <main class="app-main">
+      <div class="app-main__inner">
+        <div class="page-header">
+          <div>
+            <h1 class="page-header__title">Danh sách cảnh báo sớm</h1>
+            <p class="page-header__desc">Chủ thẻ có dấu hiệu xấu đi sau kỳ sao kê 09/2026. Dùng để theo dõi và liên hệ nhắc nợ mềm.</p>
+          </div>
+          <div class="page-header__actions">
+            <a class="btn btn--secondary" href="#"><svg class="icon"><use href="#i-download"/></svg>Tải CSV</a>
+          </div>
+        </div>
+
+        <div class="alert alert--info">
+          <svg class="icon"><use href="#i-eye"/></svg>
+          <div class="alert__body">
+            <span class="alert__title">Chỉ theo dõi</span>
+            <p>Danh sách này không thay đổi hạn mức và <strong>không tự động chuyển tài khoản sang thu hồi nợ</strong>. Muốn hạ hoặc tạm khoá hạn mức, hãy chạy rà soát theo lô để tạo ca xem xét.</p>
+          </div>
+        </div>
+
+        <section class="card" aria-labelledby="wl-title">
+          <h2 class="sr-only" id="wl-title">Chủ thẻ cần theo dõi</h2>
+          <form class="filters" method="get" action="/analyst/watchlist">
+            <div class="field">
+              <label class="label" for="rule">Tiêu chí</label>
+              <select class="select" id="rule" name="rule"><option>Tất cả cảnh báo</option><option>Xác suất vỡ nợ ≥ 60&nbsp;%</option><option>Tăng ≥ 10 điểm % so với kỳ trước</option><option>Vừa phát sinh trễ hạn</option></select>
+            </div>
+            <div class="field">
+              <label class="label" for="wl-cycle">Kỳ sao kê</label>
+              <select class="select" id="wl-cycle" name="cycle"><option>09/2026</option><option>08/2026</option></select>
+            </div>
+            <div class="filters__actions"><button class="btn btn--secondary" type="submit"><svg class="icon"><use href="#i-filter"/></svg>Áp dụng</button></div>
+          </form>
+
+          <div class="table-wrap" data-show="data loading">
+            <table class="table">
+              <thead><tr><th>Chủ thẻ</th><th class="num">Xác suất vỡ nợ</th><th class="num">So với kỳ trước</th><th>Thanh toán kỳ gần nhất</th><th class="num col-optional">Đã dùng hạn mức</th><th>Lý do cảnh báo</th></tr></thead>
+              <tbody data-show="loading">
+                <tr><td colspan="6"><span class="skeleton"></span></td></tr>
+                <tr><td colspan="6"><span class="skeleton" style="width: 90%"></span></td></tr>
+                <tr><td colspan="6"><span class="skeleton" style="width: 95%"></span></td></tr>
+              </tbody>
+              <tbody data-show="data">
+                <tr>
+                  <td><span class="table__primary">Phạm Đức Long</span><span class="table__secondary">KH-007781 · **** 0954</span></td>
+                  <td class="num"><span class="badge badge--decline">71,8&nbsp;%</span></td>
+                  <td class="num" style="color:var(--decline-fg)"><svg class="icon"><use href="#i-arrow-up"/></svg> +18,2 điểm</td>
+                  <td><span class="badge badge--decline">Trễ 2 tháng</span></td>
+                  <td class="num col-optional">97,5&nbsp;%</td>
+                  <td>Xác suất ≥ 60&nbsp;% · vừa trễ hạn</td>
+                </tr>
+                <tr>
+                  <td><span class="table__primary">Trịnh Văn Phúc</span><span class="table__secondary">KH-009034 · **** 6625</span></td>
+                  <td class="num"><span class="badge badge--decline">64,0&nbsp;%</span></td>
+                  <td class="num" style="color:var(--decline-fg)"><svg class="icon"><use href="#i-arrow-up"/></svg> +6,5 điểm</td>
+                  <td><span class="badge badge--review">Trễ 1 tháng</span></td>
+                  <td class="num col-optional">88,1&nbsp;%</td>
+                  <td>Xác suất ≥ 60&nbsp;%</td>
+                </tr>
+                <tr>
+                  <td><span class="table__primary">Bùi Ngọc Hân</span><span class="table__secondary">KH-003377 · **** 2093</span></td>
+                  <td class="num"><span class="badge badge--review">57,9&nbsp;%</span></td>
+                  <td class="num" style="color:var(--decline-fg)"><svg class="icon"><use href="#i-arrow-up"/></svg> +12,3 điểm</td>
+                  <td><span class="badge badge--neutral">Trả tối thiểu</span></td>
+                  <td class="num col-optional">74,0&nbsp;%</td>
+                  <td>Tăng ≥ 10 điểm %</td>
+                </tr>
+                <tr>
+                  <td><span class="table__primary">Lê Hoàng Yến</span><span class="table__secondary">KH-002984 · **** 1167</span></td>
+                  <td class="num"><span class="badge badge--review">52,1&nbsp;%</span></td>
+                  <td class="num" style="color:var(--decline-fg)"><svg class="icon"><use href="#i-arrow-up"/></svg> +10,8 điểm</td>
+                  <td><span class="badge badge--review">Trễ 1 tháng</span></td>
+                  <td class="num col-optional">69,4&nbsp;%</td>
+                  <td>Tăng ≥ 10 điểm % · vừa trễ hạn</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-foot" data-show="data"><span>4 chủ thẻ · cập nhật sau job rà soát kỳ 09/2026 lúc 02:00, 03/10/2026</span></div>
+
+          <div class="empty-state" data-show="empty">
+            <span class="empty-state__icon" style="background:var(--success-bg);color:var(--success-fg)"><svg class="icon icon--xl"><use href="#i-check-circle"/></svg></span>
+            <p class="empty-state__title">Không có chủ thẻ nào cần theo dõi ở kỳ 09/2026</p>
+            <p class="empty-state__desc">Danh sách được cập nhật sau mỗi lần rà soát theo lô. Nếu chưa chạy lô nào cho kỳ này, hãy chạy rà soát trước.</p>
+            <div class="empty-state__actions"><a class="btn btn--secondary" href="05-analyst-batch.html"><svg class="icon"><use href="#i-layers"/></svg>Rà soát theo lô</a></div>
+          </div>
+
+          <div class="empty-state empty-state--error" role="alert" data-show="error">
+            <span class="empty-state__icon"><svg class="icon icon--xl"><use href="#i-alert-octagon"/></svg></span>
+            <p class="empty-state__title">Không tải được danh sách cảnh báo</p>
+            <p class="empty-state__desc">Cơ sở dữ liệu của cổng không phản hồi. Thử lại sau ít phút.</p>
+            <div class="empty-state__actions"><button class="btn btn--secondary" type="button"><svg class="icon"><use href="#i-refresh"/></svg>Thử lại</button></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+</body>
+</html>

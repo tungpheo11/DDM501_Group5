@@ -1,0 +1,21 @@
+{% set state = readiness.get("status", "unreachable") %}
+<dl class="facts">
+  <dt>API chấm điểm</dt>
+  <dd><span class="badge {% if state == 'ready' %}badge--ok{% elif state == 'degraded' %}badge--warn{% else %}badge--bad{% endif %}">{{ state }}</span>
+    {% for reason in readiness.get("reasons", []) %}<br><span class="small muted">{{ reason }}</span>{% endfor %}</dd>
+  <dt>Model đang phục vụ</dt>
+  <dd>{% if model %}{{ model.model_name }} @{{ model.model_alias }} · version <strong>{{ model.model_version }}</strong>
+      <br><span class="small muted">{{ model.model_type }} · nguồn {{ model.source }}{% if model.degraded %} (fallback){% endif %} · nạp lúc {{ model.loaded_at_dt|dt }}</span>
+      <br><span class="small muted">Ngưỡng REVIEW {{ model.thresholds.review }} · DECLINE {{ model.thresholds.decline }}</span>
+    {% else %}<span class="badge badge--bad">không lấy được</span>{% endif %}</dd>
+  <dt>Cơ sở dữ liệu</dt>
+  <dd><span class="badge {% if database_ok %}badge--ok{% else %}badge--bad{% endif %}">{{ "ok" if database_ok else "down" }}</span></dd>
+  <dt>Drift monitor</dt>
+  <dd>{% if drift %}
+      <span class="badge {% if drift.is_drifted %}badge--bad{% else %}badge--ok{% endif %}">{{ "DRIFT" if drift.is_drifted else "Không drift" }}</span>
+      <span class="small">max PSI {{ "%.3f"|format(drift.max_psi or 0) }} · drift share {{ drift.drift_share|percent }} · {{ drift.current_samples }} mẫu</span>
+      {% if drift.drifted_columns %}<br><span class="small muted">Cột drift: {{ drift.drifted_columns|join(", ") }}</span>{% endif %}
+      <br><span class="small muted">Phân tích lúc {{ drift.analyzed_at_dt|dt }}</span>
+    {% elif drift_error %}<span class="badge badge--warn">{{ drift_error }}</span>
+    {% else %}<span class="muted small">Chưa cấu hình DRIFT_MONITOR_URL</span>{% endif %}</dd>
+</dl>

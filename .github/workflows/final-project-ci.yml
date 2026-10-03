@@ -3,7 +3,7 @@
 #
 #   lint ──────────┐
 #   test ──────────┼──> ci-result   (single required status check)
-#   image ─────────┘    build -> Trivy (fail on CRITICAL) -> compose smoke
+#   image ─────────┘    build API + staff portal -> Trivy (fail on CRITICAL) -> compose smoke
 #
 # Every step calls a FinalProject/Makefile target, so `make ci` reproduces this
 # pipeline locally. Also reused by final-project-cd.yml as the release gate.
@@ -113,11 +113,12 @@ jobs:
           retention-days: 14
 
   image:
-    name: Build image, Trivy scan & compose smoke test
+    name: Build images, Trivy scan & compose smoke test
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
       API_IMAGE: credit-risk-api:ci-${{ github.sha }}
+      PORTAL_IMAGE: credit-risk-staff-portal:ci-${{ github.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -140,8 +141,28 @@ jobs:
           cache-from: type=gha,scope=final-project-api
           cache-to: type=gha,mode=max,scope=final-project-api
 
+      # Same builder stage as the API image, so the dependency layer comes from the API cache.
+      - name: Build multi-stage staff portal image (GHA layer cache)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: FinalProject
+          file: FinalProject/services/staff_portal/Dockerfile
+          platforms: linux/amd64
+          load: true
+          push: false
+          provenance: false
+          tags: ${{ env.PORTAL_IMAGE }}
+          cache-from: |
+            type=gha,scope=final-project-api
+            type=gha,scope=final-project-portal
+          cache-to: type=gha,mode=max,scope=final-project-portal
+
       - name: Image size
-        run: docker image ls "${API_IMAGE%%:*}" --format '| {{.Repository}}:{{.Tag}} | {{.Size}} |' >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          {
+            docker image ls "${API_IMAGE%%:*}" --format '| {{.Repository}}:{{.Tag}} | {{.Size}} |'
+            docker image ls "${PORTAL_IMAGE%%:*}" --format '| {{.Repository}}:{{.Tag}} | {{.Size}} |'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Cache Trivy vulnerability DB
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -153,8 +174,11 @@ jobs:
       - name: Trivy scan (fails on CRITICAL)
         run: make scan API_IMAGE="$API_IMAGE"
 
-      - name: Compose smoke test (up -> health -> predict -> down)
-        run: make smoke API_IMAGE="$API_IMAGE" ENV_FILE=.env.example SMOKE_TIMEOUT=300
+      - name: Trivy scan of the staff portal image (fails on CRITICAL)
+        run: make scan-portal PORTAL_IMAGE="$PORTAL_IMAGE"
+
+      - name: Compose smoke test (up -> health -> predict -> portal login/403/score -> down)
+        run: make smoke API_IMAGE="$API_IMAGE" PORTAL_IMAGE="$PORTAL_IMAGE" ENV_FILE=.env.example SMOKE_TIMEOUT=300
 
       - name: Upload Trivy report
         if: always()

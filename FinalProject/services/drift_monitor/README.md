@@ -1,6 +1,6 @@
 # Drift monitor service
 
-FastAPI + Evidently (theo `tutorial07/evidently`). So sánh `data/reference/` với N inference log mới nhất trong PostgreSQL; logic tính drift dùng lại `credit_risk.monitoring.drift`, service chỉ là lớp HTTP + scheduler.
+FastAPI + Evidently. So sánh `data/reference/` với N inference log mới nhất trong PostgreSQL; logic tính drift dùng lại `credit_risk.monitoring.drift`, service chỉ là lớp HTTP + scheduler.
 
 | Endpoint | Mô tả |
 |---|---|

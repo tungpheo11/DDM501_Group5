@@ -1,0 +1,37 @@
+<dl class="metrics">
+  <div class="metric"><dt>Số dòng (theo bộ lọc)</dt><dd>{{ stats.total|number }}</dd></div>
+  {% for d in decisions %}
+  <div class="metric"><dt>{{ d|decision_label }}</dt><dd>{{ stats.by_decision[d]|number }} <span class="small muted">{% if stats.total %}{{ (stats.by_decision[d] / stats.total)|percent(0) }}{% endif %}</span></dd></div>
+  {% endfor %}
+  <div class="metric"><dt>Xác suất TB</dt><dd>{{ stats.avg_probability|percent }}</dd></div>
+  <div class="metric"><dt>Latency TB / max</dt><dd>{{ stats.avg_latency_ms|number(1) }} / {{ stats.max_latency_ms|number(0) }} ms</dd></div>
+</dl>
+<p class="small muted">Khoảng thời gian: {{ stats.first|dt }} → {{ stats.last|dt }}</p>
+{% if page.rows %}
+<div class="table-wrap"><table>
+  <thead><tr><th class="num">id</th><th>Thời điểm</th><th>request_id</th><th>Quyết định</th><th class="num">Xác suất</th><th class="num">Latency</th><th>Model</th><th></th></tr></thead>
+  <tbody>
+  {% for row in page.rows %}
+  <tr>
+    <td class="num">{{ row.id }}</td>
+    <td class="small">{{ row.timestamp|dt }}</td>
+    <td class="small"><code>{{ row.request_id }}</code></td>
+    <td><span class="badge badge--{{ row.risk_decision }}">{{ row.risk_decision }}</span></td>
+    <td class="num">{{ row.probability|percent }}</td>
+    <td class="num">{{ row.latency_ms|number(1) }} ms</td>
+    <td>{{ row.model_version }}</td>
+    <td><button class="btn btn--secondary btn--sm" type="button" hx-get="/admin/logs/{{ row.id }}" hx-target="#log-detail" hx-swap="innerHTML">Xem</button></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+<nav class="pagination" aria-label="Phân trang">
+  <span>Trang {{ page.page }} / {{ page.pages }} · {{ page.total|number }} dòng</span>
+  <span class="row">
+    {% if prev_url %}<a class="btn btn--secondary btn--sm" href="{{ prev_url|replace('/admin/logs?', '/admin?') }}" hx-get="{{ prev_url }}" hx-target="#logs" hx-swap="innerHTML">← Trước</a>{% endif %}
+    {% if next_url %}<a class="btn btn--secondary btn--sm" href="{{ next_url|replace('/admin/logs?', '/admin?') }}" hx-get="{{ next_url }}" hx-target="#logs" hx-swap="innerHTML">Sau →</a>{% endif %}
+  </span>
+</nav>
+{% else %}
+<div class="empty">Không có dòng log nào{% if query.as_dict() %} khớp bộ lọc{% endif %}. Dùng màn hình CSKH hoặc nút Simulate để tạo lưu lượng.</div>
+{% endif %}

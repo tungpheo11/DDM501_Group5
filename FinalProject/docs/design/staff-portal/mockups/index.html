@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mục lục mockup · Staff Portal</title>
+  <link rel="stylesheet" href="../tokens.css">
+  <link rel="stylesheet" href="../components.css">
+  <link rel="stylesheet" href="assets/mockup.css">
+  <script src="assets/mockup.js" defer></script>
+  <style>
+    .toc { max-width: 1120px; margin: 0 auto; padding: var(--space-10) var(--space-6); display: flex; flex-direction: column; gap: var(--space-8); }
+    .toc__states { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
+    .toc__states a { font-size: var(--text-xs); }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <span class="app-brand">
+      <span class="app-brand__mark">HM</span>
+      <span class="app-brand__text">
+        <span class="app-brand__name">Staff Portal — mockup tĩnh</span>
+        <span class="app-brand__sub">Mở trực tiếp bằng trình duyệt, không cần server</span>
+      </span>
+    </span>
+  </header>
+  <main class="toc">
+    <div>
+      <h1 class="page-header__title">Mục lục màn hình</h1>
+      <p class="page-header__desc">Mỗi mockup có thanh chọn trạng thái ở cuối trang. Thêm <code>?state=&lt;id&gt;</code> vào URL để mở thẳng một trạng thái, <code>&amp;clean=1</code> để ẩn thanh chọn.</p>
+    </div>
+
+    <section>
+      <div class="section-head"><h2 class="section-title">Chung</h2></div>
+      <div class="grid grid--2">
+        <div class="card card__body">
+          <a class="link-tile__title" href="01-login.html">Đăng nhập</a>
+          <p class="link-tile__desc">3 tài khoản demo, lỗi sai thông tin, đang đăng nhập, hết phiên.</p>
+          <div class="toc__states"><a href="01-login.html?state=default">Mặc định</a><a href="01-login.html?state=error">Sai thông tin</a><a href="01-login.html?state=loading">Đang đăng nhập</a><a href="01-login.html?state=expired">Hết phiên</a></div>
+        </div>
+        <div class="card card__body">
+          <a class="link-tile__title" href="09-forbidden.html">Trang 403</a>
+          <p class="link-tile__desc">Khi mở route không thuộc vai trò của mình.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head"><h2 class="section-title">CSKH / Card Ops</h2></div>
+      <div class="card card__body">
+        <a class="link-tile__title" href="02-cskh-request.html">Tạo yêu cầu + kết quả realtime</a>
+        <p class="link-tile__desc">Tìm chủ thẻ → nhập yêu cầu → APPROVE / REVIEW / DECLINE (kèm reason codes).</p>
+        <div class="toc__states"><a href="02-cskh-request.html?state=empty">Chưa chọn chủ thẻ</a><a href="02-cskh-request.html?state=search-empty">Không tìm thấy</a><a href="02-cskh-request.html?state=form">Nhập yêu cầu</a><a href="02-cskh-request.html?state=loading">Đang chấm điểm</a><a href="02-cskh-request.html?state=approve">APPROVE</a><a href="02-cskh-request.html?state=review">REVIEW</a><a href="02-cskh-request.html?state=decline">DECLINE</a><a href="02-cskh-request.html?state=error">Lỗi API</a></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head"><h2 class="section-title">Chuyên viên rủi ro tín dụng</h2></div>
+      <div class="grid grid--2">
+        <div class="card card__body">
+          <a class="link-tile__title" href="03-analyst-queue.html">Hàng đợi REVIEW</a>
+          <div class="toc__states"><a href="03-analyst-queue.html?state=data">Có ca</a><a href="03-analyst-queue.html?state=loading">Đang tải</a><a href="03-analyst-queue.html?state=empty">Hết ca</a><a href="03-analyst-queue.html?state=error">Lỗi</a></div>
+        </div>
+        <div class="card card__body">
+          <a class="link-tile__title" href="04-analyst-case.html">Chi tiết ca + SHAP + quyết định</a>
+          <div class="toc__states"><a href="04-analyst-case.html?state=data">Có giải thích</a><a href="04-analyst-case.html?state=explain-loading">Đang tính SHAP</a><a href="04-analyst-case.html?state=explain-error">SHAP lỗi</a><a href="04-analyst-case.html?state=invalid">Thiếu thông tin</a><a href="04-analyst-case.html?state=saved">Đã lưu</a></div>
+        </div>
+        <div class="card card__body">
+          <a class="link-tile__title" href="05-analyst-batch.html">Rà soát theo lô</a>
+          <div class="toc__states"><a href="05-analyst-batch.html?state=idle">Chưa chạy</a><a href="05-analyst-batch.html?state=invalid">Lô quá lớn</a><a href="05-analyst-batch.html?state=loading">Đang chấm</a><a href="05-analyst-batch.html?state=result">Có kết quả</a><a href="05-analyst-batch.html?state=error">Lỗi API</a></div>
+        </div>
+        <div class="card card__body">
+          <a class="link-tile__title" href="06-analyst-watchlist.html">Cảnh báo sớm (chỉ theo dõi)</a>
+          <div class="toc__states"><a href="06-analyst-watchlist.html?state=data">Có dữ liệu</a><a href="06-analyst-watchlist.html?state=loading">Đang tải</a><a href="06-analyst-watchlist.html?state=empty">Rỗng</a><a href="06-analyst-watchlist.html?state=error">Lỗi</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head"><h2 class="section-title">System admin</h2></div>
+      <div class="grid grid--2">
+        <div class="card card__body">
+          <a class="link-tile__title" href="07-admin-logs.html">Nhật ký suy luận + Simulate + Xoá dữ liệu</a>
+          <div class="toc__states"><a href="07-admin-logs.html?state=data">Có dữ liệu</a><a href="07-admin-logs.html?state=loading">Đang tải</a><a href="07-admin-logs.html?state=empty">Bảng rỗng</a><a href="07-admin-logs.html?state=filtered-empty">Lọc không ra</a><a href="07-admin-logs.html?state=error">Lỗi DB</a><a href="07-admin-logs.html?state=features">features_json</a><a href="07-admin-logs.html?state=simulate">Hộp Simulate</a><a href="07-admin-logs.html?state=simulate-invalid">Simulate sai số lượng</a><a href="07-admin-logs.html?state=running">Job đang chạy</a><a href="07-admin-logs.html?state=done">Job xong</a><a href="07-admin-logs.html?state=job-error">Job lỗi</a><a href="07-admin-logs.html?state=purge">Hộp xoá</a><a href="07-admin-logs.html?state=purge-ready">Đã gõ XOA</a><a href="07-admin-logs.html?state=purged">Đã xoá</a><a href="07-admin-logs.html?state=demo-off">Tắt chế độ demo</a></div>
+        </div>
+        <div class="card card__body">
+          <a class="link-tile__title" href="08-admin-system.html">Tình trạng hệ thống</a>
+          <div class="toc__states"><a href="08-admin-system.html?state=ready">ready</a><a href="08-admin-system.html?state=degraded">degraded</a><a href="08-admin-system.html?state=not-ready">not_ready</a><a href="08-admin-system.html?state=loading">Đang tải</a></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

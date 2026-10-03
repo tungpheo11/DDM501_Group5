@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>403 · Không có quyền truy cập · Cổng nghiệp vụ hạn mức thẻ</title>
+  <link rel="stylesheet" href="../tokens.css">
+  <link rel="stylesheet" href="../components.css">
+  <link rel="stylesheet" href="assets/mockup.css">
+  <script src="assets/mockup.js" defer></script>
+</head>
+<body>
+<div class="app">
+  <header class="app-header">
+    <a class="app-brand" href="#">
+      <span class="app-brand__mark">HM</span>
+      <span class="app-brand__text">
+        <span class="app-brand__name">Ngân hàng Demo</span>
+        <span class="app-brand__sub">Cổng nghiệp vụ hạn mức thẻ</span>
+      </span>
+    </a>
+    <span class="env-tag">DEMO</span>
+    <span class="app-header__spacer"></span>
+    <div class="app-user">
+      <div class="app-user__meta">
+        <span class="app-user__name">Lan Vy</span>
+        <span class="role-chip"><svg class="icon"><use href="#i-card"/></svg>CSKH / Card Ops</span>
+      </div>
+      <span class="avatar" aria-hidden="true">LV</span>
+      <form method="post" action="/logout">
+        <button class="btn-logout" type="submit"><svg class="icon"><use href="#i-logout"/></svg>Đăng xuất</button>
+      </form>
+    </div>
+  </header>
+  <div class="demo-banner"><svg class="icon"><use href="#i-info"/></svg>Môi trường demo — tên, mã khách hàng và số thẻ đều là dữ liệu giả lập.</div>
+
+  <main class="error-page">
+    <div class="error-page__card card" style="padding: var(--space-10) var(--space-8)">
+      <span class="empty-state__icon" style="background:var(--danger-bg);color:var(--danger-fg);width:64px;height:64px"><svg class="icon icon--xl"><use href="#i-lock"/></svg></span>
+      <span class="error-page__code">LỖI 403 · KHÔNG CÓ QUYỀN</span>
+      <h1 class="error-page__title">Bạn không có quyền mở trang này</h1>
+      <p class="muted">Trang <code>/admin/logs</code> chỉ dành cho vai trò <strong>System admin</strong>. Bạn đang đăng nhập với vai trò <strong>CSKH / Card Ops</strong>.</p>
+      <p class="subtle">Nếu cần quyền này cho công việc, liên hệ quản trị hệ thống. Lần truy cập này đã được ghi lại.</p>
+      <div class="row" style="justify-content: center; margin-top: var(--space-3)">
+        <a class="btn btn--primary" href="02-cskh-request.html"><svg class="icon"><use href="#i-home"/></svg>Về trang của tôi</a>
+        <form method="post" action="/logout"><button class="btn btn--secondary" type="submit">Đăng nhập bằng tài khoản khác</button></form>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

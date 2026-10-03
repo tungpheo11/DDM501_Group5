@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Ca #{{ record.id }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <p><a href="/analyst">← Hàng đợi xem xét</a></p>
+    <h1>Ca #{{ record.id }} · {{ cardholder.full_name }}</h1>
+    <p>{{ cardholder.customer_id }} · Thẻ {{ cardholder.card_masked }} · {{ record.request_type|request_type_label }} · tiếp nhận {{ record.created_at|dt(False) }} bởi {{ record.created_by }}</p>
+  </div>
+  <span class="badge badge--{{ record.risk_decision }}">API: {{ record.risk_decision|decision_label }}</span>
+</div>
+<div class="grid grid--sidebar">
+  <div class="stack">
+    <section class="card" aria-labelledby="explain-title">
+      <div class="card__title"><h2 id="explain-title">Giải thích quyết định (SHAP)</h2></div>
+      <div id="explain" hx-get="/analyst/cases/{{ record.id }}/explain" hx-trigger="load" hx-swap="innerHTML">
+        <p class="row muted"><span class="spinner" aria-hidden="true"></span> Đang gọi <code>/api/v1/explain</code>…</p>
+      </div>
+    </section>
+    <section class="card" aria-labelledby="features-title">
+      <div class="card__title"><h2 id="features-title">Hồ sơ hành vi (23 feature gửi API)</h2></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Feature</th><th>Ý nghĩa</th><th class="num">Giá trị</th></tr></thead>
+        <tbody>
+        {% for name, value in cardholder.features.items() %}
+        <tr><td><code>{{ name }}</code></td><td>{{ name|feature_label }}</td><td class="num">{{ value|number(0) }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+    </section>
+  </div>
+  <aside class="stack">
+    <section class="card" aria-labelledby="score-title">
+      <div class="card__title"><h2 id="score-title">Kết quả chấm điểm</h2></div>
+      <dl class="facts">
+        <dt>Xác suất vỡ nợ</dt><dd>{{ record.default_probability|percent }}</dd>
+        <dt>Điểm tín dụng</dt><dd>{{ record.credit_score }} ({{ record.credit_tier|tier_label }})</dd>
+        <dt>Hạn mức hiện tại</dt><dd>{{ cardholder.limit_bal|money }}</dd>
+        <dt>Hạn mức API đề xuất</dt><dd>{{ record.recommended_limit_ntd|money }}</dd>
+        <dt>Model version</dt><dd>{{ record.model_version }}</dd>
+      </dl>
+      <h3>Yếu tố theo quy tắc</h3>
+      <ul class="reason-list">
+        {% for reason in reasons %}<li><span class="reason-code">{{ reason.code }}</span><span>{{ reason.text }}</span></li>{% endfor %}
+      </ul>
+      {% if record.note %}<h3>Ghi chú CSKH</h3><p>{{ record.note }}</p>{% endif %}
+    </section>
+    <section class="card" aria-labelledby="decide-title">
+      <div class="card__title"><h2 id="decide-title">Quyết định cuối</h2></div>
+      {% if decision %}
+      <div class="alert alert--ok">
+        <p><strong>{{ actions[decision.action] }}</strong>{% if decision.action == "REDUCE" %}: hạn mức mới {{ decision.new_limit_ntd|money }}{% endif %}</p>
+        <p class="small">{{ decision.analyst }} · {{ decision.decided_at|dt }}</p>
+        {% if decision.note %}<p class="small">{{ decision.note }}</p>{% endif %}
+      </div>
+      {% else %}
+      <div id="decision-error" aria-live="polite"></div>
+      <form method="post" action="/analyst/cases/{{ record.id }}/decision" data-limit-toggle
+            hx-post="/analyst/cases/{{ record.id }}/decision" hx-target="#decision-error" hx-swap="innerHTML">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="field">
+          <span class="visually-hidden" id="action-label">Quyết định</span>
+          <div class="radio-list" role="radiogroup" aria-labelledby="action-label">
+            {% for key, label in actions.items() %}
+            <label><input type="radio" name="action" value="{{ key }}" required> {{ label }}</label>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="field" data-limit-field>
+          <label for="new_limit">Hạn mức mới (NT$)</label>
+          <input id="new_limit" name="new_limit" type="text" inputmode="numeric" maxlength="16" placeholder="Thấp hơn {{ cardholder.limit_bal|money }}">
+        </div>
+        <div class="field">
+          <label for="note">Ghi chú thẩm định</label>
+          <textarea id="note" name="note" maxlength="1000"></textarea>
+        </div>
+        <button class="btn" type="submit">Lưu quyết định</button>
+      </form>
+      {% endif %}
+    </section>
+  </aside>
+</div>
+{% endblock %}

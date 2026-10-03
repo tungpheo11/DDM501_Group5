@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Tra cứu chủ thẻ{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Tra cứu chủ thẻ</h1>
+    <p>Tìm theo tên, mã khách hàng hoặc 4 số cuối thẻ, rồi tạo yêu cầu cho chủ thẻ.</p>
+  </div>
+</div>
+<div class="grid grid--sidebar">
+  <section class="card" aria-labelledby="search-title">
+    <div class="card__title"><h2 id="search-title">Danh mục chủ thẻ ({{ catalog_size }})</h2></div>
+    <form method="get" action="/cskh" role="search">
+      <div class="field">
+        <label for="q">Từ khoá</label>
+        <input id="q" name="q" type="search" value="{{ q }}" placeholder="VD: Nguyễn Thảo, KH123456 hoặc 1234"
+               maxlength="64" autocomplete="off"
+               hx-get="/cskh/search" hx-trigger="input changed delay:300ms, search" hx-target="#search-results"
+               hx-indicator="#search-indicator">
+        <div class="field__hint row"><span>Kết quả cập nhật khi gõ.</span>
+          <span id="search-indicator" class="htmx-indicator row"><span class="spinner" aria-hidden="true"></span> Đang tìm…</span></div>
+      </div>
+      <noscript><button class="btn" type="submit">Tìm</button></noscript>
+    </form>
+    <div id="search-results" aria-live="polite">
+      {% include "cskh/_results.html" %}
+    </div>
+  </section>
+  <aside class="card" aria-labelledby="recent-title">
+    <div class="card__title"><h2 id="recent-title">Yêu cầu bạn vừa tạo</h2></div>
+    {% if recent %}
+    <ul class="result-list">
+      {% for item in recent %}
+      <li><a href="/cskh/requests/{{ item.id }}">
+        <span><strong>{{ item.customer_id }}</strong> · {{ item.request_type|request_type_label }}<br>
+          <span class="muted small">{{ item.created_at|dt }}</span></span>
+        <span class="badge badge--{{ item.risk_decision }}">{{ item.risk_decision|decision_label }}</span>
+      </a></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="empty">Chưa có yêu cầu nào trong phiên làm việc này.</div>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

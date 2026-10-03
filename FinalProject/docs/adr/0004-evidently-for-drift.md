@@ -14,7 +14,7 @@ Kịch bản trọng tâm của dự án là **covariate drift**: chiến dịch
 - **PSI (Population Stability Index)** tự cài đặt (`calculate_psi`, quantile binning 10 bucket, additive smoothing) cho các feature chính (`AGE`, `LIMIT_BAL`, `PAY_0`, `BILL_AMT1` — cấu hình ở `configs/drift.yaml`). Ngưỡng chuẩn ngành tín dụng: `< 0.10` STABLE, `0.10–0.25` MODERATE, `≥ 0.25` CRITICAL → điều kiện trigger retrain.
 - **Evidently** (`DataDriftPreset` + `DataQualityPreset`, API `evidently.legacy`) sinh `reports/drift_report.html` và `drift_summary.json` với test thống kê theo từng cột.
 - Nguồn dữ liệu "current": bảng `inference_logs` (Postgres) khi đủ `min_current_samples`, fallback file `data/processed/stream_drifted.csv`.
-- Logic này được bọc thành service `services/drift_monitor` expose `/metrics` cho Prometheus (theo `tutorial07/evidently`).
+- Logic này được bọc thành service `services/drift_monitor` expose `/metrics` cho Prometheus.
 
 ## Consequences
 
@@ -29,5 +29,5 @@ Kịch bản trọng tâm của dự án là **covariate drift**: chiến dịch
 |---|---|---|---|
 | Chỉ PSI tự viết | Nhẹ, không phụ thuộc | Không có báo cáo trực quan/test thống kê đa dạng | Thiếu evidence và chiều sâu phân tích |
 | Alibi Detect | Nhiều detector (MMD, KS) cả cho DL | Nặng (TensorFlow/PyTorch), API phức tạp | Over-engineering cho dữ liệu bảng |
-| NannyML | Ước lượng performance khi chưa có label (CBPE) | Thêm một thư viện lớn, ít tài liệu trong môn | Có thể bổ sung sau, không cần cho MVP |
+| NannyML | Ước lượng performance khi chưa có label (CBPE) | Thêm một thư viện lớn; CBPE giả định xác suất model đã calibrated và chỉ ước lượng performance, không thay được test drift theo từng feature | Có thể bổ sung sau, không cần cho MVP |
 | WhyLabs / Arize | SaaS monitoring đầy đủ | Dữ liệu tín dụng ra ngoài, cần tài khoản | Vi phạm privacy + self-hosted |

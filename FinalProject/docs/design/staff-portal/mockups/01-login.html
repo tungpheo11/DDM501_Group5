@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Đăng nhập · Cổng nghiệp vụ hạn mức thẻ</title>
+  <link rel="stylesheet" href="../tokens.css">
+  <link rel="stylesheet" href="../components.css">
+  <link rel="stylesheet" href="assets/mockup.css">
+  <script src="assets/mockup.js" defer></script>
+</head>
+<body data-states="default|Mặc định;error|Sai thông tin;loading|Đang đăng nhập;expired|Hết phiên">
+  <div class="auth-page">
+    <section class="auth-hero" aria-label="Giới thiệu">
+      <div class="app-brand">
+        <span class="app-brand__mark">HM</span>
+        <span class="app-brand__text">
+          <span class="app-brand__name">Ngân hàng Demo</span>
+          <span class="app-brand__sub">Cổng nghiệp vụ hạn mức thẻ</span>
+        </span>
+        <span class="env-tag">DEMO</span>
+      </div>
+
+      <div>
+        <h1 class="auth-hero__title">Quản lý hạn mức thẻ tín dụng</h1>
+        <p class="auth-hero__lead">Một nơi để tiếp nhận yêu cầu của chủ thẻ, xem xét các ca cần chuyên viên quyết định và vận hành hệ thống chấm điểm.</p>
+      </div>
+
+      <ul class="auth-hero__list">
+        <li><svg class="icon icon--lg"><use href="#i-card"/></svg><span><strong>CSKH / Card Ops</strong> — nhận quyết định cho yêu cầu tăng hạn mức, rút tiền mặt, chuyển trả góp trong vài giây.</span></li>
+        <li><svg class="icon icon--lg"><use href="#i-shield"/></svg><span><strong>Chuyên viên rủi ro tín dụng</strong> — xử lý ca REVIEW có giải thích, rà soát hạn mức theo lô.</span></li>
+        <li><svg class="icon icon--lg"><use href="#i-server"/></svg><span><strong>System admin</strong> — nhật ký suy luận, mô phỏng lưu lượng, tình trạng hệ thống.</span></li>
+      </ul>
+    </section>
+
+    <main class="auth-panel">
+      <div class="auth-card">
+        <div>
+          <h2 class="page-header__title">Đăng nhập</h2>
+          <p class="page-header__desc">Dùng tài khoản nhân viên được cấp. Phiên làm việc tự hết hạn sau 30 phút không thao tác.</p>
+        </div>
+
+        <div class="alert alert--info" role="status" data-show="expired">
+          <svg class="icon"><use href="#i-clock"/></svg>
+          <div class="alert__body">
+            <span class="alert__title">Phiên làm việc đã hết hạn</span>
+            <p>Vui lòng đăng nhập lại. Dữ liệu chưa gửi trên form trước đó không được lưu.</p>
+          </div>
+        </div>
+
+        <div class="alert alert--danger" role="alert" data-show="error">
+          <svg class="icon"><use href="#i-alert-octagon"/></svg>
+          <div class="alert__body">
+            <span class="alert__title">Tên đăng nhập hoặc mật khẩu không đúng</span>
+            <p>Kiểm tra lại và thử lần nữa. Sau 5 lần sai liên tiếp, tài khoản bị khoá 5 phút.</p>
+          </div>
+        </div>
+
+        <form class="stack" method="post" action="/login" novalidate>
+          <input type="hidden" name="csrf_token" value="•••">
+          <div class="field">
+            <label class="label" for="username">Tên đăng nhập</label>
+            <input class="input" id="username" name="username" autocomplete="username" value="cskh.demo" required>
+          </div>
+          <div class="field">
+            <label class="label" for="password">Mật khẩu</label>
+            <input class="input" id="password" name="password" type="password" autocomplete="current-password" value="••••••••" required aria-describedby="pw-err">
+            <span class="error-text" id="pw-err" data-show="error"><svg class="icon"><use href="#i-alert"/></svg>Nhập lại mật khẩu.</span>
+          </div>
+          <button class="btn btn--primary btn--lg btn--block" type="submit" data-hide="loading">Đăng nhập</button>
+          <button class="btn btn--primary btn--lg btn--block" type="button" disabled data-show="loading"><span class="spinner"></span>Đang đăng nhập…</button>
+        </form>
+
+        <div class="stack stack--sm">
+          <div class="row row--between">
+            <span class="label">Tài khoản demo</span>
+            <span class="subtle">Mật khẩu xem trong <code>.env.example</code></span>
+          </div>
+          <div class="demo-accounts">
+            <button class="demo-account" type="button" data-fill-user="cskh.demo">
+              <span class="holder__avatar"><svg class="icon"><use href="#i-card"/></svg></span>
+              <span><span class="demo-account__role">CSKH / Card Ops</span><br><span class="demo-account__user">cskh.demo</span></span>
+              <svg class="icon"><use href="#i-chevron-right"/></svg>
+            </button>
+            <button class="demo-account" type="button" data-fill-user="analyst.demo">
+              <span class="holder__avatar"><svg class="icon"><use href="#i-shield"/></svg></span>
+              <span><span class="demo-account__role">Chuyên viên rủi ro tín dụng</span><br><span class="demo-account__user">analyst.demo</span></span>
+              <svg class="icon"><use href="#i-chevron-right"/></svg>
+            </button>
+            <button class="demo-account" type="button" data-fill-user="admin.demo">
+              <span class="holder__avatar"><svg class="icon"><use href="#i-server"/></svg></span>
+              <span><span class="demo-account__role">System admin</span><br><span class="demo-account__user">admin.demo</span></span>
+              <svg class="icon"><use href="#i-chevron-right"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <p class="subtle">Toàn bộ chủ thẻ trong cổng này là dữ liệu giả lập. Không nhập thông tin khách hàng thật.</p>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

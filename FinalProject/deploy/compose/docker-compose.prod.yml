@@ -57,6 +57,22 @@ services:
       LOG_FORMAT: json
     logging: *prod-logging
 
+  # Deleting inference logs is a demo-only feature: off unless PORTAL_DEMO_MODE=true is set explicitly.
+  staff-portal:
+    restart: always
+    ports: !override
+      - "127.0.0.1:${PORTAL_PORT:-18030}:8030"
+    environment:
+      PORTAL_DEMO_MODE: ${PORTAL_DEMO_MODE:-false}
+      PORTAL_COOKIE_SECURE: ${PORTAL_COOKIE_SECURE:-true}
+      PORTAL_SESSION_SECRET: ${PORTAL_SESSION_SECRET:?PORTAL_SESSION_SECRET is required in production}
+      # No fallback passwords: a role without PORTAL_<ROLE>_PASSWORD(_HASH) cannot log in.
+      PORTAL_CSKH_PASSWORD: ${PORTAL_CSKH_PASSWORD:-}
+      PORTAL_ANALYST_PASSWORD: ${PORTAL_ANALYST_PASSWORD:-}
+      PORTAL_ADMIN_PASSWORD: ${PORTAL_ADMIN_PASSWORD:-}
+      LOG_FORMAT: json
+    logging: *prod-logging
+
   drift-monitor:
     restart: always
     ports: !override

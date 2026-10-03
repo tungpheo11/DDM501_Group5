@@ -8,7 +8,7 @@ Hệ thống cần một online scoring service cho bài toán Credit Default Ri
 - Validation input chặt chẽ, trả lỗi 4xx rõ ràng; OpenAPI tự sinh để làm tài liệu + contract test.
 - Export metrics cho Prometheus, health/readiness cho Docker healthcheck và Airflow `service_health_check`.
 - Hot-reload model khi `@champion` đổi trên MLflow registry, không downtime.
-- Team đã quen FastAPI từ lab/tutorial của môn học.
+- Serving viết bằng Python để dùng chung package `credit_risk` (feature, decision engine, explain) với training và drift monitor, tránh viết lại logic ở ngôn ngữ khác.
 
 ## Decision
 

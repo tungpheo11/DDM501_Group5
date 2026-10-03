@@ -18,3 +18,7 @@ services:
     image: ${API_IMAGE:?set API_IMAGE to the prebuilt API image}
     build: !reset null
     volumes: !reset []
+
+  # Prebuilt portal image (`make smoke` passes the image Trivy scanned).
+  staff-portal:
+    image: ${PORTAL_IMAGE:-credit-risk-staff-portal:local}
