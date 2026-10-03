@@ -26,12 +26,13 @@ Tên người cụ thể: xem [CONTRIBUTING.md](../../CONTRIBUTING.md#7-vai-trò
 |---|---|---|---|
 | 1 | Toàn bộ service healthy | `make health` (server: `deploy.sh status`) | 15 service `healthy`/`exited (0)` |
 | 2 | API sẵn sàng từ registry | `curl -s localhost:18020/health/ready \| jq .status` | `ready` (không phải `degraded`) |
-| 3 | Alert đang firing | `make alerts`, Grafana *Infra & SLA* → *Firing alerts* | 0 alert |
-| 4 | SLA 24h | *Infra & SLA*: uptime, success ratio, p95 | ≥ 99.5 %, ≥ 99 %, < 100 ms |
-| 5 | Drift | *Data Drift*: drift share, max PSI, tuổi phân tích | share < 0.5, PSI < 0.10 (vàng 0.10–0.25), phân tích < 2 phút trước |
-| 6 | Business | *Business KPIs*: approve/review/decline rate | Lệch < 10 điểm % so với tuần trước |
-| 7 | Airflow | UI :18080 — `service_health_check`, `drift_monitoring` | Run gần nhất `success` |
-| 8 | Backup đêm qua (server) | `backup.sh list`, `journalctl -u credit-risk-backup -n 20` | Có bản mới, exit 0 |
+| 3 | Staff portal sẵn sàng | `curl -s localhost:18030/health/ready \| jq '.status, .checks'` | `ready`; `degraded` = API chấm điểm không phản hồi, HTTP 503 `not_ready` = mất database portal |
+| 4 | Alert đang firing | `make alerts`, Grafana *Infra & SLA* → *Firing alerts* | 0 alert |
+| 5 | SLA 24h | *Infra & SLA*: uptime, success ratio, p95 | ≥ 99.5 %, ≥ 99 %, < 100 ms |
+| 6 | Drift | *Data Drift*: drift share, max PSI, tuổi phân tích | share < 0.5, PSI < 0.10 (vàng 0.10–0.25), phân tích < 2 phút trước |
+| 7 | Business | *Business KPIs*: approve/review/decline rate | Lệch < 10 điểm % so với tuần trước |
+| 8 | Airflow | UI :18080 — `service_health_check`, `drift_monitoring` | Run gần nhất `success` |
+| 9 | Backup đêm qua (server) | `backup.sh list`, `journalctl -u credit-risk-backup -n 20` | Có bản mới, exit 0 |
 
 ### Hằng tuần
 

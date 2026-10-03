@@ -10,7 +10,7 @@
 #   API_KEY                                   scoring key that must never appear in HTML/JS (required)
 #   PORTAL_{CSKH,ANALYST,ADMIN}_USERNAME      demo usernames               (default cskh / chuyenvien / admin)
 #   PORTAL_{CSKH,ANALYST,ADMIN}_PASSWORD      demo passwords               (required)
-#   SMOKE_TIMEOUT                             seconds to wait for /health  (default 300)
+#   SMOKE_TIMEOUT                             seconds to wait for readiness (default 300)
 set -euo pipefail
 
 PORTAL_URL="${PORTAL_URL:-http://localhost:18030}"
@@ -67,10 +67,22 @@ assert_no_key() {
 log "target: $PORTAL_URL (timeout ${SMOKE_TIMEOUT}s)"
 deadline=$((SECONDS + SMOKE_TIMEOUT))
 anon="$work_dir/anon.jar"
-until [[ "$(http "$anon" "$PORTAL_URL/health" 2>/dev/null)" == "200" ]]; do
-  (( SECONDS < deadline )) || fail "GET /health did not return 200 within ${SMOKE_TIMEOUT}s"
+until [[ "$(http "$anon" "$PORTAL_URL/health/live" 2>/dev/null)" == "200" ]]; do
+  (( SECONDS < deadline )) || fail "GET /health/live did not return 200 within ${SMOKE_TIMEOUT}s"
   sleep 3
 done
+log "GET /health/live -> 200"
+
+# The scoring API passed its own smoke test just before, so the portal must be fully ready.
+until status="$(http "$anon" "$PORTAL_URL/health/ready")" && [[ "$status" == "200" ]] \
+  && python3 -c 'import json,sys; sys.exit(json.load(open(sys.argv[1]))["status"] != "ready")' "$body_file"; do
+  (( SECONDS < deadline )) || fail "GET /health/ready returned $status: $(cat "$body_file")"
+  sleep 3
+done
+log "GET /health/ready -> 200 (ready: database up, scoring API up)"
+
+status="$(http "$anon" "$PORTAL_URL/health")"
+[[ "$status" == "200" ]] || fail "GET /health returned $status: $(cat "$body_file")"
 python3 - "$body_file" <<'PY' || fail "health check failed: $(cat "$body_file")"
 import json
 import sys

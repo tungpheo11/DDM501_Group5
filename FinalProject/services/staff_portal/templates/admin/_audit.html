@@ -4,7 +4,7 @@
   <tbody>
   {% for entry in audit %}
   <tr>
-    <td class="small">{{ entry.at|dt }}</td>
+    <td class="small nowrap">{{ entry.at|dt }}</td>
     <td>{{ entry.actor }}</td>
     <td><code>{{ entry.action }}</code></td>
     <td class="num">{{ entry.rows_affected if entry.rows_affected is not none else "—" }}</td>

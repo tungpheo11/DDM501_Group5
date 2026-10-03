@@ -38,5 +38,15 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () { init(document); });
-  document.addEventListener("htmx:afterSwap", function (event) { init(event.target); });
+  // The log detail panel sits below a long table: bring it into view once loaded.
+  function revealDetail(target) {
+    if (target.id !== "log-detail") return;
+    var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }
+
+  document.addEventListener("htmx:afterSwap", function (event) {
+    init(event.target);
+    revealDetail(event.target);
+  });
 })();

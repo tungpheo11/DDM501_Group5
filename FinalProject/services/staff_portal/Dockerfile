@@ -74,7 +74,7 @@ USER app:app
 EXPOSE 8030
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8030/health', timeout=4)"]
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8030/health/ready', timeout=4)"]
 
 # One process on purpose: the simulation job and the login throttle live in memory.
 CMD ["uvicorn", "staff_portal.app:app", "--host", "0.0.0.0", "--port", "8030", "--workers", "1", "--proxy-headers", "--no-access-log"]

@@ -14,7 +14,7 @@
   {% for row in page.rows %}
   <tr>
     <td class="num">{{ row.id }}</td>
-    <td class="small">{{ row.timestamp|dt }}</td>
+    <td class="small nowrap">{{ row.timestamp|dt }}</td>
     <td class="small"><code>{{ row.request_id }}</code></td>
     <td><span class="badge badge--{{ row.risk_decision }}">{{ row.risk_decision }}</span></td>
     <td class="num">{{ row.probability|percent }}</td>

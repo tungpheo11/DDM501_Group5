@@ -41,7 +41,7 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
 .thesis{display:grid;grid-template-columns:1.1fr .9fr;gap:32px;align-items:stretch;flex:1}.iceberg{position:relative;overflow:hidden}.ice-top{height:34%;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,rgba(115,183,255,.12),rgba(115,183,255,.03));clip-path:polygon(34% 100%,50% 0,66% 100%);font-size:22px;font-weight:700}.water{height:2px;background:linear-gradient(90deg,transparent,var(--blue),transparent);opacity:.6}.ice-bottom{height:64%;display:grid;place-items:center;background:linear-gradient(180deg,rgba(110,231,168,.04),rgba(191,156,255,.06));clip-path:polygon(20% 0,80% 0,94% 100%,6% 100%);text-align:center;padding:80px 120px 60px}.ice-bottom .ops-cloud{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}.ops-pill{padding:12px 10px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);font:600 16px var(--mono);color:var(--muted)}
 .slo-wrap{display:grid;grid-template-columns:1.15fr .85fr;gap:28px;flex:1}.decision-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.decision{padding:16px;border-radius:14px;text-align:center;border:1px solid var(--line);font:700 18px var(--mono)}.decision.approve{background:rgba(110,231,168,.07);color:var(--green)}.decision.review{background:rgba(255,199,104,.07);color:var(--amber)}.decision.decline{background:rgba(255,125,125,.07);color:var(--red)}
 .slo-card{display:grid;grid-template-columns:68px 1fr;gap:16px;align-items:center;padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.06)}.slo-card:last-child{border-bottom:none}.slo-icon{width:58px;height:58px;border-radius:16px;display:grid;place-items:center;background:rgba(115,183,255,.08);border:1px solid rgba(115,183,255,.18);font:800 21px var(--mono);color:var(--blue)}.slo-card b{font-size:22px}.slo-card span{font-size:19px;color:var(--muted)}
-.lifecycle{position:relative;flex:1;display:flex;align-items:center}.life-track{display:grid;grid-template-columns:repeat(9,1fr);gap:14px;width:100%}.life-step{position:relative;padding:22px 14px 18px;border-radius:16px;background:linear-gradient(180deg,#122338,#0d1a29);border:1px solid rgba(115,183,255,.17);text-align:center;min-height:140px}.life-step::after{content:"→";position:absolute;right:-18px;top:51px;color:var(--muted2);font-size:26px;z-index:2}.life-step:last-child::after{display:none}.life-step .idx{width:34px;height:34px;margin:0 auto 12px;border-radius:10px;display:grid;place-items:center;font:800 16px var(--mono);background:rgba(115,183,255,.10);color:var(--blue)}.life-step b{display:block;font-size:20px}.life-step span{display:block;margin-top:6px;font-size:16px;color:var(--muted)}.loopback{position:absolute;left:9%;right:9%;bottom:44px;height:88px;border:2px dashed rgba(110,231,168,.25);border-top:0;border-radius:0 0 80px 80px}.loopback::before{content:"continuous feedback loop";position:absolute;left:50%;bottom:-16px;transform:translateX(-50%);background:var(--bg);padding:0 14px;color:var(--green);font:600 16px var(--mono)}
+.lifecycle{position:relative;flex:1;display:flex;align-items:center}.life-track{display:grid;grid-template-columns:repeat(9,1fr);gap:14px;width:100%}.life-step{position:relative;padding:22px 14px 18px;border-radius:16px;background:linear-gradient(180deg,#122338,#0d1a29);border:1px solid rgba(115,183,255,.17);text-align:center;min-height:140px}.life-step::after{content:"→";position:absolute;right:-18px;top:51px;color:var(--muted2);font-size:26px;z-index:2}.life-step:last-child::after{display:none}.life-step .idx{width:34px;height:34px;margin:0 auto 12px;border-radius:10px;display:grid;place-items:center;font:800 16px var(--mono);background:rgba(115,183,255,.10);color:var(--blue)}.life-step b{display:block;font-size:20px}.life-step span{display:block;margin-top:6px;font-size:16px;color:var(--muted)}.loopback{position:absolute;left:61%;right:5.5%;bottom:44px;height:88px;border:2px dashed rgba(110,231,168,.25);border-top:0;border-radius:0 0 80px 80px}.loopback::before{content:"model loop: retrain → reload API";white-space:nowrap;position:absolute;left:50%;bottom:-16px;transform:translateX(-50%);background:var(--bg);padding:0 14px;color:var(--green);font:600 16px var(--mono)}
 .arch{display:grid;grid-template-columns:1fr 1.55fr 1fr;gap:18px;flex:1;align-items:stretch}.arch-col{display:flex;flex-direction:column;gap:14px}.arch-head{font:700 18px var(--mono);color:var(--muted2);text-transform:uppercase;letter-spacing:.08em}.svc{flex:1;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,#102033,#0c1826);padding:20px;display:flex;flex-direction:column;justify-content:center}.svc h3{margin:0 0 8px;font-size:24px}.svc p{margin:0;color:var(--muted);font-size:18px;line-height:1.4}.svc.core{border-color:rgba(115,183,255,.24)}.svc.mon{border-color:rgba(110,231,168,.24)}.svc.orch{border-color:rgba(191,156,255,.24)}
 .release{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-top:34px}.rel-step{position:relative;border-radius:18px;padding:22px 18px;background:#0f1c2a;border:1px solid rgba(255,255,255,.08);min-height:210px}.rel-step::after{content:"→";position:absolute;right:-18px;top:84px;color:var(--muted2);font-size:26px}.rel-step:last-child::after{display:none}.rel-step .num{font:800 16px var(--mono);color:var(--muted2)}.rel-step h3{font-size:23px;margin:12px 0 8px}.rel-step p{font-size:18px;line-height:1.4;color:var(--muted)}.rollback-band{margin-top:22px;padding:18px 24px;border-radius:16px;border:1px solid rgba(255,125,125,.25);background:rgba(255,125,125,.06);display:flex;align-items:center;justify-content:space-between;gap:20px}.rollback-band strong{font-size:22px}.security-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:18px}.security-chip{padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);font:600 15px var(--mono);color:var(--muted);text-align:center}
 .state-machine{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:center}.state{position:relative;border-radius:22px;padding:28px;border:1px solid var(--line);background:#0d1a27;text-align:center}.state::after{content:"→";position:absolute;right:-20px;top:50%;transform:translateY(-50%);font-size:30px;color:var(--muted2)}.state:last-child::after{display:none}.state .light{width:22px;height:22px;border-radius:50%;margin:0 auto 14px;box-shadow:0 0 24px currentColor}.state.ready{color:var(--green);border-color:rgba(110,231,168,.25)}.state.degraded{color:var(--amber);border-color:rgba(255,199,104,.25)}.state.down{color:var(--red);border-color:rgba(255,125,125,.25)}.state h3{color:#fff}.state p{font-size:18px;color:var(--muted);line-height:1.4}.api-box{margin-top:20px;display:grid;grid-template-columns:1.2fr .8fr;gap:20px}.terminal{background:#050b11;border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;font:18px/1.55 var(--mono);box-shadow:var(--shadow)}.terminal .bar{padding:12px 16px;background:#0f1b28;border-bottom:1px solid rgba(255,255,255,.07);color:var(--muted2);font-size:15px}.terminal pre{margin:0;padding:20px 22px;white-space:pre-wrap;color:#e7f0f7}
@@ -79,6 +79,38 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
 .pd-gauge{position:relative;z-index:1}.gauge-bar{height:18px;border-radius:99px;background:linear-gradient(90deg,var(--green) 0 30%,var(--amber) 30% 60%,var(--red) 60% 100%);position:relative}.gauge-marker{position:absolute;left:41%;top:-8px;width:3px;height:34px;background:#fff;border-radius:4px;box-shadow:0 0 16px rgba(255,255,255,.5)}.gauge-labels{display:flex;justify-content:space-between;margin-top:9px;font:600 12px var(--mono);color:var(--muted)}
 .decision-result{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;position:relative;z-index:1}.result-box{padding:16px 10px;border-radius:15px;text-align:center;border:1px solid var(--line);font:700 14px var(--mono);background:rgba(255,255,255,.025)}.result-box.active{border-color:rgba(255,199,104,.45);background:rgba(255,199,104,.085);color:var(--amber);box-shadow:0 0 30px rgba(255,199,104,.05)}
 .bridge-callout{padding:15px 18px;border-radius:16px;background:rgba(115,183,255,.055);border:1px solid rgba(115,183,255,.18);font-size:18px;color:var(--muted)}.bridge-callout b{color:#fff}
+
+/* ---------- staff portal (real screenshots from docs/assets/screenshots/staff-portal/) ---------- */
+.shot{margin:0;border-radius:14px;overflow:hidden;border:1px solid rgba(142,177,207,.24);background:#f4f6f9;box-shadow:var(--shadow)}
+.shot img{display:block;width:100%;height:100%;object-fit:cover;object-position:top left}
+.shot.contain img{object-fit:contain;object-position:center}
+.ui-btn{display:inline-block;padding:3px 10px;border-radius:8px;background:#0f3b66;border:1px solid rgba(115,183,255,.35);color:#fff;font:700 16px var(--sans);white-space:nowrap}
+.portal-arch{display:grid;grid-template-columns:1.2fr .8fr;gap:30px;flex:1;min-height:0}
+.portal-flow{display:flex;flex-direction:column;gap:16px}.portal-flow .flow-row{flex:1}
+.shot.center img{object-position:center}
+.flow-row{display:grid;grid-template-columns:1fr 44px 1.2fr 44px 1fr;align-items:stretch}
+.flow-arrow{display:grid;place-items:center;color:var(--muted2);font-size:28px}
+.flow-down{display:grid;grid-template-columns:1fr 44px 1.2fr 44px 1fr;color:var(--muted2);font-size:26px;text-align:center;line-height:1}
+.svc.portal{border-color:rgba(255,199,104,.4);background:linear-gradient(180deg,rgba(255,199,104,.08),#0c1826)}
+.svc .mono{font-size:16px}
+.portal-side{display:flex;flex-direction:column;gap:16px;min-height:0}
+.portal-side .shot{flex:1;min-height:0}
+.guard-list{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.guard-list .security-chip{text-align:left;font-size:15px;line-height:1.35}
+.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;flex:1;min-height:0}
+.role-card{display:flex;flex-direction:column;gap:14px;padding:22px;border-radius:20px;background:#0e1b28;border:1px solid rgba(255,255,255,.08);min-height:0}
+.role-head{display:flex;align-items:center;gap:14px}
+.role-step{flex:none;width:46px;height:46px;border-radius:13px;display:grid;place-items:center;font:800 18px var(--mono);background:rgba(115,183,255,.1);color:var(--blue);border:1px solid rgba(115,183,255,.22)}
+.role-head h3{margin:0;font-size:25px}.role-head span{display:block;font:600 15px var(--mono);color:var(--muted2);margin-top:3px}
+.role-card .shot{flex:1;min-height:0}
+.role-card p{font-size:18px;color:var(--muted);line-height:1.45;margin:0}.role-card p b{color:#fff}
+.drift-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.ds{position:relative;padding:16px 18px;border-radius:16px;background:#0e1b28;border:1px solid rgba(255,255,255,.08)}
+.ds::after{content:"→";position:absolute;right:-15px;top:50%;transform:translateY(-50%);color:var(--muted2);font-size:22px}.ds:last-child::after{display:none}
+.ds .n{font:800 15px var(--mono);color:var(--amber)}.ds b{display:block;font-size:20px;margin-top:6px}.ds>span{display:block;font-size:16px;color:var(--muted);line-height:1.38;margin-top:5px}
+.drift-shots{display:grid;grid-template-columns:.9fr 1.1fr;grid-template-rows:1fr auto;gap:16px;flex:1;min-height:0}
+.drift-shots .shot{min-height:0}
+.drift-shots .wide{grid-column:1/3;height:262px}
 
 </style>
 </head>
@@ -234,30 +266,30 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
       <div class="life-step"><div class="idx">01</div><b>Code + Data</b><span>src · config · manifest</span></div>
       <div class="life-step"><div class="idx">02</div><b>CI</b><span>lint · tests · coverage</span></div>
       <div class="life-step"><div class="idx">03</div><b>Build</b><span>Docker · Trivy</span></div>
-      <div class="life-step"><div class="idx">04</div><b>Registry</b><span>GHCR + MLflow</span></div>
+      <div class="life-step"><div class="idx">04</div><b>Release</b><span>GHCR image · tag v*</span></div>
       <div class="life-step"><div class="idx">05</div><b>Deploy</b><span>Ubuntu · smoke test</span></div>
-      <div class="life-step"><div class="idx">06</div><b>Serve</b><span>FastAPI · health</span></div>
+      <div class="life-step"><div class="idx">06</div><b>Serve</b><span>FastAPI · @champion</span></div>
       <div class="life-step"><div class="idx">07</div><b>Observe</b><span>metrics · alerts</span></div>
       <div class="life-step"><div class="idx">08</div><b>Drift</b><span>Evidently · PSI</span></div>
-      <div class="life-step"><div class="idx">09</div><b>Retrain</b><span>gate · promote / keep</span></div>
+      <div class="life-step"><div class="idx">09</div><b>Retrain</b><span>MLflow · gate · reload</span></div>
     </div>
     <div class="loopback"></div>
   </div>
-  <aside class="notes">Dùng slide này như agenda sống. Từ đây các slide sau zoom vào từng đoạn của vòng đời. Nhấn vòng loop là điểm khác với software CI/CD thông thường.</aside>
+  <aside class="notes">Dùng slide này như agenda sống. Từ đây các slide sau zoom vào từng đoạn của vòng đời. 01–05 là vòng đời code: chỉ chạy khi đẩy tag v*, image lên GHCR, không train model. 06–09 là vòng đời model: drift kích hoạt model_retrain, challenger qua gate thì lên @champion trong MLflow, API hot-reload và kiểm tra đúng version, sai thì rollback — không build lại image, không deploy lại. Vòng loop này là điểm khác với software CI/CD thông thường.</aside>
 </section>
 
 <!-- 07 ARCH -->
 <section class="slide" data-title="Production architecture" data-section="DEPLOY & SERVE">
   <p class="kicker">06 · architecture</p>
-  <h2 class="h2">15 service, nhưng chỉ <span class="blue">3 operational profile</span></h2>
+  <h2 class="h2">16 service, nhưng chỉ <span class="blue">3 operational profile</span></h2>
   <div class="arch mt32">
     <div class="arch-col"><div class="arch-head">Ingress / Users</div>
       <div class="svc"><h3>CMS / Mobile backend</h3><p>Realtime request → <span class="blue">/predict</span></p></div>
       <div class="svc"><h3>Batch review job</h3><p>Post-statement portfolio scoring → <span class="blue">/predict/batch</span></p></div>
-      <div class="svc"><h3>Risk / Compliance</h3><p>Review · reason codes · audit</p></div>
+      <div class="svc portal"><h3 class="amber">Staff Portal · 3 role</h3><p>CSKH · Chuyên viên rủi ro · Quản trị hệ thống → <span class="blue">/predict · /explain</span></p></div>
     </div>
     <div class="arch-col"><div class="arch-head">Core ML platform</div>
-      <div class="svc core"><h3 class="blue">CORE profile</h3><p><b>FastAPI</b> serving · <b>MLflow</b> registry · PostgreSQL metadata · MinIO artifacts</p></div>
+      <div class="svc core"><h3 class="blue">CORE profile</h3><p><b>FastAPI</b> serving · <b>Staff Portal</b> · <b>MLflow</b> registry · PostgreSQL metadata · MinIO artifacts</p></div>
       <div class="svc orch"><h3 class="violet">ORCHESTRATION profile</h3><p>Airflow scheduler + webserver · drift monitoring DAG · model retrain DAG · service health DAG</p></div>
       <div class="svc mon"><h3 class="green">MONITORING profile</h3><p>Prometheus · Grafana · Alertmanager · Evidently drift monitor · statsd-exporter · alert webhook</p></div>
     </div>
@@ -268,12 +300,47 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
     </div>
   </div>
   <div class="row mt16"><span class="tag warn">Compose instead of Kubernetes</span><span class="small">1 Ubuntu VM · lower operational overhead · accept no HA / no autoscale</span></div>
-  <aside class="notes">Đây là kiến trúc production ở mức vận hành. Nhấn profile Compose để core có thể chạy trên máy yếu; monitoring/orchestration bật khi cần. Giải thích trade-off Compose vs Kubernetes ngắn gọn.</aside>
+  <aside class="notes">Đây là kiến trúc production ở mức vận hành. Nhấn profile Compose để core có thể chạy trên máy yếu; monitoring/orchestration bật khi cần. Staff Portal là service thứ 16, nằm trong profile core vì nhân viên ngân hàng cần nó cùng lúc với API. Giải thích trade-off Compose vs Kubernetes ngắn gọn.</aside>
 </section>
 
-<!-- 08 CICD -->
+<!-- 08 STAFF PORTAL IN ARCHITECTURE -->
+<section class="slide" data-title="Staff Portal trong kiến trúc" data-section="DEPLOY & SERVE">
+  <p class="kicker">07 · staff portal · cổng nghiệp vụ</p>
+  <h2 class="h2">Staff Portal: nhân viên dùng model <span class="amber">qua giao diện riêng</span></h2>
+  <div class="portal-arch mt32">
+    <div class="portal-flow">
+      <div class="flow-row">
+        <div class="svc"><h3>Trình duyệt</h3><p>CSKH · Chuyên viên rủi ro · Quản trị hệ thống</p><p class="mono mt8">cookie phiên + CSRF</p></div>
+        <div class="flow-arrow">→</div>
+        <div class="svc portal"><h3 class="amber">staff-portal</h3><p>FastAPI + Jinja + HTMX · đăng nhập bcrypt · mỗi role chỉ vào màn hình của mình</p><p class="mono mt8">:18030 · profile core</p></div>
+        <div class="flow-arrow">→</div>
+        <div class="svc core"><h3 class="blue">Scoring API</h3><p><span class="mono">/predict</span> · <span class="mono">/predict/batch</span> · <span class="mono">/explain</span></p><p class="mono mt8">X-API-Key giữ ở server</p></div>
+      </div>
+      <div class="flow-down"><span></span><span></span><span>↓</span><span></span><span>↓</span></div>
+      <div class="flow-row">
+        <div></div><div></div>
+        <div class="svc"><h3>PostgreSQL</h3><p>Bảng riêng: yêu cầu hạn mức · quyết định chuyên viên · lô rà soát · nhật ký quản trị. Đọc <span class="mono">inference_logs</span> của API.</p></div>
+        <div class="flow-arrow">←</div>
+        <div class="svc mon"><h3 class="green">inference_logs</h3><p>Mỗi request một dòng → drift monitor → Alertmanager → Telegram → Airflow</p></div>
+      </div>
+      <div class="guard-list mt8">
+        <div class="security-chip">API contract <span class="mono">/api/v1/*</span> không đổi</div>
+        <div class="security-chip">API key không bao giờ xuống trình duyệt</div>
+        <div class="security-chip"><span class="mono">/health/live</span> · <span class="mono">/health/ready</span> cho Docker healthcheck</div>
+        <div class="security-chip">Xoá log chỉ bật khi <span class="mono">PORTAL_DEMO_MODE=true</span></div>
+      </div>
+    </div>
+    <div class="portal-side">
+      <figure class="shot center"><img src="../assets/screenshots/staff-portal/01-login.png" alt="Màn hình Đăng nhập của Staff Portal"></figure>
+      <div class="row"><span class="tag warn">3 tài khoản demo</span><span class="tag">cskh</span><span class="tag">chuyenvien</span><span class="tag">admin</span></div>
+    </div>
+  </div>
+  <aside class="notes">~40 giây. Trước đây chỉ có app/batch gọi API; nhân viên ngân hàng phải dùng Swagger. Staff Portal là service thứ 16, cùng profile core, gọi đúng ba endpoint cũ nên API contract không đổi. API key nằm ở server portal; trình duyệt chỉ có cookie phiên. Portal ghi bảng riêng, chỉ đọc (và trong chế độ demo được xoá) inference_logs. Ảnh là màn hình Đăng nhập thật.</aside>
+</section>
+
+<!-- 09 CICD -->
 <section class="slide" data-title="Release safety" data-section="DEPLOY &amp; SERVE">
-  <p class="kicker">07 · ci/cd · release safety — VERIFIED v1.0.0</p>
+  <p class="kicker">08 · ci/cd · release safety — VERIFIED v1.0.0</p>
   <h2 class="h2">Tag → CI → GHCR → Deploy → Smoke: <span class="green">toàn bộ tự động, đã chạy thật</span></h2>
   <div class="release">
     <div class="rel-step"><div class="num">01</div><h3>Validate</h3><p>ruff · black · mypy · data/model tests</p><div class="tag ok" style="margin-top:8px;font-size:14px">51s</div></div>
@@ -288,9 +355,9 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
   <aside class="notes">Pipeline thật: tag v1.0.0 đã trigger CD, qua CI gate, publish lên GHCR, deploy lên VM 148.113.255.63 và smoke test pass. Thời gian thực tế ghi trên mỗi step. Rollback tự động nếu smoke fail.</aside>
 </section>
 
-<!-- 09 SERVING -->
+<!-- 10 SERVING -->
 <section class="slide" data-title="Serving reliability" data-section="DEPLOY & SERVE">
-  <p class="kicker">08 · serving · failure semantics</p>
+  <p class="kicker">09 · serving · failure semantics</p>
   <h2 class="h2">API không bao giờ “chết im lặng”</h2>
   <div class="state-machine mt32">
     <div class="state ready"><div class="light"></div><h3>READY</h3><p>Load <b>@champion</b> từ MLflow Registry.<br>Model version luôn xuất hiện trong response.</p></div>
@@ -316,9 +383,9 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
   <aside class="notes">Nhấn failure semantics: degraded và not-ready khác nhau. Fallback chỉ có giá trị vì nó observable bằng metric/alert. Health endpoint phục vụ Docker healthcheck và smoke test.</aside>
 </section>
 
-<!-- 10 OBSERVABILITY -->
+<!-- 11 OBSERVABILITY -->
 <section class="slide" data-title="Observability" data-section="OBSERVE">
-  <p class="kicker">09 · monitoring</p>
+  <p class="kicker">10 · monitoring</p>
   <h2 class="h2">4 dashboard = 4 câu hỏi vận hành</h2>
   <div class="obs-grid mt32">
     <div class="obs"><div class="tag ok">BUSINESS</div><h3 class="mt16">Hệ thống đang quyết định gì?</h3><p>Approve / Review / Decline · exposure · volume.</p><div class="spark"><svg viewBox="0 0 300 110"><polyline points="0,78 30,62 60,69 90,50 120,58 150,36 180,41 210,22 240,31 270,18 300,26" fill="none" stroke="#6ee7a8" stroke-width="4"/><polyline points="0,95 30,88 60,83 90,90 120,77 150,80 180,72 210,75 240,61 270,66 300,58" fill="none" stroke="#ffc768" stroke-width="3" opacity=".75"/></svg></div><div class="obs-foot"><span>portfolio</span><span>risk exposure</span></div></div>
@@ -330,9 +397,9 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
   <aside class="notes">Thay vì screenshot nhiều chữ, slide này mô tả bốn câu hỏi. Khi demo mới mở Grafana thật. Đây là framing observability, không phải gallery dashboard.</aside>
 </section>
 
-<!-- 11 INCIDENT -->
+<!-- 12 INCIDENT -->
 <section class="slide" data-title="Incident response" data-section="OBSERVE">
-  <p class="kicker">10 · alerting · runbook · recovery</p>
+  <p class="kicker">11 · alerting · runbook · recovery</p>
   <h2 class="h2">Alert chỉ có giá trị khi dẫn tới <span class="green">hành động và recovery</span></h2>
   <div class="incident">
     <div class="inc-step"><div class="inc-dot">01</div><h3>Inject fault</h3><p>Latency spike / API down / model unload</p></div>
@@ -350,9 +417,9 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
   <aside class="notes">Không đọc 11 tên alert. Kể một incident story. Sau đó mới nói tổng cộng có 11 alert, mỗi alert có summary/description/runbook URL và đã có chaos target để chứng minh nó thực sự fire.</aside>
 </section>
 
-<!-- 12 DRIFT -->
+<!-- 13 DRIFT -->
 <section class="slide" data-title="Drift operations" data-section="CLOSED LOOP">
-  <p class="kicker">11 · drift ≠ retrain ngay lập tức</p>
+  <p class="kicker">12 · drift ≠ retrain ngay lập tức</p>
   <h2 class="h2">Monitoring frequency, orchestration frequency và retrain frequency <span class="amber">không giống nhau</span></h2>
   <div class="drift-grid mt32">
     <div>
@@ -375,9 +442,9 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
   <aside class="notes">Slide này thể hiện tư duy vận hành. Prediction shift không đủ để tự retrain; dataset drift mới đi tiếp và vẫn phải qua cooldown. Đây là nơi nối observability sang closed-loop MLOps.</aside>
 </section>
 
-<!-- 13 GATE -->
+<!-- 14 GATE -->
 <section class="slide" data-title="Safe retraining" data-section="CLOSED LOOP">
-  <p class="kicker">12 · champion / challenger</p>
+  <p class="kicker">13 · champion / challenger</p>
   <h2 class="h2">Retrain tự động — <span class="green">promotion thì không mù quáng</span></h2>
   <div class="gate mt32">
     <div class="policy">
@@ -399,9 +466,9 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
   <aside class="notes">Điểm phải nhấn: auto-retrain không có nghĩa auto-promote. Quality gate và verification sau reload là lớp an toàn. Fail path giữ champion hoặc rollback alias về bản cũ.</aside>
 </section>
 
-<!-- 14 FAILURE MODES -->
+<!-- 15 FAILURE MODES -->
 <section class="slide" data-title="Failure modes" data-section="RELIABILITY">
-  <p class="kicker">13 · design for failure</p>
+  <p class="kicker">14 · design for failure</p>
   <h2 class="h2">Mỗi failure mode đều có <span class="blue">response + signal + recovery path</span></h2>
   <div class="fail-grid mt32">
     <div class="fail-card"><div class="code">422</div><h3>Input sai schema</h3><p>Pydantic chặn trước model. Không để request lỗi làm bẩn inference path.</p><div class="signal">SIGNAL → HTTP metric / validation count</div></div>
@@ -412,9 +479,9 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
   <aside class="notes">Đây là slide reliability. Mục tiêu là chứng minh “failure is a first-class design concern”. Không có case nào chỉ được ghi log rồi bỏ đó.</aside>
 </section>
 
-<!-- 15 RAI -->
+<!-- 16 RAI -->
 <section class="slide" data-title="Responsible AI guardrails" data-section="GOVERNANCE">
-  <p class="kicker">14 · responsible ai as an operational guardrail</p>
+  <p class="kicker">15 · responsible ai as an operational guardrail</p>
   <h2 class="h2">Fairness, explainability và privacy phải <span class="violet">đi cùng vòng đời model</span></h2>
   <div class="rai mt32">
     <div class="guardrails">
@@ -434,26 +501,69 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
   <aside class="notes">Merge hai slide RAI thành một để không lấn Ops. Tư duy chính: governance là guardrail của vòng đời model. Nói thẳng fairness hiện có WARN thay vì che giấu.</aside>
 </section>
 
-<!-- 16 DEMO -->
+<!-- 17 PORTAL ROLES -->
+<section class="slide" data-title="Staff Portal · 3 vai trò" data-section="DEMO">
+  <p class="kicker">16 · staff portal · luồng 3 vai trò</p>
+  <h2 class="h2">Một yêu cầu tăng hạn mức đi qua <span class="green">3 vai trò</span>, mỗi vai một màn hình</h2>
+  <div class="roles mt32">
+    <div class="role-card">
+      <div class="role-head"><div class="role-step">01</div><div><h3>CSKH</h3><span>tài khoản cskh · Tra cứu chủ thẻ</span></div></div>
+      <figure class="shot"><img src="../assets/screenshots/staff-portal/03-cskh-review.png" alt="Kết quả chấm điểm REVIEW, Chuyển xem xét, trên màn hình CSKH"></figure>
+      <p>Tìm chủ thẻ → chọn <b>Tăng hạn mức</b> → <span class="ui-btn">Gửi chấm điểm</span>. Portal gọi <span class="mono">/predict</span>, trả quyết định trong ~20 ms. Ca REVIEW tự vào hàng đợi.</p>
+    </div>
+    <div class="role-card">
+      <div class="role-head"><div class="role-step">02</div><div><h3>Chuyên viên rủi ro</h3><span>tài khoản chuyenvien · Hàng đợi xem xét</span></div></div>
+      <figure class="shot"><img src="../assets/screenshots/staff-portal/05-analyst-case.png" alt="Ca xem xét với giải thích SHAP và Quyết định cuối Hạ hạn mức"></figure>
+      <p><span class="ui-btn">Xem xét</span> → đọc <b>SHAP</b> từ <span class="mono">/explain</span> → chọn Giữ nguyên / Hạ / Tạm khoá hạn mức → <span class="ui-btn">Lưu quyết định</span>. Có thêm Rà soát theo lô và Cảnh báo sớm.</p>
+    </div>
+    <div class="role-card">
+      <div class="role-head"><div class="role-step">03</div><div><h3>Quản trị hệ thống</h3><span>tài khoản admin · Bảng điều khiển hệ thống</span></div></div>
+      <figure class="shot"><img src="../assets/screenshots/staff-portal/06-admin-dashboard.png" alt="Bảng điều khiển hệ thống: trạng thái API, model, drift monitor"></figure>
+      <p>Trạng thái API, model <b>@champion</b>, drift monitor; bảng <span class="mono">inference_logs</span>; <span class="ui-btn">Chạy simulate</span> và xoá log khi demo.</p>
+    </div>
+  </div>
+  <div class="row mt24"><span class="tag ok">API quyết định APPROVE / REVIEW / DECLINE</span><span class="tag warn">REVIEW luôn có người quyết định cuối</span><span class="tag">Sai role → 403</span></div>
+  <aside class="notes">~45 giây, ảnh chụp từ portal đang chạy. CSKH tạo yêu cầu tăng hạn mức, API trả REVIEW (xác suất vỡ nợ 41%, đề xuất hạ hạn mức xuống 45.000). Ca này tự xuất hiện ở Hàng đợi xem xét; chuyên viên đọc SHAP rồi chọn Hạ hạn mức. Quản trị chỉ nhìn sức khoẻ hệ thống và dữ liệu suy luận. Đây là human-in-the-loop của slide Responsible AI, giờ có giao diện thật.</aside>
+</section>
+
+<!-- 18 PORTAL DRIFT -->
+<section class="slide" data-title="Simulate → drift → alert → retrain" data-section="DEMO">
+  <p class="kicker">17 · staff portal · simulate nhóm chủ thẻ &lt; 30 tuổi</p>
+  <h2 class="h2">Một cú bấm trên portal: <span class="amber">drift → alert Telegram → retrain</span></h2>
+  <div class="drift-steps mt24">
+    <div class="ds"><div class="n">01 · ADMIN</div><b>Chạy simulate</b><span>Nguồn “Chủ thẻ dưới 30 tuổi (chiến dịch Gen-Z)”, 600 request tới <span class="mono">/predict</span></span></div>
+    <div class="ds"><div class="n">02 · DRIFT MONITOR</div><b>DRIFT sau ~60 s</b><span>Cửa sổ 500 dòng mới nhất: PSI của AGE vượt xa ngưỡng 0.25</span></div>
+    <div class="ds"><div class="n">03 · ALERTMANAGER</div><b>DataDriftDetected</b><span>Firing sau 2 phút, gửi receiver <span class="mono">telegram</span> và <span class="mono">webhook</span></span></div>
+    <div class="ds"><div class="n">04 · AIRFLOW</div><b>model_retrain</b><span><span class="mono">drift_monitoring</span> kiểm cooldown → train challenger → quality gate → promote hoặc giữ champion</span></div>
+  </div>
+  <div class="drift-shots mt24">
+    <figure class="shot"><img src="../assets/screenshots/staff-portal/08b-admin-drift-card.png" alt="Trạng thái hệ thống: Drift monitor báo DRIFT, max PSI 13.142, cột drift AGE"></figure>
+    <figure class="shot contain"><img src="../assets/screenshots/staff-portal/09-alertmanager-drift.png" alt="Alertmanager: DataDriftDetected đang bắn ở receiver telegram và webhook"></figure>
+    <figure class="shot contain wide"><img src="../assets/screenshots/staff-portal/10-airflow-model-retrain.png" alt="Airflow: DAG model_retrain với các task train_challenger, quality_gate, decide_promotion, keep_champion"></figure>
+  </div>
+  <aside class="notes">~50 giây. Chạy thật trên stack local: 600 request nhóm dưới 30 tuổi → drift monitor báo DRIFT (max PSI 13.142, cột AGE) → DataDriftDetected đi tới Telegram. Train chỉ có chủ thẻ từ 30 tuổi nên lệch là có chủ đích. Ảnh Airflow là một lần model_retrain đã chạy: quality gate pass nhưng challenger không tốt hơn nên giữ champion. Sau demo chạy lại “Lưu lượng bình thường” để drift hết.</aside>
+</section>
+
+<!-- 19 DEMO -->
 <section class="slide" data-title="Live demo" data-section="DEMO">
-  <p class="kicker">15 · live demo · production story</p>
+  <p class="kicker">18 · live demo · production story</p>
   <h2 class="h2">Demo theo câu chuyện: <span class="green">Healthy → Incident → Detection → Recovery</span></h2>
   <div class="demo-flow">
     <div class="demo-step"><div class="n">01</div><h3>Healthy baseline</h3><p>API ready · champion version hiển thị · Grafana xanh.</p></div>
-    <div class="demo-step"><div class="n">02</div><h3>Inject drift</h3><p>Tạo traffic/data distribution lệch có chủ đích.</p></div>
+    <div class="demo-step"><div class="n">02</div><h3>Inject drift</h3><p>Portal → Chạy simulate “Chủ thẻ dưới 30 tuổi”.</p></div>
     <div class="demo-step"><div class="n">03</div><h3>Observe alert</h3><p>Drift dashboard thay đổi · DataDriftDetected fire.</p></div>
     <div class="demo-step"><div class="n">04</div><h3>Airflow reacts</h3><p>DAG kiểm tra cooldown → retrain challenger.</p></div>
     <div class="demo-step"><div class="n">05</div><h3>Quality gate</h3><p>Pass → promote; fail → champion không đổi.</p></div>
     <div class="demo-step"><div class="n">06</div><h3>Prove recovery</h3><p>Verify served version + alert resolved / rollback path.</p></div>
   </div>
-  <div class="demo-code"><span>make simulate SCENARIO=drift</span><span>make drift-dag</span><span>make registry</span><span>make retrain-fail</span><span>make alerts</span><span class="red">optional: make chaos-api-down</span></div>
+  <div class="demo-code"><span>portal: Chạy simulate</span><span>make drift-dag</span><span>make registry</span><span>make retrain-fail</span><span>make alerts</span><span class="red">optional: make chaos-api-down</span></div>
   <div class="row mt20"><span class="tag warn">Backup screenshots + expected output ready</span><span class="small">Nếu DAG/demo chậm: không debug trước hội đồng, chuyển sang evidence dự phòng.</span></div>
   <aside class="notes">Demo business prediction chỉ dùng vài giây đầu nếu cần. Trọng tâm là incident lifecycle: healthy → drift → alert → orchestration → quality gate → verify. Optional chaos nếu còn thời gian.</aside>
 </section>
 
-<!-- 17 LESSONS -->
+<!-- 20 LESSONS -->
 <section class="slide" data-title="Lessons learned" data-section="LESSONS">
-  <p class="kicker">16 · what broke when we operated it</p>
+  <p class="kicker">19 · what broke when we operated it</p>
   <h2 class="h2">Bài học đến từ <span class="blue">vận hành thật</span>, không phải từ notebook</h2>
   <div class="learn-grid mt32">
     <div class="lesson"><div class="num">01</div><div><h3>Evidence phải sinh từ pipeline</h3><p>Report, model card và docs lấy số liệu từ artifact; retrain xong tài liệu không lệch khỏi hệ thống.</p></div></div>
@@ -465,7 +575,7 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
   <aside class="notes">Kết bài bằng kinh nghiệm production. Nhấn lesson 3 vì đó là sự cố cụ thể cho thấy monitoring stack cũng là workload cần capacity planning.</aside>
 </section>
 
-<!-- 17 Q&A -->
+<!-- 21 Q&A -->
 <section class="slide center" data-title="Q&A" data-section="Q&A">
   <div style="font:800 160px var(--mono);line-height:1;color:var(--green)">?</div>
   <h2 class="h2 mt16">Questions & Discussion</h2>

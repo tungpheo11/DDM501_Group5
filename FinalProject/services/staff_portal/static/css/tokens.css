@@ -58,4 +58,6 @@
   --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08);
 
   --layout-max-width: 1200px;
+  /* Shared height of inputs, selects and buttons placed on the same form row. */
+  --control-height: 2.625rem;
 }

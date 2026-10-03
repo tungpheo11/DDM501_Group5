@@ -56,10 +56,13 @@ class ScoringClient:
         if self._owns_client:
             self._client.close()
 
-    def _request(self, method: str, path: str, *, json: Any = None, auth: bool = True) -> ApiResult:
+    def _request(
+        self, method: str, path: str, *, json: Any = None, auth: bool = True, timeout: float | None = None
+    ) -> ApiResult:
         start = time.perf_counter()
+        extra: dict[str, Any] = {"timeout": timeout} if timeout is not None else {}
         try:
-            response = self._client.request(method, path, json=json, headers=self._auth if auth else None)
+            response = self._client.request(method, path, json=json, headers=self._auth if auth else None, **extra)
         except httpx.HTTPError as exc:
             logger.warning("Scoring API unreachable: %s %s (%s)", method, path, type(exc).__name__)
             raise ScoringApiError(503, "API_UNREACHABLE", "Không kết nối được API chấm điểm.") from exc
@@ -90,9 +93,9 @@ class ScoringClient:
         """``GET /api/v1/model/info``."""
         return self._request("GET", "/api/v1/model/info")
 
-    def readiness(self) -> dict[str, Any]:
+    def readiness(self, timeout_seconds: float | None = None) -> dict[str, Any]:
         """``GET /health/ready`` (unauthenticated); 503 bodies are returned, not raised."""
         try:
-            return self._request("GET", "/health/ready", auth=False).body
+            return self._request("GET", "/health/ready", auth=False, timeout=timeout_seconds).body
         except ScoringApiError as exc:
             return {"status": "not_ready" if exc.status_code == 503 else "unreachable", "reasons": [exc.message]}

@@ -21,7 +21,14 @@ from staff_portal.config import hash_password, load_portal_settings, load_users
 from staff_portal.scoring_client import ApiResult, ScoringApiError, ScoringClient
 from staff_portal.simulator import SimulationBusyError, SimulationManager, SimulationRejectedError
 from staff_portal.store import AlreadyDecidedError, LogFilters, PortalStore, StoreUnavailableError, utcnow
-from staff_portal.views import format_money, format_number, format_percent, guardrails, reason_codes
+from staff_portal.views import (
+    format_money,
+    format_number,
+    format_percent,
+    guardrails,
+    reason_codes,
+    static_fingerprint,
+)
 
 # --- settings ------------------------------------------------------------------------
 
@@ -228,6 +235,31 @@ def test_scoring_client_unreachable() -> None:
         client.predict({})
     assert (excinfo.value.status_code, excinfo.value.code) == (503, "API_UNREACHABLE")
     assert client.readiness()["status"] == "not_ready"
+
+
+def test_static_fingerprint_tracks_asset_content(tmp_path: Path) -> None:
+    (tmp_path / "css").mkdir()
+    asset = tmp_path / "css" / "portal.css"
+    asset.write_text(".page { margin: 0; }")
+    first = static_fingerprint(tmp_path)
+    assert first == static_fingerprint(tmp_path)
+    assert len(first) == 12
+    asset.write_text(".page { margin: 1px; }")
+    assert static_fingerprint(tmp_path) != first
+
+
+def test_scoring_client_readiness_uses_probe_timeout() -> None:
+    timeouts: list[dict[str, Any]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        timeouts.append(request.extensions["timeout"])
+        return httpx.Response(200, json={"status": "ready"})
+
+    client = _client(handler)
+    assert client.readiness(timeout_seconds=2.0) == {"status": "ready"}
+    client.readiness()
+    assert timeouts[0]["read"] == 2.0
+    assert timeouts[1]["read"] != 2.0
 
 
 def test_scoring_client_owns_default_client() -> None:

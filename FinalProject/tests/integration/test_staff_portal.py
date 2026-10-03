@@ -220,9 +220,62 @@ def test_health_and_login_page(stack: Stack) -> None:
     assert page.status_code == 200
     assert csrf_of(page.text)
     assert "chuyenvien" in page.text
+    assert re.search(r'href="/static/css/portal\.css\?v=[0-9a-f]{12}"', page.text)
     assert "script-src 'self'" in page.headers["content-security-policy"]
     assert page.headers["x-frame-options"] == "DENY"
     assert page.headers["cache-control"] == "no-store"
+
+
+def test_liveness_and_readiness_probes(stack: Stack) -> None:
+    browser = stack.client()
+    live = browser.get("/health/live")
+    assert live.status_code == 200
+    assert live.json()["status"] == "alive"
+
+    ready = browser.get("/health/ready")
+    assert ready.status_code == 200, ready.text
+    body = ready.json()
+    assert body["status"] == "ready"
+    assert body["reasons"] == []
+    assert body["checks"]["database"]["status"] == "up"
+    assert body["checks"]["scoring_api"]["status"] == "up"
+    assert body["checks"]["scoring_api"]["detail"] in {"ready", "degraded"}
+    assert API_KEY not in ready.text
+
+
+def test_readiness_degraded_when_scoring_api_down(stack: Stack, monkeypatch: pytest.MonkeyPatch) -> None:
+    portal = stack.app.state.portal
+    monkeypatch.setattr(
+        portal.scoring,
+        "readiness",
+        lambda timeout_seconds=None: {"status": "unreachable", "reasons": ["Không kết nối được API chấm điểm."]},
+    )
+    response = stack.client().get("/health/ready")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "degraded"
+    assert body["checks"]["scoring_api"] == {
+        "status": "down",
+        "detail": "unreachable",
+        "reasons": ["Không kết nối được API chấm điểm."],
+    }
+    assert body["reasons"] == ["scoring API is unreachable"]
+
+
+def test_probes_fail_when_database_down(stack: Stack, monkeypatch: pytest.MonkeyPatch) -> None:
+    portal = stack.app.state.portal
+    monkeypatch.setattr(portal.store, "ping", lambda: False)
+    browser = stack.client()
+
+    assert browser.get("/health/live").status_code == 200
+    ready = browser.get("/health/ready")
+    assert ready.status_code == 503
+    assert ready.json()["status"] == "not_ready"
+    assert ready.json()["checks"]["database"] == {"status": "down"}
+    summary = browser.get("/health")
+    assert summary.status_code == 503
+    assert summary.json()["status"] == "down"
+    assert summary.json()["database"] == "down"
 
 
 def test_session_cookie_is_httponly_and_samesite_lax(stack: Stack) -> None:
