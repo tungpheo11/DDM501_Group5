@@ -230,6 +230,20 @@ def test_scoring_client_unreachable() -> None:
     assert client.readiness()["status"] == "not_ready"
 
 
+def test_scoring_client_readiness_uses_probe_timeout() -> None:
+    timeouts: list[dict[str, Any]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        timeouts.append(request.extensions["timeout"])
+        return httpx.Response(200, json={"status": "ready"})
+
+    client = _client(handler)
+    assert client.readiness(timeout_seconds=2.0) == {"status": "ready"}
+    client.readiness()
+    assert timeouts[0]["read"] == 2.0
+    assert timeouts[1]["read"] != 2.0
+
+
 def test_scoring_client_owns_default_client() -> None:
     client = ScoringClient("http://127.0.0.1:9", "k", timeout_seconds=0.2)
     client.close()

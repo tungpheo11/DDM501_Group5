@@ -13,7 +13,7 @@ from typing import Any
 
 import httpx
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
@@ -24,7 +24,7 @@ from staff_portal.auth import LoginRequiredError, LoginThrottle
 from staff_portal.catalog import Catalog, build_catalog
 from staff_portal.config import PortalSettings, load_portal_settings
 from staff_portal.context import PortalContext
-from staff_portal.routes import admin, analyst, auth, cskh
+from staff_portal.routes import admin, analyst, auth, cskh, health
 from staff_portal.scoring_client import ScoringApiError, ScoringClient
 from staff_portal.simulator import SimulationJob, SimulationManager
 from staff_portal.store import PortalStore, StoreUnavailableError
@@ -180,19 +180,7 @@ def create_app(
         template = "partials/error.html" if is_htmx(request) else "error.html"
         return render(request, template, {"status_code": 503, "message": str(exc)}, 503)
 
-    @app.get("/health", include_in_schema=False)
-    def health() -> JSONResponse:
-        body: dict[str, Any] = {
-            "status": "ok",
-            "service": "staff-portal",
-            "version": __version__,
-            "demo_mode": cfg.demo_mode,
-            "database": "ok" if portal_store.ping() else "down",
-            "catalog_size": len(cardholders),
-            "accounts": len(cfg.users),
-        }
-        return JSONResponse(body)
-
+    app.include_router(health.router)
     app.include_router(auth.router)
     app.include_router(cskh.router)
     app.include_router(analyst.router)
