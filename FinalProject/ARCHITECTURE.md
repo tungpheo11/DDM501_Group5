@@ -17,6 +17,8 @@ Tóm tắt một trang. Tài liệu đầy đủ (sơ đồ ngữ cảnh hệ th
 
 15 service Docker Compose, 3 profile (`core`, `monitoring`, `orchestration`); production chạy sau Nginx + TLS trên
 Ubuntu, mọi cổng bind `127.0.0.1` ([Ubuntu deployment](docs/guides/ubuntu-deployment.md)).
+Hệ thống đã **được kiểm chứng thực tế (LIVE)**: CD pipeline triển khai tự động release **`v1.0.0`** lên VPS `148.113.255.63` qua SSH Deploy Key (Ed25519), 12 containers healthy, smoke test pass.
+
 
 ## 2. Vòng lặp MLOps
 

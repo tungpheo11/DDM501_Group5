@@ -122,7 +122,8 @@ Project Compose `credit-risk-mlops`: 15 service (12 long-running + 3 job one-sho
 | Smoke CI | `docker` | `make smoke` (project `credit-risk-smoke`, image đã scan) | `mlflow:5000` | `postgres:5432` |
 | Production (1 host) | `docker` | `deploy.sh` + overlay `docker-compose.prod.yml` + image GHCR theo digest, Nginx + TLS, systemd | nội bộ | nội bộ |
 
-Chi tiết: [guide Ubuntu](guides/ubuntu-deployment.md), [CI/CD](07-testing-cicd.md).
+Đã kiểm chứng (**LIVE**): Release `v1.0.0` đã được deploy tự động lên VPS `148.113.255.63` qua pipeline CD (12 containers healthy, smoke test pass). Chi tiết: [guide Ubuntu](guides/ubuntu-deployment.md), [CI/CD](07-testing-cicd.md).
+
 
 ## 6. Tech stack & lý do chọn
 

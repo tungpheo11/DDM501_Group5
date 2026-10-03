@@ -229,6 +229,8 @@ Trivy scan image và nếu có vulnerability mức CRITICAL thì pipeline bị c
 
 Khi tạo tag release, image được publish lên GHCR rồi deploy qua SSH vào thư mục `releases/<tag>` trên Ubuntu.
 
+Đặc biệt, pipeline này đã được kiểm chứng thực tế: nhóm đã chạy thành công khi push tag `v1.0.0`, toàn bộ chu trình CI/CD tự động build, scan Trivy, publish GHCR và deploy lên VPS Ubuntu `148.113.255.63` qua SSH Deploy Key, smoke test pass và 12 container healthy mà không cần bất kỳ can thiệp thủ công nào.
+
 Sau deploy, hệ thống chưa được coi là thành công ngay.
 
 Nó phải gọi `/health/ready` và chạy một prediction thật.

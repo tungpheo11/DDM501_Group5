@@ -5,7 +5,9 @@ Pipeline GitHub Actions cho Final Project nằm ở root repo:
 | Workflow | Trigger | Vai trò |
 |---|---|---|
 | [`final-project-ci.yml`](../../.github/workflows/final-project-ci.yml) | push lên mọi branch / pull request có thay đổi trong `FinalProject/**`; `workflow_dispatch`; `workflow_call` (CD gọi lại) | Quality gate: lint, type check, 4 loại test + coverage ≥ 80%, build image, Trivy, compose smoke test |
-| [`final-project-cd.yml`](../../.github/workflows/final-project-cd.yml) | push tag `v*` (vd. `v1.2.0`); `workflow_dispatch` trên một tag | Chạy lại CI, publish image lên GHCR, deploy Ubuntu qua SSH (có phê duyệt), smoke test sau deploy, rollback tự động, báo Telegram |
+| [`final-project-cd.yml`](../../.github/workflows/final-project-cd.yml) | push tag `v*` (vd. `v1.2.0`); `workflow_dispatch` trên một tag | Chạy lại CI, publish image lên GHCR, deploy Ubuntu qua SSH, smoke test sau deploy, rollback tự động, báo Telegram |
+
+> **Production VERIFIED**: Pipeline CD (`final-project-cd.yml`) đã được kích hoạt và triển khai thành công thực tế với release **`v1.0.0`** lên VPS Ubuntu `148.113.255.63` thông qua SSH Deploy Key (Ed25519) và GitHub Actions Secrets. Toàn bộ 12 containers chạy healthy, smoke test pass (`/health/ready` = 200, prediction = 200). Quản lý release bằng symlink `/opt/credit-risk/current → releases/v1.0.0`.
 
 Mọi bước CI đều gọi **target `make`** trong `FinalProject/Makefile`, nên `make ci` chạy lại đúng pipeline trên máy local.
 

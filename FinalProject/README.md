@@ -187,12 +187,33 @@ make test
 make test-cov
 ```
 
-### Triển Khai Tự Động (Continuous Deployment - CD)
-Dự án sẵn sàng triển khai thực tế lên máy chủ ảo Ubuntu thông qua GitHub Actions (`final-project-cd.yml`):
-- Đóng gói Docker image và đẩy lên GitHub Container Registry (GHCR).
-- Kết nối SSH an toàn (pin host key) vào Ubuntu VM.
-- Chạy zero-downtime rolling update qua Nginx Reverse Proxy và Systemd.
-- Tự động chạy Smoke Test sau khi deploy; tự động rollback về release trước nếu phát hiện lỗi; gửi thông báo trạng thái qua Telegram Bot.
+### Triển Khai Tự Động (Continuous Deployment - CD) — ĐÃ VERIFIED trên Production
+
+Pipeline CD được kích hoạt hoàn toàn tự động khi push tag `v*` lên `main`, đã triển khai thành công **v1.0.0** lên VM production `148.113.255.63`:
+
+```text
+git tag v1.0.0 && git push origin v1.0.0
+   │
+   ▼
+CI Gate (lint + 394 tests + coverage ≥ 80% + image build + Trivy + smoke)
+   │  ✓ 2m13s
+   ▼
+Publish Image → GHCR (ghcr.io/tungpheo11/credit-risk-api@sha256:...)
+   │  ✓ 3m14s – immutable digest, SBOM + provenance attestations
+   ▼
+Deploy to Ubuntu VM (SSH → upload release → docker compose up → smoke test)
+   │  ✓ 1m47s – 12 containers healthy, automatic rollback nếu smoke fail
+   ▼
+Notify Telegram (deployment status)
+```
+
+- **Trigger**: Push tag `v*` (e.g. `git tag v1.2.0 && git push origin v1.2.0`)
+- **CI gate**: Lint (ruff, black, mypy) + Test suite (394 tests, coverage ≥ 80%) + Docker build + Trivy security scan (block CRITICAL)
+- **Publish**: Build multi-stage Docker image → push lên GitHub Container Registry (GHCR) với immutable digest
+- **Deploy**: SSH key-only auth → upload release bundle → `deploy.sh deploy` → zero-downtime rolling update
+- **Safety**: Smoke test tự động sau deploy; **automatic rollback** về release trước nếu smoke fail; symlink-based release management (`/opt/credit-risk/current → releases/<tag>`)
+- **Secrets**: `DEPLOY_SSH_KEY`, `DEPLOY_SSH_HOST`, `DEPLOY_SSH_USER`, `DEPLOY_SSH_KNOWN_HOSTS` được quản lý qua GitHub Actions Secrets
+
 
 ---
 

@@ -262,8 +262,8 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
       <div class="svc mon"><h3 class="green">MONITORING profile</h3><p>Prometheus · Grafana · Alertmanager · Evidently drift monitor · statsd-exporter · alert webhook</p></div>
     </div>
     <div class="arch-col"><div class="arch-head">External / Delivery</div>
-      <div class="svc"><h3>GitHub Actions + GHCR</h3><p>CI gate · image publish · deployment trigger</p></div>
-      <div class="svc"><h3>Ubuntu host</h3><p>Nginx/TLS · release directories · systemd · backup</p></div>
+      <div class="svc"><h3>GitHub Actions + GHCR</h3><p>CI gate · image publish · <b class="green">auto deploy v1.0.0 ✓</b></p></div>
+      <div class="svc"><h3>Ubuntu host <span class="tag ok" style="font-size:12px;padding:3px 8px">LIVE</span></h3><p>148.113.255.63 · 12 containers · release symlink · /opt/credit-risk</p></div>
       <div class="svc"><h3>Telegram</h3><p>Operational alert destination</p></div>
     </div>
   </div>
@@ -272,20 +272,20 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
 </section>
 
 <!-- 08 CICD -->
-<section class="slide" data-title="Release safety" data-section="DEPLOY & SERVE">
-  <p class="kicker">07 · ci/cd · release safety</p>
-  <h2 class="h2">Release không phải “docker compose up” — <span class="green">mỗi bước đều có gate</span></h2>
+<section class="slide" data-title="Release safety" data-section="DEPLOY &amp; SERVE">
+  <p class="kicker">07 · ci/cd · release safety — VERIFIED v1.0.0</p>
+  <h2 class="h2">Tag → CI → GHCR → Deploy → Smoke: <span class="green">toàn bộ tự động, đã chạy thật</span></h2>
   <div class="release">
-    <div class="rel-step"><div class="num">01</div><h3>Validate</h3><p>ruff · black · mypy · data/model tests</p></div>
-    <div class="rel-step"><div class="num">02</div><h3>Quality gate</h3><p>396 tests · coverage floor ≥ 80%</p></div>
-    <div class="rel-step"><div class="num">03</div><h3>Build</h3><p>multi-stage image · reproducible artifact</p></div>
-    <div class="rel-step"><div class="num">04</div><h3>Security</h3><p>Trivy blocks CRITICAL vulnerabilities</p></div>
-    <div class="rel-step"><div class="num">05</div><h3>Deploy</h3><p>tag v* → GHCR → SSH → releases/&lt;tag&gt;</p></div>
-    <div class="rel-step"><div class="num">06</div><h3>Smoke</h3><p>/health/ready + real predict before success</p></div>
+    <div class="rel-step"><div class="num">01</div><h3>Validate</h3><p>ruff · black · mypy · data/model tests</p><div class="tag ok" style="margin-top:8px;font-size:14px">51s</div></div>
+    <div class="rel-step"><div class="num">02</div><h3>Quality gate</h3><p>394 tests · coverage ≥ 80%</p><div class="tag ok" style="margin-top:8px;font-size:14px">2m13s</div></div>
+    <div class="rel-step"><div class="num">03</div><h3>Build + Scan</h3><p>multi-stage image · Trivy blocks CRITICAL</p><div class="tag ok" style="margin-top:8px;font-size:14px">2m12s</div></div>
+    <div class="rel-step"><div class="num">04</div><h3>Publish GHCR</h3><p>ghcr.io/tungpheo11/credit-risk-api @sha256</p><div class="tag ok" style="margin-top:8px;font-size:14px">3m14s</div></div>
+    <div class="rel-step"><div class="num">05</div><h3>Deploy VM</h3><p>SSH key-only → releases/v1.0.0 → compose up</p><div class="tag ok" style="margin-top:8px;font-size:14px">1m47s</div></div>
+    <div class="rel-step"><div class="num">06</div><h3>Smoke</h3><p>/health/ready + predict → 12 containers healthy</p><div class="tag ok" style="margin-top:8px;font-size:14px">✓ PASS</div></div>
   </div>
   <div class="rollback-band"><div><strong class="red">Smoke fail? Roll back immediately.</strong><div class="small mt8">Symlink <span class="mono">current</span> trở lại <span class="mono">previous_release</span>; service không giữ bản lỗi.</div></div><span class="tag bad">automatic rollback</span></div>
-  <div class="security-row"><div class="security-chip">runtime secrets outside image</div><div class="security-chip">host .env · chmod 600</div><div class="security-chip">image scan before publish</div><div class="security-chip">health check after deploy</div><div class="security-chip">pinned release artifact</div></div>
-  <aside class="notes">Đây là slide Ops rất quan trọng. Đừng đọc từng tool; kể release story: mỗi gate loại bỏ một lớp rủi ro và smoke test là nơi quyết định success/rollback.</aside>
+  <div class="security-row"><div class="security-chip">SSH deploy key (Ed25519)</div><div class="security-chip">GitHub Secrets for SSH</div><div class="security-chip">Trivy scan before publish</div><div class="security-chip">immutable image digest</div><div class="security-chip">release symlink management</div></div>
+  <aside class="notes">Pipeline thật: tag v1.0.0 đã trigger CD, qua CI gate, publish lên GHCR, deploy lên VM 148.113.255.63 và smoke test pass. Thời gian thực tế ghi trên mỗi step. Rollback tự động nếu smoke fail.</aside>
 </section>
 
 <!-- 09 SERVING -->

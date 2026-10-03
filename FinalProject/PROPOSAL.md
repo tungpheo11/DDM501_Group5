@@ -199,11 +199,18 @@ flowchart TD
         MLflow --> S3
     end
 
-    subgraph CICDLayer ["5. Tích Hợp & Triển Khai Liên Tục (GitHub Actions)"]
-        GitHub[Push Code to GitHub] --> Actions["GitHub Actions CI Pipeline"]
-        Actions --> Lint[Linting: flake8]
-        Actions --> Test[Unit & Drift Tests: pytest]
-        Actions --> DockerBuild[Build Unified Docker Images]
+    subgraph CICDLayer ["5. Tích Hợp & Triển Khai Liên Tục (CI/CD & Production Delivery)"]
+        GitTrigger[Git Push / Tag v*] --> CIWorkflow["GitHub Actions CI/CD Pipeline"]
+        CIWorkflow --> LintGate["Quality Gate 1: Lint & Types (ruff, black, mypy)"]
+        LintGate --> TestGate["Quality Gate 2: 394 Tests (Coverage >= 80%)"]
+        TestGate --> BuildScan["Quality Gate 3: Multi-stage Build & Trivy Security (Block CRITICAL)"]
+        BuildScan --> PublishGHCR["Publish GHCR Container Registry (Immutable Digest)"]
+        PublishGHCR --> SSHDeploy["Automated CD: SSH Ed25519 Deploy Key"]
+        SSHDeploy --> VPSDeploy["Ubuntu 24.04 Production VM (148.113.255.63)"]
+        VPSDeploy --> SmokeGate{"Smoke Test: /health/ready & Real Predict"}
+        SmokeGate -->|Pass| ProdLive["12 Containers LIVE (Symlink /opt/credit-risk/current)"]
+        SmokeGate -->|Fail| AutoRollback["Automatic Rollback to previous_release"]
+        ProdLive --> AlertNotify["Telegram Deployment Notification"]
     end
 ```
 
@@ -211,10 +218,16 @@ flowchart TD
 
 ## 🎬 6. Kịch Bản Trình Bày Live Demo Cho Giảng Viên (15 Phút "Gây Choáng Ngợp")
 
+> 🌟 **PRODUCTION VERIFIED**: Không dừng lại ở môi trường máy cá nhân (Local Compose), đồ án đã được **kiểm chứng thực tế trên Cloud VPS Ubuntu 24.04 (`148.113.255.63`)**:
+> - CD Pipeline kích hoạt tự động qua tag `v1.0.0`.
+> - Ảnh Docker đẩy lên GitHub Container Registry (GHCR) với SHA digest bất biến.
+> - SSH Deploy Key triển khai không chạm, 12 containers đồng bộ trạng thái Healthy, tự động rollback nếu smoke test thất bại.
+
 | Thời gian | Nhóm trình chiếu / Thao tác | Hiện tượng diễn ra trên hệ thống | Giá trị chứng minh với Thầy |
 | :---: | :--- | :--- | :--- |
-| **00:00 - 03:00** | Bật terminal: `docker compose up -d`. Mở `docker compose ps` cho thầy thấy 8 services đang chạy trơn tru. | Toàn bộ stack khởi động: API, Postgres, MinIO, MLflow, Airflow, Prometheus, Grafana, Evidently. | Kỹ năng đóng gói hạ tầng DevOps/MLOps hoàn hảo, 1-click deployment. |
+| **00:00 - 03:00** | Bật terminal: `docker compose up -d` (hoặc mở SSH kiểm tra status stack production trên VM `148.113.255.63`). Mở `docker compose ps` cho thầy thấy các services đang chạy trơn tru. | Toàn bộ stack khởi động: API, Postgres, MinIO, MLflow, Airflow, Prometheus, Grafana, Evidently. | Kỹ năng đóng gói hạ tầng DevOps/MLOps hoàn hảo, 1-click deployment & production-ready. |
 | **03:00 - 06:00** | Chạy script: `python scripts/simulate_normal_traffic.py`. Mở Grafana Dashboard. | Requests tăng đều, Latency < 40ms, PSI < 0.1, Evidently hiển thị trạng thái `Drift Status: OK (Green)`. | Hệ thống phục vụ thời gian thực ổn định ở điều kiện bình thường. |
 | **06:00 - 09:00** | **Tạo sự cố (The Shock)**: Chạy `python scripts/simulate_genz_marketing_drift.py`. | **Bảng điều khiển Grafana đổi màu**: Biểu đồ phân phối tuổi lệch hẳn; PSI nhảy lên 0.32; Evidently cắm cờ đỏ; Prometheus kích hoạt alert `ALERT: CriticalDataDriftDetected`. | Khả năng quan sát (Observability) và áp dụng đúng hệ thống 3 ngưỡng phát hiện sự cố. |
 | **09:00 - 12:00** | Không thao tác gì cả, bảo thầy nhìn vào Airflow UI. | **DAG Retraining tự động được bật chạy** do nhận Webhook từ Evidently. Các task chạy xanh lần lượt: Ghép nhãn &rarr; Quality Gate &rarr; Train V2 &rarr; So sánh F1 &rarr; Đăng ký MLflow `@challenger`. | Chu trình khép kín tự phục hồi (Self-healing Loop), đúng chuẩn triết lý MLOps. |
-| **12:00 - 15:00** | Mở MLflow xem Model Version 2. Kiểm tra API Gateway đang chia luồng Canary 90/10. Gửi 1 sample khách hàng trẻ tuổi để thấy Model V2 dự đoán chuẩn xác. | Khách hàng trẻ tuổi được chấm điểm đúng rủi ro, hệ thống sẵn sàng thăng cấp Model V2 lên 100% traffic không gián đoạn. | Triển khai an toàn chuẩn doanh nghiệp (Safe Deployment / Zero Downtime). |
+| **12:00 - 15:00** | Mở MLflow xem Model Version 2. Kiểm tra API Gateway đang chia luồng Canary 90/10. Gửi 1 sample khách hàng trẻ tuổi để thấy Model V2 dự đoán chuẩn xác. Trình bày pipeline CI/CD GitHub Actions deploy tự động lên VM production. | Khách hàng trẻ tuổi được chấm điểm đúng rủi ro, hệ thống sẵn sàng thăng cấp Model V2 lên 100% traffic không gián đoạn. Minh chứng pipeline CI/CD release tự động hóa hoàn chỉnh. | Triển khai an toàn chuẩn doanh nghiệp (Safe Deployment / Zero Downtime / Automated CI/CD). |
+

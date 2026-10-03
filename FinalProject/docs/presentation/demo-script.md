@@ -197,3 +197,5 @@ make alerts                                             # Prometheus alerts: non
 - **"Sao challenger không được promote?"** — dữ liệu retrain gần giống champion nên không vượt `PromotionPolicy`; đó là hành vi mong muốn (nhánh `keep_champion`, có thông báo `RetrainChampionKept`).
 - **"Drift xử lý thế nào nếu chỉ lệch output?"** — prediction shift (PSI output ≥ 0.25) chỉ alert `PredictionDistributionShift`, không retrain tự động, vì có thể là thay đổi hợp lệ trong tập chủ thẻ.
 - **"Latency có bị retrain ảnh hưởng?"** — retrain chạy trong Airflow (container riêng); API chỉ hot-reload model qua `POST /api/v1/model/reload`.
+- **"Stack này đã chạy trên production thật chưa hay chỉ local compose?"** — hệ thống đã có pipeline CD hoàn chỉnh: push tag `v1.0.0` kích hoạt workflow GitHub Actions, build và scan Trivy, publish GHCR, rồi deploy qua SSH Deploy Key vào VPS Ubuntu `148.113.255.63`. Stack production chạy 12 containers (`/opt/credit-risk/current`), sau Nginx, smoke test pass và tự động rollback nếu lỗi.
+

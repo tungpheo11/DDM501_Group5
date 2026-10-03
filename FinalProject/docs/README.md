@@ -110,8 +110,8 @@ Cột "Bằng chứng" là file sinh tự động hoặc lệnh tái lập đư�
 | Tiêu chí (Excellent) | Tài liệu | Bằng chứng |
 |---|---|---|
 | Coverage > 80 %, test có ý nghĩa | [07 §2](07-testing-cicd.md#2-quality-gates) | Coverage tổng 91.3 % (gate ≥ 80 %, `make test-ci`; artifact CI `final-project-coverage`) |
-| Unit, integration, data quality, model tests | [07](07-testing-cicd.md), [03 §8](03-ml-pipeline.md#8-kiểm-thử-liên-quan) | `tests/unit`, `tests/integration`, `tests/data_quality`, `tests/model_validation` (JUnit từng suite) |
-| CI/CD: lint, test, build, deploy | [07 §1, §6](07-testing-cicd.md#1-sơ-đồ-job) | [`final-project-ci.yml`](../../.github/workflows/final-project-ci.yml), [`final-project-cd.yml`](../../.github/workflows/final-project-cd.yml); `make ci` chạy lại pipeline local |
+| CI/CD: lint, test, build, deploy | [07 §1, §6](07-testing-cicd.md#1-sơ-đồ-job) | [`final-project-ci.yml`](../../.github/workflows/final-project-ci.yml), [`final-project-cd.yml`](../../.github/workflows/final-project-cd.yml); `make ci` chạy lại pipeline local; CD verified live trên VPS `148.113.255.63` (v1.0.0) |
+
 
 ### 3.1.5 Responsible AI (10%)
 

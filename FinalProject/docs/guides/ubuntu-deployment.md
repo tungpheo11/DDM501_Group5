@@ -4,9 +4,10 @@ Hướng dẫn đưa toàn bộ stack lên **một VPS Ubuntu** phía sau Nginx 
 upgrade và rollback. Script tự động hoá nằm trong [`deploy/ubuntu/`](../../deploy/ubuntu/README.md); pipeline CD tự
 động (GitHub Actions) mô tả trong [07 — Testing & CI/CD](../07-testing-cicd.md#6-release-và-rollback).
 
-> Đã kiểm chứng: `install.sh` chạy trong container `ubuntu:24.04` (Docker 29.8.1, Compose v5.5.1, `nginx -t` OK,
-> `systemd-analyze verify` OK cho 3 unit); `backup.sh backup/restore` chạy trên stack thật (dữ liệu giữ nguyên, API
-> `ready` từ registry sau restore). Chưa có VPS/DNS thật nên bước certbot cần domain thật mới chạy được.
+> **Production VERIFIED**: Pipeline CD (`final-project-cd.yml`) đã tự động deploy thành công **v1.0.0** lên VPS
+> `148.113.255.63` (Ubuntu 24.04, Docker 29.x, Compose v2.x). 12 containers healthy, smoke test pass.
+> SSH deploy key (Ed25519) được cấu hình qua GitHub Secrets. Release management qua symlink
+> `/opt/credit-risk/current → releases/v1.0.0`.
 
 ## 0. Kiến trúc triển khai
 
