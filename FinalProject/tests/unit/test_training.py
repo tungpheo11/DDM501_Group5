@@ -1,5 +1,6 @@
 import json
 import shutil
+from unittest.mock import Mock
 
 import pandas as pd
 import pytest
@@ -136,3 +137,20 @@ def test_registry_skips_when_tracking_unreachable(settings, champion_model):
 
 def test_hot_reload_unreachable_api_returns_false():
     assert trigger_hot_reload("http://127.0.0.1:9", timeout=0.2) is False
+
+
+@pytest.mark.parametrize(
+    ("body", "expected"),
+    [
+        ({"status": "reloaded", "model": {"model_version": "1", "degraded": False}}, True),
+        ({"status": "reloaded", "model": {"model_version": "5", "degraded": False}}, False),
+        ({"status": "reloaded", "model": {"model_version": "1", "degraded": True}}, False),
+        ({"status": "unchanged", "model": {"model_version": "1", "degraded": False}}, False),
+    ],
+)
+def test_hot_reload_verifies_expected_model_version(monkeypatch, body, expected):
+    response = Mock(status_code=200)
+    response.json.return_value = body
+    monkeypatch.setattr("credit_risk.training.retrain.requests.post", lambda *args, **kwargs: response)
+
+    assert trigger_hot_reload("http://api:8000", expected_version="1") is expected

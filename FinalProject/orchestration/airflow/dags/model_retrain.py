@@ -177,8 +177,6 @@ with DAG(
     def rollback_on_failure(promotion: dict | None) -> dict:
         import os
 
-        import requests
-
         if not promotion:
             print("Nothing was promoted in this run; champion unchanged.")
             return {"action": "none"}
@@ -188,20 +186,23 @@ with DAG(
             return {"action": "none", "reason": "no previous champion"}
 
         from credit_risk.training.registry import rollback_champion
+        from credit_risk.training.retrain import trigger_hot_reload
 
         change = rollback_champion(to_version=previous)
         api_url = os.environ.get("API_URL", "http://api:8000").rstrip("/")
         api_key = os.environ.get("API_KEY", "")
-        try:
-            response = requests.post(
-                f"{api_url}/api/v1/model/reload", headers={"X-API-Key": api_key} if api_key else {}, timeout=120
+        reloaded = trigger_hot_reload(
+            api_url,
+            api_key,
+            timeout=120,
+            expected_version=change.champion_version,
+        )
+        if not reloaded:
+            raise RuntimeError(
+                f"@champion rolled back to v{change.champion_version}, but API reload could not be verified."
             )
-            reloaded = response.status_code == 200
-        except requests.RequestException as exc:
-            print(f"API reload after rollback failed: {exc}")
-            reloaded = False
-        print(f"Rolled back @champion v{change.previous_champion_version} -> v{change.champion_version}")
-        return {"action": "rollback", "champion_version": change.champion_version, "api_reloaded": reloaded}
+        print(f"Rolled back @champion and verified API v{change.champion_version}")
+        return {"action": "rollback", "champion_version": change.champion_version, "api_reloaded": True}
 
     @task
     def refresh_drift_reference(reloaded: dict[str, Any]) -> dict[str, Any]:

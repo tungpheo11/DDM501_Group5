@@ -95,8 +95,13 @@ def load_champion_spec(settings: Settings | None = None) -> tuple[str, dict[str,
     return get_candidate(fallback.model_type).name, dict(fallback.params), "configs/training.yaml"
 
 
-def trigger_hot_reload(api_url: str, api_key: str = "", timeout: float = 10.0) -> bool:
-    """POST ``/api/v1/model/reload`` on the serving API; return True on HTTP 200."""
+def trigger_hot_reload(
+    api_url: str,
+    api_key: str = "",
+    timeout: float = 10.0,
+    expected_version: str | None = None,
+) -> bool:
+    """POST ``/api/v1/model/reload``; optionally verify the API now serves ``expected_version``."""
     headers = {"X-API-Key": api_key} if api_key else {}
     try:
         response = requests.post(f"{api_url.rstrip('/')}/api/v1/model/reload", headers=headers, timeout=timeout)
@@ -104,7 +109,20 @@ def trigger_hot_reload(api_url: str, api_key: str = "", timeout: float = 10.0) -
         logger.warning("Could not reach API for hot reload (%s).", exc)
         return False
     if response.status_code == 200:
-        logger.info("Hot reload triggered on API: %s", response.json())
+        body = response.json()
+        if expected_version is not None:
+            model = body.get("model") or {}
+            served_version = str(model.get("model_version"))
+            if body.get("status") != "reloaded" or served_version != str(expected_version) or model.get("degraded"):
+                logger.warning(
+                    "Hot reload verification failed: expected v%s, status=%s served=v%s degraded=%s",
+                    expected_version,
+                    body.get("status"),
+                    served_version,
+                    model.get("degraded"),
+                )
+                return False
+        logger.info("Hot reload triggered on API: %s", body)
         return True
     logger.warning("Hot reload returned HTTP %s", response.status_code)
     return False

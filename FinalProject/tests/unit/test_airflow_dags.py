@@ -50,6 +50,7 @@ def test_model_retrain_pipeline_order(dagbag: DagBag) -> None:
     rollback = dag.get_task("rollback_champion")
     assert rollback.trigger_rule == TriggerRule.ONE_FAILED
     assert "reload_api" in rollback.upstream_task_ids
+    assert "promote_champion" in rollback.upstream_task_ids
     assert dag.on_failure_callback is not None and dag.on_success_callback is not None
 
 

@@ -105,7 +105,8 @@ có request lỗi.
 
 **Đường tự động (Airflow):** `make retrain-dag REASON="scenario 3"` → `train_challenger` → `quality_gate` →
 `decide_promotion` → `promote_champion` → `reload_api` (kiểm tra API thật sự phục vụ version mới, sai thì
-`rollback_champion`) → `refresh_drift_reference` → `notify_promoted`. Gate chỉ promote khi challenger **tốt hơn**
+`rollback_champion`, sau đó reload và xác minh API đã phục vụ đúng version trước; nếu không xác minh được, task
+rollback cũng báo lỗi) → `refresh_drift_reference` → `notify_promoted`. Gate chỉ promote khi challenger **tốt hơn**
 (ROC-AUC không giảm quá 0.005, expected loss không tăng, cải thiện ít nhất một chỉ số); nếu không, nhánh
 `keep_champion` chạy và DAG vẫn **success** (không phải lỗi).
 
