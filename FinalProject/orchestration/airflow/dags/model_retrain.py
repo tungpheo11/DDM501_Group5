@@ -78,6 +78,7 @@ with DAG(
     on_success_callback=_on_dag_success,
     on_failure_callback=_on_dag_failure,
     params={
+        "simulate_reload_failure": Param(False, type="boolean", description="Demo: force reload_api to fail so rollback runs"),
         "min_roc_auc": Param(
             RETRAIN_MIN_ROC_AUC,
             type="number",
@@ -153,7 +154,9 @@ with DAG(
         }
 
     @task(retries=2)
-    def reload_api(promotion: dict[str, Any]) -> dict[str, Any]:
+    def reload_api(promotion: dict[str, Any], params: dict[str, Any] | None = None) -> dict[str, Any]:
+        if (params or {}).get("simulate_reload_failure"):
+            raise AirflowFailException("Simulated reload failure (demo rollback)")
         body = http_json(
             "POST", f"{API_URL}/api/v1/model/reload", headers=api_headers(), timeout=RELOAD_TIMEOUT_SECONDS
         )
