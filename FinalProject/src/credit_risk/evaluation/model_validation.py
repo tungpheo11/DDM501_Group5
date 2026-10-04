@@ -82,7 +82,7 @@ def compare_champion_challenger(
     if champion_metrics is None:
         return GateDecision(
             promote=True,
-            reasons=["no current champion; challenger passes the quality floor"],
+            reasons=["no current champion; challenger passes the quality"],
             challenger=challenger,
         )
 
