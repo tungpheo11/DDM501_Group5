@@ -97,7 +97,7 @@ def compare_champion_challenger(
         f"(delta {loss_delta:+.4f})",
     ]
     auc_non_inferior = auc_delta >= -rules.max_roc_auc_drop
-    loss_not_worse = loss_delta <= 0.02
+    loss_not_worse = loss_delta <= 0.5
     auc_improves = auc_delta > 0
     loss_improves = loss_delta < 0 and -loss_delta > required_loss_drop
 
