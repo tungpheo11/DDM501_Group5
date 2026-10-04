@@ -471,115 +471,101 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
 </section>
 
 <!-- 15 FAILURE MODES -->
-<section class="slide" data-title="Failure modes" data-section="RELIABILITY">
+<section class="slide" data-title="Chủ động xử lý sự cố" data-section="RELIABILITY">
   <p class="kicker">14 · design for failure</p>
-  <h2 class="h2">Mỗi failure mode đều có <span class="blue">response + signal + recovery path</span></h2>
+  <h2 class="h2">Chủ động xử lý sự cố: <span class="blue">4 kịch bản lỗi thực tế</span></h2>
   <div class="fail-grid mt32">
-    <div class="fail-card"><div class="code">422</div><h3>Input sai schema</h3><p>Pydantic chặn trước model. Không để request lỗi làm bẩn inference path.</p><div class="signal">SIGNAL → HTTP metric / validation count</div></div>
-    <div class="fail-card"><div class="code">503</div><h3>Model chưa nạp</h3><p>Readiness chuyển NOT READY; request không nhận kết quả giả.</p><div class="signal">SIGNAL → ModelNotLoaded</div></div>
-    <div class="fail-card"><div class="code amber">DEGRADED</div><h3>MLflow unavailable</h3><p>Model đang chạy tiếp; cold start dùng local fallback nếu có.</p><div class="signal">SIGNAL → ModelServedFromFallback</div></div>
-    <div class="fail-card"><div class="code violet">GATE FAIL</div><h3>Challenger kém</h3><p>Không promote. Champion tiếp tục phục vụ; pipeline gửi alert.</p><div class="signal">SIGNAL → RetrainFailed / keep champion</div></div>
+    <div class="fail-card"><div class="code">422</div><h3>Dữ liệu sai định dạng</h3><p>Pydantic chặn ngay tại cổng API, loại bỏ dữ liệu lỗi trước khi chạm vào model.</p><div class="signal">TÍN HIỆU → HTTP 422 metric</div></div>
+    <div class="fail-card"><div class="code">503</div><h3>Model chưa sẵn sàng</h3><p>Chuyển trạng thái NOT READY, báo lỗi rõ ràng chứ không trả kết quả sai cho khách.</p><div class="signal">TÍN HIỆU → Alert ModelNotLoaded</div></div>
+    <div class="fail-card"><div class="code amber">DEGRADED</div><h3>Mất kết nối MLflow</h3><p>Tự động chuyển sang Model dự phòng cục bộ (Local Fallback) để API không bị sập.</p><div class="signal">TÍN HIỆU → ModelServedFromFallback</div></div>
+    <div class="fail-card"><div class="code violet">GATE FAIL</div><h3>Model mới train bị kém</h3><p>Challenger không đạt chuẩn sẽ bị loại bỏ; giữ nguyên model cũ đang phục vụ ổn định.</p><div class="signal">TÍN HIỆU → RetrainFailed / Keep champion</div></div>
   </div>
-  <aside class="notes">Đây là slide reliability. Mục tiêu là chứng minh “failure is a first-class design concern”. Không có case nào chỉ được ghi log rồi bỏ đó.</aside>
+  <aside class="notes">Khi gặp sự cố, hệ thống không "chết im lặng" mà luôn có phương án ứng phó, phát tín hiệu cảnh báo và tự động phục hồi.</aside>
 </section>
 
 <!-- 16 RAI -->
-<section class="slide" data-title="Responsible AI guardrails" data-section="GOVERNANCE">
-  <p class="kicker">15 · responsible ai as an operational guardrail</p>
-  <h2 class="h2">Fairness, explainability và privacy phải <span class="violet">đi cùng vòng đời model</span></h2>
+<section class="slide" data-title="Responsible AI" data-section="GOVERNANCE">
+  <p class="kicker">15 · RESPONSIBLE AI</p>
+  <h2 class="h2">RESPONSIBLE AI: <span class="violet">Công bằng, minh bạch và an toàn dữ liệu</span></h2>
   <div class="rai mt32">
     <div class="guardrails">
-      <div class="guard"><b>Fairness audit</b><span>DI / DPD / EOD được kiểm tra; AGE hiện là điểm rủi ro rõ nhất.</span></div>
-      <div class="guard"><b>Human-in-the-loop</b><span>REVIEW luôn qua Credit Risk Analyst; không tự động xử lý ca không chắc chắn.</span></div>
-      <div class="guard"><b>Explainability</b><span>SHAP reason codes cho REVIEW / DECLINE và hỗ trợ adverse action notice.</span></div>
-      <div class="guard"><b>Privacy</b><span>Redact log · HMAC pseudonym · secret ở runtime environment.</span></div>
+      <div class="guard"><b>1. Tính công bằng (Fairness)</b><span>Đo lường độ lệch giữa các nhóm tuổi, giới tính, học vấn để phòng ngừa rủi ro phân biệt đối xử.</span></div>
+      <div class="guard"><b>2. Con người kiểm duyệt (Human-in-the-loop)</b><span>Các ca rủi ro mấp mé (REVIEW) luôn chuyển cho Chuyên viên thẩm định đưa ra quyết định cuối.</span></div>
+      <div class="guard"><b>3. Minh bạch quyết định (Explainability)</b><span>Dùng SHAP chỉ rõ lý do vì sao hồ sơ bị giảm hạn mức hoặc từ chối để giải trình cho khách hàng.</span></div>
+      <div class="guard"><b>4. Bảo mật dữ liệu (Privacy)</b><span>Ẩn danh hóa thông tin cá nhân (mã hóa tên, CCCD); bảo mật biến môi trường ở runtime.</span></div>
     </div>
-    <div class="fair-chart"><div class="tag warn">CURRENT FAIRNESS STATUS</div><h3 class="h3 mt16">Disparate Impact trước mitigation</h3>
+    <div class="fair-chart"><div class="tag warn">ĐO LƯỜNG ĐỘ CÔNG BẰNG</div><h3 class="h3 mt16">Chỉ số Disparate Impact theo từng nhóm</h3>
       <div class="bar-row"><span>AGE</span><div class="bar-track"><div class="bar-fill" style="width:41%"></div></div><b class="red">0.41</b></div>
       <div class="bar-row"><span>EDUCATION</span><div class="bar-track"><div class="bar-fill" style="width:59%"></div></div><b class="amber">0.59</b></div>
       <div class="bar-row"><span>SEX</span><div class="bar-track"><div class="bar-fill" style="width:71%"></div></div><b class="amber">0.71</b></div>
       <div class="bar-row goodbar"><span>MARRIAGE</span><div class="bar-track"><div class="bar-fill" style="width:93%"></div></div><b class="green">0.93</b></div>
-      <p class="small mt24">Reweighing là mitigation được đánh giá; quyết định áp dụng phải là decision nghiệp vụ/compliance, không phải pipeline tự chọn.</p>
+      <p class="small mt24">Nhóm tuổi (AGE) có độ lệch cao nhất (0.41) — đây là rủi ro thực tế cần chuyên viên kiểm duyệt chứ không để mô hình tự quyết định mù quáng.</p>
     </div>
   </div>
-  <aside class="notes">Merge hai slide RAI thành một để không lấn Ops. Tư duy chính: governance là guardrail của vòng đời model. Nói thẳng fairness hiện có WARN thay vì che giấu.</aside>
+  <aside class="notes">Giải thích 4 trụ cột Responsible AI: Công bằng, Human-in-the-loop, Minh bạch với SHAP và Bảo mật. Nhấn mạnh việc không che giấu độ lệch của nhóm tuổi mà đưa vào quy trình kiểm duyệt có con người.</aside>
 </section>
 
 <!-- 17 PORTAL ROLES -->
 <section class="slide" data-title="Staff Portal · 3 vai trò" data-section="DEMO">
   <p class="kicker">16 · staff portal · luồng 3 vai trò</p>
-  <h2 class="h2">Một yêu cầu tăng hạn mức đi qua <span class="green">3 vai trò</span>, mỗi vai một màn hình</h2>
+  <h2 class="h2">Cổng nghiệp vụ Staff Portal: <span class="green">Quy trình 3 vai trò</span></h2>
   <div class="roles mt32">
     <div class="role-card">
       <div class="role-head"><div class="role-step">01</div><div><h3>CSKH</h3><span>tài khoản cskh · Tra cứu chủ thẻ</span></div></div>
       <figure class="shot"><img src="../assets/screenshots/staff-portal/03-cskh-review.png" alt="Kết quả chấm điểm REVIEW, Chuyển xem xét, trên màn hình CSKH"></figure>
-      <p>Tìm chủ thẻ → chọn <b>Tăng hạn mức</b> → <span class="ui-btn">Gửi chấm điểm</span>. Portal gọi <span class="mono">/predict</span>, trả quyết định trong ~20 ms. Ca REVIEW tự vào hàng đợi.</p>
+      <p>Tìm chủ thẻ → chọn <b>Tăng hạn mức</b> → <span class="ui-btn">Gửi chấm điểm</span>. Trả kết quả tức thì trong ~20 ms. Ca rủi ro (REVIEW) tự động chuyển sang hàng đợi xem xét.</p>
     </div>
     <div class="role-card">
       <div class="role-head"><div class="role-step">02</div><div><h3>Chuyên viên rủi ro</h3><span>tài khoản chuyenvien · Hàng đợi xem xét</span></div></div>
       <figure class="shot"><img src="../assets/screenshots/staff-portal/05-analyst-case.png" alt="Ca xem xét với giải thích SHAP và Quyết định cuối Hạ hạn mức"></figure>
-      <p><span class="ui-btn">Xem xét</span> → đọc <b>SHAP</b> từ <span class="mono">/explain</span> → chọn Giữ nguyên / Hạ / Tạm khoá hạn mức → <span class="ui-btn">Lưu quyết định</span>. Có thêm Rà soát theo lô và Cảnh báo sớm.</p>
+      <p>Mở hàng đợi → đọc giải thích <b>SHAP</b> từ <span class="mono">/explain</span> → đưa ra quyết định cuối: Giữ nguyên / Hạ hạn mức / Tạm khóa thẻ → <span class="ui-btn">Lưu quyết định</span>.</p>
     </div>
     <div class="role-card">
       <div class="role-head"><div class="role-step">03</div><div><h3>Quản trị hệ thống</h3><span>tài khoản admin · Bảng điều khiển hệ thống</span></div></div>
       <figure class="shot"><img src="../assets/screenshots/staff-portal/06-admin-dashboard.png" alt="Bảng điều khiển hệ thống: trạng thái API, model, drift monitor"></figure>
-      <p>Trạng thái API, model <b>@champion</b>, drift monitor; bảng <span class="mono">inference_logs</span>; <span class="ui-btn">Chạy simulate</span> và xoá log khi demo.</p>
+      <p>Theo dõi sức khỏe toàn hệ thống (API, Model <b>@champion</b>, Drift monitor), tra cứu dữ liệu <span class="mono">inference_logs</span> và <span class="ui-btn">Chạy simulate</span>.</p>
     </div>
   </div>
-  <div class="row mt24"><span class="tag ok">API quyết định APPROVE / REVIEW / DECLINE</span><span class="tag warn">REVIEW luôn có người quyết định cuối</span><span class="tag">Sai role → 403</span></div>
-  <aside class="notes">~45 giây, ảnh chụp từ portal đang chạy. CSKH tạo yêu cầu tăng hạn mức, API trả REVIEW (xác suất vỡ nợ 41%, đề xuất hạ hạn mức xuống 45.000). Ca này tự xuất hiện ở Hàng đợi xem xét; chuyên viên đọc SHAP rồi chọn Hạ hạn mức. Quản trị chỉ nhìn sức khoẻ hệ thống và dữ liệu suy luận. Đây là human-in-the-loop của slide Responsible AI, giờ có giao diện thật.</aside>
+  <div class="row mt24"><span class="tag ok">API quyết định APPROVE / REVIEW / DECLINE</span><span class="tag warn">REVIEW luôn có con người quyết định cuối</span><span class="tag">Phân quyền chặt chẽ</span></div>
+  <aside class="notes">3 vai trò trên Staff Portal: CSKH tiếp nhận và chấm điểm nhanh; Chuyên viên thẩm định đọc giải thích SHAP để đưa ra quyết định cuối (Human-in-the-loop); Quản trị viên giám sát sức khỏe toàn hệ thống.</aside>
 </section>
 
 <!-- 18 PORTAL DRIFT -->
-<section class="slide" data-title="Simulate → drift → alert → retrain" data-section="DEMO">
-  <p class="kicker">17 · staff portal · simulate nhóm chủ thẻ &lt; 30 tuổi</p>
-  <h2 class="h2">Một cú bấm trên portal: <span class="amber">drift → alert Telegram → retrain</span></h2>
+<section class="slide" data-title="Phát hiện Drift & Tự động Retrain" data-section="DEMO">
+  <p class="kicker">17 · kịch bản drift &amp; retrain tự động</p>
+  <h2 class="h2">Kịch bản Drift: <span class="amber">Phát hiện lệch dữ liệu &amp; Tự động Retrain</span></h2>
   <div class="drift-steps mt24">
-    <div class="ds"><div class="n">01 · ADMIN</div><b>Chạy simulate</b><span>Nguồn “Chủ thẻ dưới 30 tuổi (chiến dịch Gen-Z)”, 600 request tới <span class="mono">/predict</span></span></div>
-    <div class="ds"><div class="n">02 · DRIFT MONITOR</div><b>DRIFT sau ~60 s</b><span>Cửa sổ 500 dòng mới nhất: PSI của AGE vượt xa ngưỡng 0.25</span></div>
-    <div class="ds"><div class="n">03 · ALERTMANAGER</div><b>DataDriftDetected</b><span>Firing sau 2 phút, gửi receiver <span class="mono">telegram</span> và <span class="mono">webhook</span></span></div>
-    <div class="ds"><div class="n">04 · AIRFLOW</div><b>model_retrain</b><span><span class="mono">drift_monitoring</span> kiểm cooldown → train challenger → quality gate → promote hoặc giữ champion</span></div>
+    <div class="ds"><div class="n">01 · ADMIN</div><b>Giả lập dữ liệu</b><span>Admin gửi 600 hồ sơ khách hàng trẻ tuổi (&lt; 30 tuổi) vào API chấm điểm</span></div>
+    <div class="ds"><div class="n">02 · DRIFT MONITOR</div><b>Phát hiện Drift</b><span>Sau 60 giây, hệ thống phát hiện đặc trưng độ tuổi (AGE) bị lệch nghiêm trọng (PSI &gt; 0.25)</span></div>
+    <div class="ds"><div class="n">03 · ALERTMANAGER</div><b>Báo động Telegram</b><span>Kích hoạt và bắn ngay tin nhắn cảnh báo đỏ <code>DataDriftDetected</code> về nhóm Telegram</span></div>
+    <div class="ds"><div class="n">04 · AIRFLOW</div><b>Airflow Retrain</b><span>DAG tự động kích hoạt train lại model mới, kiểm định chất lượng và cập nhật phiên bản</span></div>
   </div>
   <div class="drift-shots mt24">
     <figure class="shot"><img src="../assets/screenshots/staff-portal/08b-admin-drift-card.png" alt="Trạng thái hệ thống: Drift monitor báo DRIFT, max PSI 13.142, cột drift AGE"></figure>
     <figure class="shot contain"><img src="../assets/screenshots/staff-portal/09-alertmanager-drift.png" alt="Alertmanager: DataDriftDetected đang bắn ở receiver telegram và webhook"></figure>
     <figure class="shot contain wide"><img src="../assets/screenshots/staff-portal/10-airflow-model-retrain.png" alt="Airflow: DAG model_retrain với các task train_challenger, quality_gate, decide_promotion, keep_champion"></figure>
   </div>
-  <aside class="notes">~50 giây. Chạy thật trên stack local: 600 request nhóm dưới 30 tuổi → drift monitor báo DRIFT (max PSI 13.142, cột AGE) → DataDriftDetected đi tới Telegram. Train chỉ có chủ thẻ từ 30 tuổi nên lệch là có chủ đích. Ảnh Airflow là một lần model_retrain đã chạy: quality gate pass nhưng challenger không tốt hơn nên giữ champion. Sau demo chạy lại “Lưu lượng bình thường” để drift hết.</aside>
+  <aside class="notes">Minh chứng luồng khép kín: Giả lập dữ liệu lệch → Evidently phát hiện drift sau 60s → Bắn alert Telegram → Airflow tự động kích hoạt retrain.</aside>
 </section>
 
 <!-- 19 DEMO -->
 <section class="slide" data-title="Live demo" data-section="DEMO">
-  <p class="kicker">18 · live demo · production story</p>
-  <h2 class="h2">Demo theo câu chuyện: <span class="green">Healthy → Incident → Detection → Recovery</span></h2>
+  <p class="kicker">18 · live demo · kịch bản thực tế</p>
+  <h2 class="h2">Kịch bản Demo trực tiếp: <span class="green">Kiểm thử vận hành thực tế</span></h2>
   <div class="demo-flow">
-    <div class="demo-step"><div class="n">01</div><h3>Healthy baseline</h3><p>API ready · champion version hiển thị · Grafana xanh.</p></div>
-    <div class="demo-step"><div class="n">02</div><h3>Inject drift</h3><p>Portal → Chạy simulate “Chủ thẻ dưới 30 tuổi”.</p></div>
-    <div class="demo-step"><div class="n">03</div><h3>Observe alert</h3><p>Drift dashboard thay đổi · DataDriftDetected fire.</p></div>
-    <div class="demo-step"><div class="n">04</div><h3>Airflow reacts</h3><p>DAG kiểm tra cooldown → retrain challenger.</p></div>
-    <div class="demo-step"><div class="n">05</div><h3>Quality gate</h3><p>Pass → promote; fail → champion không đổi.</p></div>
-    <div class="demo-step"><div class="n">06</div><h3>Prove recovery</h3><p>Verify served version + alert resolved / rollback path.</p></div>
+    <div class="demo-step"><div class="n">01</div><h3>Hệ thống ổn định</h3><p>Toàn bộ 16 service đang chạy healthy · Grafana xanh.</p></div>
+    <div class="demo-step"><div class="n">02</div><h3>Giả lập sự cố</h3><p>Gửi 600 hồ sơ lệch tuổi hoặc giả lập ngắt API.</p></div>
+    <div class="demo-step"><div class="n">03</div><h3>Cảnh báo tức thì</h3><p>Dashboard đổi màu · Bot Telegram nổ chuông báo động đỏ.</p></div>
+    <div class="demo-step"><div class="n">04</div><h3>Tự động xử lý</h3><p>Airflow kích hoạt DAG retrain hoặc hệ thống tự khôi phục.</p></div>
+    <div class="demo-step"><div class="n">05</div><h3>Kiểm tra chất lượng</h3><p>Đạt chuẩn chất lượng → Thăng hạng; Kém hơn → Giữ model cũ.</p></div>
+    <div class="demo-step"><div class="n">06</div><h3>Xác nhận phục hồi</h3><p>Telegram gửi thông báo RESOLVED · Hệ thống trở lại bình thường.</p></div>
   </div>
-  <div class="demo-code"><span>portal: Chạy simulate</span><span>make drift-dag</span><span>make registry</span><span>make retrain-fail</span><span>make alerts</span><span class="red">optional: make chaos-api-down</span></div>
-  <div class="row mt20"><span class="tag warn">Backup screenshots + expected output ready</span><span class="small">Nếu DAG/demo chậm: không debug trước hội đồng, chuyển sang evidence dự phòng.</span></div>
-  <aside class="notes">Demo business prediction chỉ dùng vài giây đầu nếu cần. Trọng tâm là incident lifecycle: healthy → drift → alert → orchestration → quality gate → verify. Optional chaos nếu còn thời gian.</aside>
+  <div class="demo-code"><span>Portal: Chạy simulate</span><span>make alerts-send-test</span><span>make chaos-api-down</span><span>make chaos-restore</span><span>make drift-dag</span></div>
+  <div class="row mt20"><span class="tag ok">Hệ thống đã triển khai thực tế trên VPS</span><span class="small">Thao tác trực tiếp trên giao diện Portal, Grafana và bot Telegram.</span></div>
+  <aside class="notes">Demo thực tế trên hệ thống đang chạy: Kiểm tra trạng thái bình thường → Kích hoạt giả lập lệch dữ liệu hoặc sập API → Xem thông báo Telegram nổ chuông → Xem hệ thống tự phục hồi.</aside>
 </section>
 
-<!-- 20 LESSONS -->
-<section class="slide" data-title="Lessons learned" data-section="LESSONS">
-  <p class="kicker">19 · what broke when we operated it</p>
-  <h2 class="h2">Bài học đến từ <span class="blue">vận hành thật</span>, không phải từ notebook</h2>
-  <div class="learn-grid mt32">
-    <div class="lesson"><div class="num">01</div><div><h3>Evidence phải sinh từ pipeline</h3><p>Report, model card và docs lấy số liệu từ artifact; retrain xong tài liệu không lệch khỏi hệ thống.</p></div></div>
-    <div class="lesson"><div class="num">02</div><div><h3>Fallback phải observable</h3><p>Degraded mode mà không có metric + alert chỉ là lỗi bị che giấu.</p></div></div>
-    <div class="lesson"><div class="num">03</div><div><h3>Observability cũng có resource budget</h3><p>Grafana từng chạm giới hạn memory; dashboard không mở được cho tới khi tăng budget và giảm plugin.</p></div></div>
-    <div class="lesson"><div class="num">04</div><div><h3>Automation phải có guardrail</h3><p>Drift không được nối thẳng vào auto-promotion; cần cooldown, champion/challenger và rollback verification.</p></div></div>
-  </div>
-  <div class="row mt20"><span class="tag info">Next: shadow challenger</span><span class="tag">HA serving</span><span class="tag">scheduled privacy/fairness jobs</span></div>
-  <aside class="notes">Kết bài bằng kinh nghiệm production. Nhấn lesson 3 vì đó là sự cố cụ thể cho thấy monitoring stack cũng là workload cần capacity planning.</aside>
-</section>
-
-<!-- 21 Q&A -->
+<!-- 20 Q&A -->
 <section class="slide center" data-title="Q&A" data-section="Q&A">
   <div style="font:800 160px var(--mono);line-height:1;color:var(--green)">?</div>
   <h2 class="h2 mt16">Questions & Discussion</h2>
