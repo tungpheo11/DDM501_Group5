@@ -110,42 +110,34 @@ with DAG(
             "model_name": name,
             "reason": reason,
             "registered_version": result.registered_version,
-            "duplicate_of": result.duplicate_of,
-            "champion_version_before": result.champion_version or champion_before,
-            "champion_source": result.champion_source,
-            "eval_samples": result.eval_samples,
-            "training_fingerprint": result.training_fingerprint[:12],
+            "champion_version_before": champion_before,
             "candidate": result.candidate,
             "challenger_metrics": {k: float(result.challenger_metrics.get(k, 0.0)) for k in keys},
             "champion_metrics": {k: float(result.champion_metrics.get(k, 0.0)) for k in keys},
             "gate_promote": bool(result.gate.promote) if result.gate else False,
             "gate_reasons": list(result.gate.reasons) if result.gate else [],
         }
-        champion = summary["champion_version_before"]
-        print(f"Challenger v{summary['registered_version']} vs champion v{champion}: {summary}")
+        print(f"Challenger v{summary['registered_version']} vs champion v{champion_before}: {summary}")
         return summary
 
     @task
     def quality_gate(candidate: dict[str, Any], params: dict[str, Any] | None = None) -> dict[str, Any]:
         floor = float((params or {}).get("min_roc_auc", RETRAIN_MIN_ROC_AUC))
         roc_auc = candidate["challenger_metrics"]["roc_auc"]
-        duplicate_of = candidate.get("duplicate_of")
-        if not candidate.get("registered_version") and not duplicate_of:
+        if not candidate.get("registered_version"):
             raise AirflowFailException("Challenger was not registered in MLflow; nothing to promote.")
-        label = f"v{candidate['registered_version']}" if not duplicate_of else f"same as rejected v{duplicate_of}"
         if roc_auc < floor:
             # AirflowFailException skips retries: re-running does not change the metric.
             raise AirflowFailException(
                 f"Quality gate failed: ROC-AUC {roc_auc:.4f} < floor {floor:.4f} "
-                f"(challenger {label}, champion unchanged)"
+                f"(v{candidate['registered_version']} stays @challenger, champion unchanged)"
             )
         print(f"Quality floor passed: ROC-AUC {roc_auc:.4f} >= {floor:.4f}; gate: {candidate['gate_reasons']}")
         return candidate
 
     @task.branch
     def decide_promotion(candidate: dict[str, Any]) -> str:
-        promote = candidate["gate_promote"] and not candidate.get("duplicate_of")
-        return "promote_champion" if promote else "keep_champion"
+        return "promote_champion" if candidate["gate_promote"] else "keep_champion"
 
     @task.external_python(task_id="promote_champion", python=CREDIT_PYTHON, expect_airflow=False, retries=0)
     def promote_champion(candidate: dict) -> dict:
@@ -240,24 +232,14 @@ with DAG(
 
     @task
     def keep_champion(candidate: dict[str, Any]) -> None:
-        champion = candidate["champion_version_before"]
-        duplicate_of = candidate.get("duplicate_of")
-        lines = [escape(reason) for reason in candidate["gate_reasons"]]
-        if duplicate_of:
-            title = f"[RETRAIN] inputs unchanged - champion v{champion} kept (same result as rejected v{duplicate_of})"
-            lines.append(
-                f"Same data files, spec and champion as v{duplicate_of} (fingerprint "
-                f"{escape(candidate.get('training_fingerprint', ''))}): the seeded refit reproduces the same "
-                "challenger, so no new version was registered. Only new labelled feedback can change the decision."
-            )
-        else:
-            title = f"[RETRAIN] challenger v{candidate['registered_version']} rejected - champion v{champion} kept"
-        lines += [
-            f"Compared on {candidate.get('eval_samples', 0)} held-out drifted rows against "
-            f"{escape(candidate.get('champion_source', '-'))}",
-            f"Reason: {escape(candidate['reason'])}",
-        ]
-        notify("RetrainChampionKept", title, lines, status="resolved", labels={"dag_id": "model_retrain"})
+        notify(
+            "RetrainChampionKept",
+            f"[RETRAIN] challenger v{candidate['registered_version']} rejected - champion "
+            f"v{candidate['champion_version_before']} kept",
+            [escape(reason) for reason in candidate["gate_reasons"]] + [f"Reason: {escape(candidate['reason'])}"],
+            status="resolved",
+            labels={"dag_id": "model_retrain"},
+        )
 
     candidate = train_challenger(reason="{{ dag_run.conf.get('reason') or params.reason }}")
     gated = quality_gate(candidate)

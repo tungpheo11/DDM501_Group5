@@ -110,8 +110,7 @@ có request lỗi.
 `keep_champion` chạy và DAG vẫn **success** (không phải lỗi).
 
 > Với dữ liệu hiện tại, retrain thật cho challenger kém hơn champion một chút (0.7485 vs 0.7507) nên gate giữ champion
-> — đúng thiết kế. Retrain lại khi dữ liệu chưa đổi cho đúng kết quả đó, nên không đăng ký version trùng mà báo
-> `inputs unchanged` (xem `orchestration/airflow/dags/README.md`). Nhánh promote → reload → rollback đã được kiểm chứng bằng `airflow tasks test`. Để demo hot reload
+> — đúng thiết kế. Nhánh promote → reload → rollback đã được kiểm chứng bằng `airflow tasks test`. Để demo hot reload
 > dưới traffic một cách tất định, dùng đường thủ công dưới đây.
 
 **Đường thủ công (tất định, dùng cho demo):**
@@ -149,7 +148,6 @@ make retrain-fail                                     # trigger model_retrain v�
 # Airflow UI: train_challenger success → quality_gate FAILED ("ROC-AUC 0.7x < floor 0.9900")
 make alerts                                           # RetrainFailed firing (for: 0)
 make registry | grep -A3 aliases                      # @champion không đổi; version mới gắn @challenger
-                                                      # (không có version mới nếu đầu vào trùng lần bị từ chối trước)
 ```
 
 **Kết quả mong đợi**
