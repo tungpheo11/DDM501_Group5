@@ -8,15 +8,11 @@
    (rows the challenger never trained on) and run the shared promotion gate
    (ROC-AUC non-inferiority + expected financial loss).
 4. Register the challenger (``@challenger``) and move ``@champion`` when it passes.
-   A rejected run whose inputs (data files, spec, seed, policy, champion version) match an
-   earlier rejected run is reported as a repeat and not registered again: the refit is
-   deterministic, so it would only add an identical version.
 5. Ask the serving API to hot-reload the champion.
 """
 
 from __future__ import annotations
 
-import hashlib
 import json
 from dataclasses import dataclass, field
 from typing import Any
@@ -58,11 +54,6 @@ class RetrainResult:
     registered_version: str | None = None
     candidate: str = "random_forest"
     params: dict[str, Any] = field(default_factory=dict)
-    champion_version: str | None = None
-    champion_source: str = "none"
-    eval_samples: int = 0
-    training_fingerprint: str = ""
-    duplicate_of: str | None = None
 
 
 def load_combined_training_data(
@@ -119,88 +110,20 @@ def trigger_hot_reload(api_url: str, api_key: str = "", timeout: float = 10.0) -
     return False
 
 
-def _load_current_champion(cfg: Settings, client: Any | None) -> tuple[Any | None, str, str | None]:
-    """Return ``(model, source, registry_version)`` of the incumbent the gate compares against.
-
-    The local artifact is only used when the registry has no ``@champion``: once the alias
-    exists, comparing against any other model would report a gate decision for the wrong
-    champion, so a load failure is raised instead.
-    """
-    version = get_alias_version(client, cfg.mlflow.model_name, cfg.mlflow.model_alias) if client else None
-    if version is not None:
+def _load_current_champion(cfg: Settings) -> tuple[Any | None, str]:
+    client = get_registry_client(cfg)
+    if client is not None and get_alias_version(client, cfg.mlflow.model_name, cfg.mlflow.model_alias) is not None:
         import mlflow.sklearn
 
         uri = f"models:/{cfg.mlflow.model_name}@{cfg.mlflow.model_alias}"
         try:
-            return mlflow.sklearn.load_model(uri), f"{uri} (v{version})", version
-        except Exception as exc:  # MLflow raises many unrelated exception types for artifact access.
-            raise RuntimeError(f"Cannot load champion {uri} (v{version}) for the promotion gate: {exc}") from exc
+            return mlflow.sklearn.load_model(uri), uri
+        except Exception as exc:  # Fall back to the local artifact below.
+            logger.warning("Could not load %s (%s); using the local champion artifact.", uri, exc)
     local = cfg.paths.models_dir / cfg.training.champion_artifact_name
     if local.exists():
-        return joblib.load(local), str(local), None
-    return None, "none", None
-
-
-def _sha256_file(path: Any) -> str:
-    digest = hashlib.sha256()
-    with open(path, "rb") as handle:
-        for chunk in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def training_fingerprint(cfg: Settings, candidate: str, params: dict[str, Any]) -> str:
-    """SHA-256 of everything that determines the retrained challenger and its gate decision.
-
-    Two runs with the same fingerprint (and the same champion) produce the same model and
-    the same metrics, because the split and the refit are seeded.
-    """
-    training, paths = cfg.training, cfg.paths
-    payload = {
-        "data": {
-            name: _sha256_file(path)
-            for name, path in (
-                ("baseline", paths.baseline_data),
-                ("drifted_stream", paths.drifted_stream),
-                ("ground_truth", paths.ground_truth),
-            )
-        },
-        "candidate": candidate,
-        "params": params,
-        "test_size": training.test_size,
-        "random_state": training.random_state,
-        "decision_threshold": training.decision_threshold,
-        "costs": [training.cost_false_negative, training.cost_false_positive],
-        "promotion": [
-            training.promotion.min_roc_auc,
-            training.promotion.max_roc_auc_drop,
-            training.promotion.min_loss_improvement,
-        ],
-    }
-    return hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
-
-
-def find_repeated_rejection(cfg: Settings, client: Any | None, fingerprint: str, champion_version: str) -> str | None:
-    """Registry version of an earlier rejected retrain with the same inputs and champion, if any."""
-    if client is None:
-        return None
-    experiment = client.get_experiment_by_name(cfg.mlflow.experiment_name)
-    if experiment is None:
-        return None
-    runs = client.search_runs(
-        [experiment.experiment_id],
-        filter_string=(
-            f"tags.run_type = 'retrain' and tags.training_fingerprint = '{fingerprint}' "
-            f"and tags.champion_version = '{champion_version}' and tags.gate_decision = 'reject'"
-        ),
-        order_by=["attributes.start_time DESC"],
-        max_results=5,
-    )
-    for run in runs:
-        version = run.data.tags.get("registered_version")
-        if version:
-            return version
-    return None
+        return joblib.load(local), str(local)
+    return None, "none"
 
 
 def run_retraining_pipeline(
@@ -246,8 +169,7 @@ def run_retraining_pipeline(
         y_eval, challenger.predict_proba(x_eval)[:, 1], threshold, cost_fn, cost_fp
     )
 
-    client = get_registry_client(cfg)
-    champion, champion_source, champion_version = _load_current_champion(cfg, client)
+    champion, champion_source = _load_current_champion(cfg)
     champion_metrics: dict[str, float] = {}
     if champion is not None:
         champion_metrics = classification_report_from_proba(
@@ -274,61 +196,38 @@ def run_retraining_pipeline(
     )
     logger.info("Gate vs %s: %s | %s", champion_source, "PROMOTE" if gate.promote else "KEEP", gate.reasons)
 
-    fingerprint = training_fingerprint(cfg, candidate, params)
-    duplicate_of = (
-        find_repeated_rejection(cfg, client, fingerprint, champion_version)
-        if champion_version is not None and not gate.promote
-        else None
+    manifest_path = cfg.paths.data_manifest
+    manifest = load_manifest(manifest_path) if manifest_path.exists() else build_manifest(cfg.paths.data_dir)
+    result = log_model_run(
+        challenger,
+        run_name=spec.run_name,
+        params={
+            "candidate": candidate,
+            **params,
+            "strategy": spec.strategy,
+            "spec_source": spec_source,
+            "train_samples": len(x_train),
+            "eval_samples": len(x_eval),
+        },
+        metrics={
+            **{f"val_{k}": float(v) for k, v in val_metrics.items()},
+            **{f"drifted_holdout_{k}": float(v) for k, v in challenger_metrics.items()},
+            **{f"champion_drifted_holdout_{k}": float(v) for k, v in champion_metrics.items()},
+        },
+        sample_input=x_val,
+        register=True,
+        promote=promote and gate.promote,
+        settings=cfg,
+        tags={
+            "run_type": "retrain",
+            "gate_decision": "promote" if gate.promote else "reject",
+            "gate_reasons": " | ".join(gate.reasons)[:4900],
+            **lineage_tags(
+                manifest,
+                ["reference/train_baseline.csv", "processed/stream_drifted.csv", "processed/ground_truth_feedback.csv"],
+            ),
+        },
     )
-    result = None
-    if duplicate_of is not None:
-        logger.info(
-            "Inputs unchanged since rejected challenger v%s (fingerprint %s, champion v%s); not registering again.",
-            duplicate_of,
-            fingerprint[:12],
-            champion_version,
-        )
-    else:
-        manifest_path = cfg.paths.data_manifest
-        manifest = load_manifest(manifest_path) if manifest_path.exists() else build_manifest(cfg.paths.data_dir)
-        result = log_model_run(
-            challenger,
-            run_name=spec.run_name,
-            params={
-                "candidate": candidate,
-                **params,
-                "strategy": spec.strategy,
-                "spec_source": spec_source,
-                "train_samples": len(x_train),
-                "eval_samples": len(x_eval),
-            },
-            metrics={
-                **{f"val_{k}": float(v) for k, v in val_metrics.items()},
-                **{f"drifted_holdout_{k}": float(v) for k, v in challenger_metrics.items()},
-                **{f"champion_drifted_holdout_{k}": float(v) for k, v in champion_metrics.items()},
-            },
-            sample_input=x_val,
-            register=True,
-            promote=promote and gate.promote,
-            settings=cfg,
-            tags={
-                "run_type": "retrain",
-                "gate_decision": "promote" if gate.promote else "reject",
-                "gate_reasons": " | ".join(gate.reasons)[:4900],
-                "training_fingerprint": fingerprint,
-                "champion_version": champion_version or "local",
-                **lineage_tags(
-                    manifest,
-                    [
-                        "reference/train_baseline.csv",
-                        "processed/stream_drifted.csv",
-                        "processed/ground_truth_feedback.csv",
-                    ],
-                ),
-            },
-        )
-        if result is not None and result.registered_version is not None and client is not None:
-            client.set_tag(result.run_id, "registered_version", result.registered_version)
 
     challenger_path = cfg.paths.models_dir / spec.artifact_name
     joblib.dump(challenger, challenger_path)
@@ -352,9 +251,4 @@ def run_retraining_pipeline(
         registered_version=result.registered_version if result else None,
         candidate=candidate,
         params=params,
-        champion_version=champion_version,
-        champion_source=champion_source,
-        eval_samples=len(x_eval),
-        training_fingerprint=fingerprint,
-        duplicate_of=duplicate_of,
     )

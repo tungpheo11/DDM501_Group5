@@ -7,7 +7,7 @@ import pytest
 from credit_risk.config import load_settings
 from credit_risk.data.schema import ALL_FEATURES
 from credit_risk.training.models import LGBMClassifier
-from credit_risk.training.registry import bootstrap_champion, describe_registry, log_model_run
+from credit_risk.training.registry import describe_registry, log_model_run
 from credit_risk.training.retrain import (
     load_champion_spec,
     load_combined_training_data,
@@ -124,59 +124,6 @@ def test_retraining_reuses_champion_spec(small_workspace):
     result = run_retraining_pipeline(small_workspace, reload_api=False)
     assert result.candidate == "logistic_regression"
     assert result.challenger.named_steps["classifier"].C == 0.2
-
-
-def _reject_gate(monkeypatch):
-    from credit_risk.evaluation.model_validation import GateDecision
-    from credit_risk.training import retrain
-
-    monkeypatch.setattr(
-        retrain, "compare_champion_challenger", lambda *_args, **_kwargs: GateDecision(False, ["rejected: test"])
-    )
-
-
-def test_retrain_repeat_with_same_inputs_is_not_registered_again(tracked_workspace, monkeypatch):
-    bootstrap_champion(tracked_workspace)
-    _reject_gate(monkeypatch)
-
-    first = run_retraining_pipeline(tracked_workspace, reload_api=False, promote=False)
-    assert first.registered_version == "2" and first.duplicate_of is None
-    assert first.champion_version == "1" and "@champion" in first.champion_source
-    assert first.eval_samples > 0 and len(first.training_fingerprint) == 64
-
-    second = run_retraining_pipeline(tracked_workspace, reload_api=False, promote=False)
-    assert second.registered_version is None
-    assert second.duplicate_of == "2"
-    assert second.training_fingerprint == first.training_fingerprint
-    assert second.challenger_metrics == pytest.approx(first.challenger_metrics, rel=1e-6)
-    assert [v["version"] for v in describe_registry(tracked_workspace)["versions"]] == ["1", "2"]
-
-
-def test_retrain_with_new_feedback_registers_a_new_challenger(tracked_workspace, monkeypatch):
-    bootstrap_champion(tracked_workspace)
-    _reject_gate(monkeypatch)
-    first = run_retraining_pipeline(tracked_workspace, reload_api=False, promote=False)
-
-    labels_path = tracked_workspace.paths.ground_truth
-    labels = pd.read_csv(labels_path)
-    labels.head(len(labels) - 10).to_csv(labels_path, index=False)
-    second = run_retraining_pipeline(tracked_workspace, reload_api=False, promote=False)
-
-    assert second.training_fingerprint != first.training_fingerprint
-    assert second.duplicate_of is None and second.registered_version == "3"
-
-
-def test_retrain_fails_instead_of_gating_against_another_champion(tracked_workspace, monkeypatch):
-    import mlflow.sklearn
-
-    bootstrap_champion(tracked_workspace)
-
-    def unavailable(*_args, **_kwargs):
-        raise OSError("artifact store unreachable")
-
-    monkeypatch.setattr(mlflow.sklearn, "load_model", unavailable)
-    with pytest.raises(RuntimeError, match="Cannot load champion"):
-        run_retraining_pipeline(tracked_workspace, reload_api=False, promote=False)
 
 
 def test_registry_skips_when_tracking_unreachable(settings, champion_model):

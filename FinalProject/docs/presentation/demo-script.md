@@ -137,8 +137,6 @@ make registry
 
 - `"champion": "<n+1>"` — challenger tốt hơn: `promote_champion → reload_api → refresh_drift_reference → notify`, **tab 5** hiện *Last retrain run* **OK** và *Last promoted version* = n+1; hoặc
 - `"champion": "<n>"` giữ nguyên — nhánh `keep_champion`: challenger không tốt hơn champion theo `PromotionPolicy`.
-- Nếu dữ liệu chưa đổi kể từ lần retrain bị từ chối trước, không có version mới (`"challenger"` giữ nguyên) và Telegram
-  báo `[RETRAIN] inputs unchanged - champion vX kept (same result as rejected vY)`.
 
 **ML walkthrough:** chuyển **tab 7** (MLflow), chỉ alias `@champion` / `@challenger` và run vừa train, rồi nói: "Cả hai kết quả đều đúng thiết kế: hệ thống chỉ promote khi challenger đạt floor ROC-AUC 0.70, không tụt quá 0.005 và expected loss không tệ hơn — tức là không để model mới giữ hạn mức cho nhiều chủ thẻ sắp vỡ nợ hơn. Nếu API không nạp đúng version mới, `rollback_champion` trả alias về bản cũ." Nếu champion đổi, cửa sổ admin hiện version mới ở *Model đang phục vụ*.
 
@@ -222,8 +220,7 @@ make alerts         # Prometheus alerts: none
 - **"Portal có làm đổi API không?"** — không. Portal gọi đúng `/api/v1/predict`, `/predict/batch`, `/explain`; API key nằm ở server portal, trình duyệt chỉ có cookie phiên và CSRF token.
 - **"CSKH có xem được màn hình quản trị không?"** — không. Mỗi tài khoản chỉ vào màn hình của vai trò mình; vào sai trả 403.
 - **"Xoá log có nguy hiểm không?"** — chỉ bật ở chế độ demo, phải gõ `XOA`, và được ghi nhật ký. Production đặt `PORTAL_DEMO_MODE=false` nên nút bị khoá.
-- **"Sao challenger không được promote?"** — dữ liệu retrain gần giống champion nên không vượt `PromotionPolicy`; đó là hành vi mong muốn (nhánh `keep_champion`, có thông báo `RetrainChampionKept`). Drift ở đây chỉ là lệch phân phối đầu vào (nhóm dưới 30 tuổi của cùng bộ UCI), nên refit cùng thuật toán không tạo ra model tốt hơn trên phần drifted giữ lại.
-- **"Sao lý do giữ champion lần nào cũng giống hệt nhau?"** — retrain tất định: cùng dữ liệu, spec, seed thì ra cùng challenger. Hệ thống nhận ra điều đó qua `training_fingerprint`, không đăng ký version trùng và báo rõ "inputs unchanged".
+- **"Sao challenger không được promote?"** — dữ liệu retrain gần giống champion nên không vượt `PromotionPolicy`; đó là hành vi mong muốn (nhánh `keep_champion`, có thông báo `RetrainChampionKept`).
 - **"Drift xử lý thế nào nếu chỉ lệch output?"** — prediction shift (PSI output ≥ 0.25) chỉ alert `PredictionDistributionShift`, không retrain tự động, vì có thể là thay đổi hợp lệ trong tập chủ thẻ.
 - **"Latency có bị retrain ảnh hưởng?"** — retrain chạy trong Airflow (container riêng); API chỉ hot-reload model qua `POST /api/v1/model/reload`.
 - **"Stack này đã chạy trên production thật chưa hay chỉ local compose?"** — hệ thống đã có pipeline CD hoàn chỉnh: push tag `v1.0.0` kích hoạt workflow GitHub Actions, build và scan Trivy, publish GHCR, rồi deploy qua SSH Deploy Key vào VPS Ubuntu `148.113.255.63`. Stack production chạy 12 containers (`/opt/credit-risk/current`), sau Nginx, smoke test pass và tự động rollback nếu lỗi.

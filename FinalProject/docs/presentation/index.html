@@ -314,20 +314,16 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
         <div class="flow-arrow">→</div>
         <div class="svc portal"><h3 class="amber">staff-portal</h3><p>FastAPI + Jinja + HTMX · đăng nhập bcrypt · mỗi role chỉ vào màn hình của mình</p><p class="mono mt8">:18030 · profile core</p></div>
         <div class="flow-arrow">→</div>
-        <div class="svc core"><h3 class="blue">Scoring API</h3><p><span class="mono">/predict</span> · <span class="mono">/predict/batch</span> · <span class="mono">/explain</span> · <span class="mono">/model/info</span></p><p class="mono mt8">X-API-Key giữ ở server</p></div>
+        <div class="svc core"><h3 class="blue">Scoring API</h3><p><span class="mono">/predict</span> · <span class="mono">/predict/batch</span> · <span class="mono">/explain</span></p><p class="mono mt8">X-API-Key giữ ở server</p></div>
       </div>
       <div class="flow-down"><span></span><span></span><span>↓</span><span></span><span>↓</span></div>
       <div class="flow-row">
         <div></div><div></div>
-        <div class="svc"><h3>PostgreSQL · bảng portal</h3><p>Yêu cầu hạn mức · quyết định chuyên viên · lô rà soát · nhật ký quản trị. Đọc <span class="mono">inference_logs</span>, không đổi schema.</p></div>
+        <div class="svc"><h3>PostgreSQL</h3><p>Bảng riêng: yêu cầu hạn mức · quyết định chuyên viên · lô rà soát · nhật ký quản trị. Đọc <span class="mono">inference_logs</span> của API.</p></div>
         <div class="flow-arrow">←</div>
-        <div class="svc mon"><h3 class="green">inference_logs</h3><p>Cùng PostgreSQL · API ghi mỗi request một dòng → drift monitor đọc để tính PSI</p></div>
+        <div class="svc mon"><h3 class="green">inference_logs</h3><p>Mỗi request một dòng → drift monitor → Alertmanager → Telegram → Airflow</p></div>
       </div>
-      <div class="guard-list">
-        <div class="security-chip" style="border-color:rgba(110,231,168,.3)"><b class="green">Cảnh báo:</b> drift monitor → Prometheus → Alertmanager → Telegram</div>
-        <div class="security-chip" style="border-color:rgba(191,156,255,.3)"><b class="violet">Retrain:</b> Airflow <span class="mono">drift_monitoring</span> gọi drift monitor → <span class="mono">model_retrain</span></div>
-      </div>
-      <div class="guard-list">
+      <div class="guard-list mt8">
         <div class="security-chip">API contract <span class="mono">/api/v1/*</span> không đổi</div>
         <div class="security-chip">API key không bao giờ xuống trình duyệt</div>
         <div class="security-chip"><span class="mono">/health/live</span> · <span class="mono">/health/ready</span> cho Docker healthcheck</div>
@@ -339,7 +335,7 @@ body{background:radial-gradient(circle at 80% 8%,rgba(115,183,255,.12),transpare
       <div class="row"><span class="tag warn">3 tài khoản demo</span><span class="tag">cskh</span><span class="tag">chuyenvien</span><span class="tag">admin</span></div>
     </div>
   </div>
-  <aside class="notes">~40 giây. Trước đây chỉ có app/batch gọi API; nhân viên ngân hàng phải dùng Swagger. Staff Portal là service thứ 16, cùng profile core, gọi đúng ba endpoint cũ nên API contract không đổi. API key nằm ở server portal; trình duyệt chỉ có cookie phiên. Portal ghi bảng riêng, chỉ đọc (và trong chế độ demo được xoá) inference_logs — bảng này nằm cùng PostgreSQL. Từ inference_logs có hai nhánh độc lập: drift monitor đẩy metric để Alertmanager gửi Telegram, còn Airflow drift_monitoring tự gọi drift monitor theo lịch rồi trigger model_retrain; Alertmanager không kích hoạt Airflow. Ảnh là màn hình Đăng nhập thật.</aside>
+  <aside class="notes">~40 giây. Trước đây chỉ có app/batch gọi API; nhân viên ngân hàng phải dùng Swagger. Staff Portal là service thứ 16, cùng profile core, gọi đúng ba endpoint cũ nên API contract không đổi. API key nằm ở server portal; trình duyệt chỉ có cookie phiên. Portal ghi bảng riêng, chỉ đọc (và trong chế độ demo được xoá) inference_logs. Ảnh là màn hình Đăng nhập thật.</aside>
 </section>
 
 <!-- 09 CICD -->
