@@ -78,8 +78,13 @@ with DAG(
     on_success_callback=_on_dag_success,
     on_failure_callback=_on_dag_failure,
     params={
-        "simulate_reload_failure": Param(False, type="boolean", description="Demo: force reload_api to fail so rollback runs"),
+        "simulate_reload_failure": Param(
+            False,
+            type="boolean",
+            description="Demo: force reload_api to fail so rollback runs"
+        ),
         "min_roc_auc": Param(
+   
             RETRAIN_MIN_ROC_AUC,
             type="number",
             minimum=0,
