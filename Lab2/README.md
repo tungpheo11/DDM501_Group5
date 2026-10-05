@@ -36,7 +36,7 @@ Read these before you start — they are the worked examples:
 the `ingest` and `cleanup` tasks in the DAG, `beats_champion` and the helper
 functions in `registry.py`, and `TestDataIngestion` in the test file.
 
-**You are done when `.github/workflows/smoke.yml` passes.** It runs the pipeline,
+**You are done when the repository-root `.github/workflows/lab2-smoke.yml` passes.** It runs the pipeline,
 asserts a model reached the `@champion` alias, runs the sweep, then installs
 Airflow and parses the DAG. That workflow is the specification; this README is
 the explanation.
@@ -102,7 +102,7 @@ Unpause `credit_default_training` in the Airflow UI and trigger it. Seven tasks:
 | `train` | Fit the pipeline inside an MLflow run |
 | `evaluate` | Aggregate metrics, per-group metrics, fairness gap — all logged |
 | `decide` | Branch on the quality gate |
-| `promote_model` / `skip_promotion` | Register and alias, or do nothing |
+| `promote_model` / `skip_promotion` | Register and alias a passing candidate, or register/tag a rejected candidate without an alias |
 | `cleanup` | Remove the run directory down whichever branch ran |
 
 ---
@@ -256,3 +256,7 @@ to build the config dict and never use it — the runs then differ only by name.
 **The DAG runs but nothing appears in MLflow**
 Inside the compose network the tracking server is `http://mlflow:5000`, not
 `http://localhost:5000`. `localhost` inside a container is that container.
+Artifacts are uploaded through MLflow's artifact proxy to the server-owned
+`/mlflow/artifacts` directory. Airflow should not mount that volume directly;
+the tracking server and Airflow run as different users, and direct filesystem
+uploads can fail with a permissions error.

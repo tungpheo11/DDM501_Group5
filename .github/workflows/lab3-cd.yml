@@ -23,6 +23,8 @@ jobs:
   build-and-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
       version: ${{ steps.tag.outputs.version }}
     defaults:
@@ -57,12 +59,21 @@ jobs:
 
       - name: Determine image tag
         id: tag
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "version=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            version="$INPUT_TAG"
           else
-            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            version="$REF_NAME"
           fi
+          if [[ ! "$version" =~ ^lab3-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid version tag: expected lab3-vMAJOR.MINOR.PATCH"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -108,10 +119,8 @@ jobs:
     steps:
       - name: Deploy to staging
         run: |
-          echo "Deploying Lab3 ${{ needs.build-and-push.outputs.version }} to staging..."
-          # Replace with real deployment commands (SSH, kubectl, etc.)
-          echo "Image: ${{ secrets.DOCKER_USERNAME }}/movie-rating-api:${{ needs.build-and-push.outputs.version }}"
-          echo "Staging deployment complete."
+          echo "::warning::Staging deployment is not configured; no host was updated."
+          echo "Image ready: ${{ secrets.DOCKER_USERNAME }}/movie-rating-api:${{ needs.build-and-push.outputs.version }}"
 
   # ===========================================================================
   # Deploy to Production (requires manual approval)
@@ -125,6 +134,5 @@ jobs:
     steps:
       - name: Deploy to production
         run: |
-          echo "Deploying Lab3 to production environment..."
-          # Replace with real deployment commands
-          echo "Production deployment complete."
+          echo "::warning::Production deployment is not configured; no host was updated."
+          echo "Image ready: ${{ secrets.DOCKER_USERNAME }}/movie-rating-api:${{ needs.build-and-push.outputs.version }}"

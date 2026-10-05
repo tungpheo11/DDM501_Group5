@@ -94,7 +94,7 @@ jobs:
         run: python scripts/make_reference.py
 
       - name: Run the full test suite
-        run: pytest
+        run: pytest --cov-report=xml
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -137,7 +137,8 @@ jobs:
       - name: Wait for the API to be healthy (30s timeout)
         run: |
           for i in $(seq 1 30); do
-            if curl -sf localhost:8000/health > /dev/null; then
+            if curl -sf localhost:8000/health \
+                | python -c "import json,sys; sys.exit(0 if json.load(sys.stdin).get('model_loaded') is True else 1)"; then
               echo "API healthy after ${i}s"; exit 0
             fi
             sleep 1
@@ -173,11 +174,16 @@ jobs:
         # Provisioned dashboards must be available via API; a dashboard that
         # exists only in someone's browser session is not a provisioned one.
         run: |
-          sleep 5
-          COUNT=$(curl -sf "localhost:3000/api/dashboards/home" \
-                  -H "Authorization: Basic $(echo -n admin:admin | base64)" \
-                  | python -c "import json,sys; d=json.load(sys.stdin); print(1)" 2>/dev/null || echo 0)
+          for i in $(seq 1 10); do
+            COUNT=$(curl -sf -u admin:admin "localhost:3000/api/search?type=dash-db" \
+                    | python -c "import json,sys; print(len(json.load(sys.stdin)))" 2>/dev/null || echo 0)
+            if [ "$COUNT" -ge 2 ]; then
+              break
+            fi
+            sleep 3
+          done
           echo "Grafana dashboard check: $COUNT"
+          test "$COUNT" -ge 2
 
       - name: Show logs on failure
         if: failure()

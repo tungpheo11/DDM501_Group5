@@ -109,27 +109,19 @@ class TestMovieRatingModel:
 
     def test_predict_with_none_user_id(self, trained_model):
         """
-        Test behavior when user_id is None.
-        The Surprise library may raise an error or return a default prediction.
+        None is treated as an unknown user and must yield a bounded estimate.
         """
-        try:
-            result = trained_model.predict(None, "242")
-            # If it returns, should still be a float
-            assert isinstance(result, float)
-        except Exception:
-            pass  # Acceptable to raise error for None input
+        result = trained_model.predict(None, "242")
+        assert isinstance(result, float)
+        assert 1.0 <= result <= 5.0
 
     def test_predict_with_empty_string(self, trained_model):
         """
-        Test behavior when IDs are empty strings.
-        The model may treat empty string as unknown user/movie.
+        An empty ID is treated as unknown by the model wrapper and must be bounded.
         """
-        try:
-            result = trained_model.predict("", "242")
-            # If it returns, should be in valid range
-            assert 1.0 <= result <= 5.0
-        except Exception:
-            pass  # Acceptable to raise error
+        result = trained_model.predict("", "242")
+        assert isinstance(result, float)
+        assert 1.0 <= result <= 5.0
 
 
 class TestModelFileHandling:

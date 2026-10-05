@@ -6,8 +6,11 @@ actually had — derived features arriving as None, so their PSI was pinned at
 0.0 forever and the monitor looked healthy while measuring nothing.
 """
 
+from unittest.mock import patch
+
 import pytest
 
+from app import main as main_app
 from app.monitoring import MONITORED_FEATURES
 from scripts.load_test import apply_drift, apply_group_bias, row_to_payload
 
@@ -38,6 +41,32 @@ class TestMonitoringEndpoint:
         client.post("/predict/batch", json={"applications": [application] * 7})
         after = client.get("/monitoring").json()["window_size"]
         assert after == before + 7
+
+
+class TestPredictionInferenceCount:
+    def test_single_prediction_runs_model_once(self, client, application):
+        assert main_app.model is not None
+        with patch.object(
+            main_app.model,
+            "predict_proba",
+            wraps=main_app.model.predict_proba,
+        ) as predict_proba:
+            response = client.post("/predict", json=application)
+        assert response.status_code == 200
+        assert predict_proba.call_count == 1
+
+    def test_batch_prediction_runs_model_once(self, client, application):
+        assert main_app.model is not None
+        with patch.object(
+            main_app.model,
+            "predict_proba",
+            wraps=main_app.model.predict_proba,
+        ) as predict_proba:
+            response = client.post(
+                "/predict/batch", json={"applications": [application] * 3}
+            )
+        assert response.status_code == 200
+        assert predict_proba.call_count == 1
 
 
 class TestDerivedFeaturesReachTheMonitor:

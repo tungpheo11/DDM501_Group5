@@ -266,7 +266,7 @@ All settings can be overridden with environment variables — the same image run
 | Property | Value |
 |----------|-------|
 | Algorithm | `HistGradientBoostingClassifier` |
-| Dataset | UCI Default of Credit Card Clients (Yeh & Lien, 2009) |
+| Dataset | Synthetic 30,000-row dataset generated with the UCI dataset schema |
 | Training rows | 24,000 (80% stratified split) |
 | Test rows | 6,000 |
 | **ROC AUC** | **0.7481** |
@@ -287,7 +287,7 @@ All settings can be overridden with environment variables — the same image run
 
 ## CI/CD
 
-GitHub Actions workflow (`.github/workflows/smoke.yml`) runs on every push and pull request to `main`:
+GitHub Actions workflow (`.github/workflows/lab1-smoke.yml` at the repository root) runs on pushes and pull requests that change Lab 1 files:
 
 1. Install dependencies
 2. Verify all packages resolve to wheels (no compiler needed)

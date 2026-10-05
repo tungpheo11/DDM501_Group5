@@ -19,7 +19,6 @@ from pathlib import Path
 sys.path.insert(0, os.getenv("PROJECT_ROOT", str(Path(__file__).resolve().parents[1])))
 
 from airflow import DAG
-from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import BranchPythonOperator, PythonOperator
 
 RUN_DIR = Path(os.getenv("PIPELINE_RUN_DIR", "/opt/airflow/artifacts"))
@@ -202,7 +201,9 @@ with DAG(
     t_evaluate = PythonOperator(task_id="evaluate", python_callable=evaluate)
     t_decide = BranchPythonOperator(task_id="decide", python_callable=decide)
     t_promote = PythonOperator(task_id="promote_model", python_callable=promote)
-    t_skip = EmptyOperator(task_id="skip_promotion")
+    # A failed quality gate still registers the candidate for audit, but
+    # promote_model leaves it unaliased and tags it as rejected.
+    t_skip = PythonOperator(task_id="skip_promotion", python_callable=promote)
 
     # none_failed_min_one_success: cleanup must run down whichever branch was
     # taken, but must not run if an upstream task actually failed.

@@ -35,7 +35,6 @@ x-airflow-common: &airflow-common
     - ./pipeline:/opt/airflow/project/pipeline
     - ./data:/opt/airflow/project/data
     - ./artifacts:/opt/airflow/artifacts
-    - mlflow_data:/mlflow
   depends_on:
     postgres:
       condition: service_healthy
@@ -52,7 +51,9 @@ services:
   #   volumes      the named volume mlflow_data mounted at /mlflow
   #   command      mlflow server
   #                  --backend-store-uri sqlite:////mlflow/mlflow.db
-  #                  --default-artifact-root /mlflow/artifacts
+  #                  --serve-artifacts
+  #                  --default-artifact-root mlflow-artifacts:/
+  #                  --artifacts-destination /mlflow/artifacts
   #                  --host 0.0.0.0 --port 5000
   #   healthcheck  hit /health, every 15s, 10s timeout, 5 retries,
   #                20s start_period
@@ -75,7 +76,9 @@ services:
     command: >
       mlflow server
       --backend-store-uri sqlite:////mlflow/mlflow.db
-      --default-artifact-root /mlflow/artifacts
+      --serve-artifacts
+      --default-artifact-root mlflow-artifacts:/
+      --artifacts-destination /mlflow/artifacts
       --host 0.0.0.0
       --port 5000
     healthcheck:

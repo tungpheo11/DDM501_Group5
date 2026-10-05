@@ -46,8 +46,6 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         method = request.method
-        # 2. Label with ROUTE TEMPLATE, not the resolved path
-        template = _route_template(request, path)
 
         # 4. Increment in-progress gauge BEFORE processing
         REQUESTS_IN_PROGRESS.inc()
@@ -60,13 +58,16 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         finally:
             # 3. Record in finally block — counts even if request raises
             duration = time.perf_counter() - start
+            # Routing happens inside call_next, so resolve the template here.
+            # Unmatched paths share one label to avoid cardinality from 404s.
+            template = _route_template(request)
             REQUEST_COUNT.labels(method=method, endpoint=template, status=str(status_code)).inc()
             REQUEST_LATENCY.labels(method=method, endpoint=template).observe(duration)
             # 4. Decrement in-progress gauge in finally — keeps gauge balanced
             REQUESTS_IN_PROGRESS.dec()
 
 
-def _route_template(request: Request, fallback: str) -> str:
-    """The matched route's path template, or the raw path if none matched."""
+def _route_template(request: Request, fallback: str = "<unmatched>") -> str:
+    """The matched route's path template, or a fixed label if none matched."""
     route = request.scope.get("route")
     return getattr(route, "path", fallback) or fallback

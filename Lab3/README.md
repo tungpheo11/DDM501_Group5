@@ -137,7 +137,7 @@ Complete the following files:
 
 ### CI/CD Files
 - [x] `.github/workflows/lab3-ci.yml` - CI pipeline (lint → type-check → test → build)
-- [x] `.github/workflows/lab3-cd.yml` - CD pipeline (tag push → Docker Hub → staging → production)
+- [x] `.github/workflows/lab3-cd.yml` - Image publishing on version tags; deployment jobs are placeholders pending target configuration
 - [x] `.pre-commit-config.yaml` - Pre-commit hooks (black, isort, flake8, mypy)
 
 ## Test Types
@@ -188,7 +188,7 @@ def test_same_input_same_output(model):
 ### Continuous Deployment (BONUS)
 - Triggered on version tags
 - Builds and pushes Docker image
-- Deploys to staging/production
+- Contains staging/production jobs, but they currently only log the image and do not deploy to a host. Configure a deployment target and credentials before describing this as completed deployment.
 
 ## Grading Rubric
 

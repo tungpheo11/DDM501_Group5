@@ -9,9 +9,12 @@ asks a question you would otherwise only find the answer to at 3am.
 import re
 
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from prometheus_client import REGISTRY
 
 from app import metrics as M
+from app.middleware import MetricsMiddleware
 
 
 def _families():
@@ -176,7 +179,45 @@ class TestCardinality:
                 if "endpoint" in sample.labels:
                     endpoints.add(sample.labels["endpoint"])
         assert endpoints <= {"/predict", "/predict/batch", "/health", "/explain",
-                             "/monitoring", "/", "/model/info", "/docs", "/openapi.json"}
+                             "/monitoring", "/", "/model/info", "/docs", "/openapi.json",
+                             "/users/{user_id}", "<unmatched>"}
+
+    def test_dynamic_routes_use_the_matched_template(self):
+        app = FastAPI()
+        app.add_middleware(MetricsMiddleware)
+
+        @app.get("/users/{user_id}")
+        async def get_user(user_id: str):
+            return {"user_id": user_id}
+
+        before = _value(
+            "http_requests_total", method="GET", endpoint="/users/{user_id}", status="200"
+        )
+        with TestClient(app) as test_client:
+            assert test_client.get("/users/123").status_code == 200
+            assert test_client.get("/users/456").status_code == 200
+        after = _value(
+            "http_requests_total", method="GET", endpoint="/users/{user_id}", status="200"
+        )
+        assert after == before + 2
+        assert _value(
+            "http_requests_total", method="GET", endpoint="/users/123", status="200"
+        ) == 0
+
+    def test_unmatched_paths_share_one_fixed_label(self):
+        app = FastAPI()
+        app.add_middleware(MetricsMiddleware)
+
+        before = _value(
+            "http_requests_total", method="GET", endpoint="<unmatched>", status="404"
+        )
+        with TestClient(app) as test_client:
+            assert test_client.get("/missing/123").status_code == 404
+            assert test_client.get("/missing/456").status_code == 404
+        after = _value(
+            "http_requests_total", method="GET", endpoint="<unmatched>", status="404"
+        )
+        assert after == before + 2
 
     def test_metrics_endpoint_excludes_itself(self, client):
         """Prometheus scrapes every 10s. Counting those would dominate the

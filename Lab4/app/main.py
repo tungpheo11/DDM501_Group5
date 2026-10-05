@@ -216,11 +216,11 @@ async def predict(application: CreditApplication):
     try:
         start = time.perf_counter()
         frame = active.to_frame([payload])
-        scores = active.predict_proba([payload])
+        result = active.score(payload)
         PREDICTION_LATENCY.labels(model_version=MODEL_VERSION).observe(
             time.perf_counter() - start
         )
-        result = active.score(payload)
+        scores = [result["default_probability"]]
         _observe(frame, scores, [result])
         return PredictionResponse(**result)
     except Exception as exc:  # noqa: BLE001
@@ -240,11 +240,11 @@ async def predict_batch(request: BatchPredictionRequest):
     try:
         start = time.perf_counter()
         frame = active.to_frame(payloads)
-        scores = active.predict_proba(payloads)
+        results = active.score_batch(payloads)
         PREDICTION_LATENCY.labels(model_version=MODEL_VERSION).observe(
             time.perf_counter() - start
         )
-        results = active.score_batch(payloads)
+        scores = [result["default_probability"] for result in results]
         _observe(frame, scores, results)
         return BatchPredictionResponse(
             predictions=[PredictionResponse(**r) for r in results],

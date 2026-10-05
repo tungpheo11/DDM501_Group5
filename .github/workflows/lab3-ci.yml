@@ -181,4 +181,11 @@ jobs:
             -H 'Content-Type: application/json' \
             -d '{"user_id": "196", "movie_id": "242"}' \
             | tee /dev/stderr | grep -q 'predicted_rating'
+          for i in $(seq 1 40); do
+            if [ "$(docker inspect --format='{{.State.Health.Status}}' api)" = "healthy" ]; then
+              break
+            fi
+            sleep 2
+          done
+          test "$(docker inspect --format='{{.State.Health.Status}}' api)" = "healthy"
           docker stop api
